@@ -23,3 +23,4 @@ C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\obj\Debug
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\obj\Debug\net8.0\Fitness-Tracker.pdb
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\obj\Debug\net8.0\Fitness-Tracker.genruntimeconfig.cache
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\obj\Debug\net8.0\ref\Fitness-Tracker.dll
+C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\obj\Debug\net8.0\Fitness-Tracker.sourcelink.json
