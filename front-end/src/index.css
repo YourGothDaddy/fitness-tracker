@@ -11,3 +11,55 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Custom Navbar Styling */
+.custom-navbar {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
+}
+
+.custom-navbar .nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.custom-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.custom-navbar .nav-link:hover {
+  color: #f8f9fa;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.custom-navbar .nav-link.active {
+  color: #fff;
+  background-color: #dc3545; /* Bootstrap's red */
+  font-weight: bold;
+}
+
+.custom-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #fff !important;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.custom-brand:hover {
+  color: #dc3545 !important; /* Bootstrap's red */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .custom-navbar .nav-links {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+

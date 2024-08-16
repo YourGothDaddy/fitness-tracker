@@ -1,10 +1,7 @@
 ﻿namespace Fitness_Tracker.Controllers
 {
     using Microsoft.AspNetCore.Mvc;
-
-    [ApiController]
-    [Route("api/[controller]")]
-    public class HomeController : Controller
+    public class HomeController : BaseApiController
     {
         [HttpGet]   
         public IActionResult Index()
