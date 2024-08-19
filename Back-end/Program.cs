@@ -1,6 +1,7 @@
 namespace Fitness_Tracker
 {
     using Fitness_Tracker.Data;
+    using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,8 @@ namespace Fitness_Tracker
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
+
+            builder.Services.AddTransient<IUserService, UserService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {

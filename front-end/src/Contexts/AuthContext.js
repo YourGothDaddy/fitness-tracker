@@ -1,11 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
 
-// Create the Auth Context
 export const AuthContext = createContext();
 
-// Create a Provider component
 const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
 
   const checkAuthStatus = async () => {
@@ -44,8 +42,7 @@ const AuthProvider = ({ children }) => {
         throw new Error('Login failed');
       }
 
-      console.log("About to check auth status")
-      await checkAuthStatus(); // Refresh the auth status after login
+      await checkAuthStatus();
     } catch (err) {
       console.log(err.message);
       setIsAuthenticated(false);
