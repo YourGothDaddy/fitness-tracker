@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes, Link, NavLink } from 'react-router-dom';
 import Home from './Pages/Home';
 import Meals from './Pages/Meals';
-import Register from './Pages/Register';
-import Login from './Pages/Login';
+import Register from './Pages/RegisterPage';
+import Login from './Pages/LoginPage';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import { AuthContext } from '../Contexts/AuthContext';
 
@@ -20,7 +20,7 @@ const Navigation = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <NavLink exact to="/" className="nav-link">
+              <NavLink to="/" className="nav-link">
                 Home
               </NavLink>
               <NavLink to="/meals" className="nav-link">

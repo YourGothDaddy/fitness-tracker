@@ -1,72 +1,58 @@
 ﻿namespace Fitness_Tracker.Controllers
 {
     using Fitness_Tracker.Models.Users;
-    using Microsoft.AspNetCore.Authorization;
+    using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
     using System.Text;
+    using static Constants.User;
 
     public class UserController : BaseApiController
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
         public UserController(
-            UserManager<IdentityUser> userManager, 
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IUserService userService)
         {
-            this._userManager = userManager;
             this._configuration = configuration;
+            this._userService = userService;
         }
 
-        [HttpPost("register")]
+        // PUBLIC METHODS
+
+        [HttpPost(RegisterHttpAttributeName)]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var user = new IdentityUser { UserName = model.Email, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, model.Password);
-
-            if (result.Succeeded)
+            IdentityUser userInExistence = await _userService.FindUserByEmailAsync(model.Email);
+            bool userExists = userInExistence != null;
+            if (!userExists)
             {
-                return Ok(new { Result = "Registration successful" });
+                IdentityUser user = new IdentityUser { UserName = model.Email, Email = model.Email };
+                IdentityResult result = await _userService.CreateUserAsync(user, model.Password);
+
+                if (result.Succeeded)
+                {
+                    return Ok();
+                }
             }
 
-            return BadRequest(result.Errors);
+            return BadRequest();
         }
 
-        [HttpPost("login")]
+        [HttpPost(LoginHttpAttributeName)]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            IdentityUser user = await _userService.FindUserByEmailAsync(model.Email);
+            bool userAndPasswordMatch = await _userService.CheckUserAndPasswordMatch(user, model.Password);
 
-            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            if (user != null && userAndPasswordMatch)
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new Claim[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.Email, user.Email)
-                    }),
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                    Issuer = _configuration["Jwt:Issuer"],
-                    Audience = _configuration["Jwt:Audience"]
-                };
-
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var tokenString = tokenHandler.WriteToken(token);
-
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    Secure = true,
-                    SameSite = SameSiteMode.None
-                };
+                string tokenString = CreateJWT(user);
+                CookieOptions cookieOptions = SetCookieOptionsToPassJWT(true, DateTime.UtcNow.AddDays(7), true, SameSiteMode.None);
 
                 Response.Cookies.Append("jwt", tokenString, cookieOptions);
                 return Ok();
@@ -75,32 +61,27 @@
             return Unauthorized();
         }
 
-        [HttpPost("logout")]
+
+        [HttpPost(LogoutHttpAttributeName)]
         public IActionResult Logout()
         {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(-1)
-            };
+            CookieOptions cookieOptions = SetCookieOptionsToPassJWT(true, DateTime.UtcNow.AddDays(-1), true, SameSiteMode.None);
 
             Response.Cookies.Append("jwt", "", cookieOptions);
             return Ok();
         }
 
-        [HttpGet("authstatus")]
+        [HttpGet(AuthStatusHttpAttributeName)]
         public async Task<IActionResult> AuthStatus()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (userId == null)
             {
                 return Unauthorized();
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            IdentityUser user = await _userService.FindUserByIdAsync(userId);
 
             if (user == null)
             {
@@ -112,6 +93,44 @@
                 user.Email,
                 user.UserName
             });
+        }
+
+        // PRIVATE METHODS
+        private static CookieOptions SetCookieOptionsToPassJWT(
+            bool isHttpOnly,
+            DateTime expireDate,
+            bool isSecure,
+            SameSiteMode sameSiteMode)
+        {
+            return new CookieOptions
+            {
+                HttpOnly = isHttpOnly,
+                Expires = expireDate,
+                Secure = isSecure,
+                SameSite = sameSiteMode
+            };
+        }
+
+        private string CreateJWT(IdentityUser? user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
+                        new Claim(ClaimTypes.Email, user.Email)
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _configuration["Jwt:Issuer"],
+                Audience = _configuration["Jwt:Audience"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+            return tokenString;
         }
     }
 }
