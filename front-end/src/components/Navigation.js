@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes, Link, NavLink } from 'react-router-dom';
 import Home from './Pages/Home';
-import Meals from './Pages/Meals';
+import MealPage from './Pages/MealPage';
 import Register from './Pages/RegisterPage';
 import Login from './Pages/LoginPage';
 import { Navbar, Nav, Container } from 'react-bootstrap';
@@ -23,9 +23,11 @@ const Navigation = () => {
               <NavLink to="/" className="nav-link">
                 Home
               </NavLink>
-              <NavLink to="/meals" className="nav-link">
-                Meals
-              </NavLink>
+              {isAuthenticated && (
+                <NavLink to="/meals" className="nav-link">
+                  Meals
+                </NavLink>
+              )}
               {!isAuthenticated ? (
                 <>
                   <NavLink to="/register" className="nav-link">
@@ -49,7 +51,7 @@ const Navigation = () => {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/meals" element={<Meals />} />
+        <Route path="/meals" element={<MealPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
       </Routes>

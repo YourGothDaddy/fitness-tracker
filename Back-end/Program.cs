@@ -1,6 +1,8 @@
 namespace Fitness_Tracker
 {
     using Fitness_Tracker.Data;
+    using Fitness_Tracker.Data.Models;
+    using Fitness_Tracker.Services.Meals;
     using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
@@ -17,11 +19,12 @@ namespace Fitness_Tracker
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+            builder.Services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
             builder.Services.AddTransient<IUserService, UserService>();
+            builder.Services.AddTransient<IMealService, MealService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {

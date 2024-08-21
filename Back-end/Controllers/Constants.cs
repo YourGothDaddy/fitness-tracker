@@ -9,5 +9,10 @@
             public const string LogoutHttpAttributeName = "logout";
             public const string AuthStatusHttpAttributeName = "authstatus";
         }
+
+        public static class Meal
+        {
+            public const string AddMealHttpAttributeName = "add-meal";
+        }
     }
 }

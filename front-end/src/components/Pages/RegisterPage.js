@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import Register from '../Register';
+import Register from '../Forms/Register';
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from '../../Contexts/AuthContext';
 import '../../css/Register.css';
