@@ -1,5 +1,6 @@
 ﻿namespace Fitness_Tracker.Controllers
 {
+    using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Identity;
@@ -27,11 +28,11 @@
         [HttpPost(RegisterHttpAttributeName)]
         public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            IdentityUser userInExistence = await _userService.FindUserByEmailAsync(model.Email);
+            User userInExistence = await _userService.FindUserByEmailAsync(model.Email);
             bool userExists = userInExistence != null;
             if (!userExists)
             {
-                IdentityUser user = new IdentityUser { UserName = model.Email, Email = model.Email };
+                User user = new User { UserName = model.Email, Email = model.Email };
                 IdentityResult result = await _userService.CreateUserAsync(user, model.Password);
 
                 if (result.Succeeded)
@@ -46,8 +47,8 @@
         [HttpPost(LoginHttpAttributeName)]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            IdentityUser user = await _userService.FindUserByEmailAsync(model.Email);
-            bool userAndPasswordMatch = await _userService.CheckUserAndPasswordMatch(user, model.Password);
+            User user = await _userService.FindUserByEmailAsync(model.Email);
+            bool userAndPasswordMatch = await _userService.CheckUserAndPasswordMatchAsync(user, model.Password);
 
             if (user != null && userAndPasswordMatch)
             {
@@ -81,7 +82,7 @@
                 return Unauthorized();
             }
 
-            IdentityUser user = await _userService.FindUserByIdAsync(userId);
+            User user = await _userService.FindUserByIdAsync(userId);
 
             if (user == null)
             {
@@ -111,7 +112,7 @@
             };
         }
 
-        private string CreateJWT(IdentityUser? user)
+        private string CreateJWT(User? user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
