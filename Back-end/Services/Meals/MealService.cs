@@ -3,6 +3,8 @@
     using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Meals;
+    using Microsoft.EntityFrameworkCore;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     public class MealService : IMealService
@@ -28,6 +30,22 @@
                 });
 
             await _databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<List<Meal>> GetAllUserMealsAsync(string userId)
+        {
+            return await _databaseContext
+                 .Meals
+                 .Where(u => u.UserId == userId)
+                 .ToListAsync();
+        }
+
+        public async Task<int> GetTotalUserMealCaloriesAsync(string userId)
+        {
+            return await _databaseContext
+                .Meals
+                .Where(u => u.UserId == userId)
+                .SumAsync(m => m.Calories);
         }
     }
 }
