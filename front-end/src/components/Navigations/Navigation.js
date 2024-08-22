@@ -1,11 +1,14 @@
 import React, { useContext } from "react";
 import { BrowserRouter as Router, Route, Routes, Link, NavLink } from 'react-router-dom';
-import Home from './Pages/Home';
-import MealPage from './Pages/MealPage';
-import Register from './Pages/RegisterPage';
-import Login from './Pages/LoginPage';
+import Home from '../Pages/Home.js';
+import MealsNavigation from './MealsNavigation.js';
+import AddMealForm from '../Forms/AddMealForm.js';
+import AllMealsPage from '../Pages/AllMealsPage.js';
+import Register from '../Pages/RegisterPage.js';
+import Login from '../Pages/LoginPage.js';
 import { Navbar, Nav, Container } from 'react-bootstrap';
-import { AuthContext } from '../Contexts/AuthContext';
+import { AuthContext } from '../../Contexts/AuthContext.js';
+import ProtectedRoute from "../ProtectedRoute.js";
 
 const Navigation = () => {
   const { isAuthenticated, userInfo, logout } = useContext(AuthContext);
@@ -42,19 +45,27 @@ const Navigation = () => {
                   <span className="nav-link">Welcome, {userInfo?.userName}</span>
                   <button onClick={logout} className="nav-link">Logout</button>
                 </>
-
               )}
             </Nav>
           </Navbar.Collapse>
         </Container>
       </Navbar>
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/meals" element={<MealPage />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
+      <Container>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/meals/*" element={
+            <ProtectedRoute>
+              <MealsNavigation />
+            </ProtectedRoute>}>
+            <Route index element={<AllMealsPage />} />
+            <Route path="all-meals" element={<AllMealsPage />} />
+            <Route path="add-meal" element={<AddMealForm />} />
+          </Route>
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
+      </Container>
     </Router>
   );
 };

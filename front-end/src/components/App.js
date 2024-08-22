@@ -1,4 +1,4 @@
-import Navigation from '../components/Navigation';
+import Navigation from '../components/Navigations/Navigation';
 import React from 'react';
 
 function App() {

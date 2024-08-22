@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import 'react-bootstrap';
 
 const AddMealForm = () => {
     const [name, setName] = useState('');

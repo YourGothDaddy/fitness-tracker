@@ -1,0 +1,79 @@
+/* AllMealsPage.css */
+
+.all-meals-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 1.2em;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.table-wrapper {
+    max-height: 400px; /* Limit height for scroll */
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.meals-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.meals-table th,
+.meals-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.meals-table th {
+    background-color: #343a40;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.meals-table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.meals-table tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+
+.meals-table th,
+.meals-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.meals-table th {
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.meals-table td {
+    font-size: 0.9em;
+    color: #495057;
+}
+
+.meals-table tr:last-child td {
+    border-bottom: none;
+}
