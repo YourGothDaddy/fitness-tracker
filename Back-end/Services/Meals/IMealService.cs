@@ -7,8 +7,8 @@
     {
         public Task CreateMealAsync(string userId, AddMealModel meal);
 
-        public Task<List<Meal>> GetAllUserMealsAsync(string userId);
+        public Task<List<Meal>> GetAllUserMealsAsync(string userId, DateTime date);
 
-        public Task<int> GetTotalUserMealCaloriesAsync(string userId);
+        public Task<int> GetTotalUserMealCaloriesAsync(string userId, DateTime date);
     }
 }

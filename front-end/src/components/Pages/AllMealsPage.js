@@ -5,13 +5,18 @@ const AllMealsPage = () => {
     const [meals, setMeals] = useState([]);
     const [calories, setCalories] = useState(0);
     const [errorMessage, setErrorMessage] = useState('');
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     useEffect(() => {
         const fetchMeals = async () => {
             try {
-                const response = await fetch('https://localhost:7009/api/meal/all', {
-                    method: 'POST',
+                const formattedDate = selectedDate.toISOString().split('T')[0];
+                const response = await fetch(`https://localhost:7009/api/meal/all?date=${formattedDate}`, {
+                    method: 'GET',
                     credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
 
                 if (!response.ok) {
@@ -27,14 +32,15 @@ const AllMealsPage = () => {
         };
 
         fetchMeals();
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => {
         const fetchCalories = async () => {
             try {
-                const response = await fetch('https://localhost:7009/api/meal/calories', {
-                    method: 'POST',
-                    credentials: 'include',
+                const formattedDate = selectedDate.toISOString().split('T')[0];
+                const response = await fetch(`https://localhost:7009/api/meal/calories?date=${formattedDate}`, {
+                    method: 'GET',
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
@@ -50,11 +56,36 @@ const AllMealsPage = () => {
         };
 
         fetchCalories();
-    }, []);
+    }, [selectedDate]);
+
+    const handlePreviousDay = () => {
+        setSelectedDate(prevDate => {
+            const newDate = new Date(prevDate);
+            newDate.setDate(prevDate.getDate() - 1);
+            return newDate;
+        });
+    };
+
+    const handleNextDay = () => {
+        setSelectedDate(prevDate => {
+            const newDate = new Date(prevDate);
+            const today = new Date();
+            if (newDate.toDateString() !== today.toDateString()) {
+                newDate.setDate(prevDate.getDate() + 1);
+            }
+            return newDate;
+        });
+    };
 
     return (
         <div className="all-meals-container">
             {errorMessage && <p className="error-message">{errorMessage}</p>}
+
+            <div className="date-navigation">
+                <button onClick={handlePreviousDay}>←</button>
+                <span>{selectedDate.toDateString()}</span>
+                <button onClick={handleNextDay} disabled={selectedDate.toDateString() === new Date().toDateString()}>→</button>
+            </div>
 
             <div className="table-wrapper">
                 <table className="meals-table">

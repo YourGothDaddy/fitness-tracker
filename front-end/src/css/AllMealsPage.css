@@ -1,79 +1,84 @@
-/* AllMealsPage.css */
-
 .all-meals-container {
-    max-width: 1200px;
+    max-width: 800px;
     margin: 40px auto;
     padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+    background-color: #f9f9f9;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
 
 .error-message {
-    color: #dc3545;
-    font-size: 1.2em;
+    color: #d9534f;
     text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.1em;
+}
+
+.date-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 20px;
 }
 
+.date-navigation button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    margin: 0 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.date-navigation button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.date-navigation button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.date-navigation span {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
 .table-wrapper {
-    max-height: 400px; /* Limit height for scroll */
-    overflow-y: auto;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
+    overflow-x: auto;
 }
 
 .meals-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 0;
-    background-color: #fff;
-    border-radius: 8px;
-    overflow: hidden;
+    margin-bottom: 20px;
 }
 
-.meals-table th,
-.meals-table td {
+.meals-table th, .meals-table td {
     padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #ddd;
 }
 
 .meals-table th {
-    background-color: #343a40;
+    background-color: #007bff;
     color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-}
-
-.meals-table tr:nth-child(even) {
-    background-color: #f8f9fa;
+    text-transform: uppercase;
 }
 
 .meals-table tr:hover {
     background-color: #f1f1f1;
-    cursor: pointer;
-}
-
-.meals-table th,
-.meals-table td {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.meals-table th {
-    font-size: 1em;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
 }
 
 .meals-table td {
-    font-size: 0.9em;
-    color: #495057;
+    color: #555;
 }
 
-.meals-table tr:last-child td {
-    border-bottom: none;
+h1 {
+    text-align: center;
+    color: #333;
+    font-size: 1.5em;
 }
