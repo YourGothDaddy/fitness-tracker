@@ -4,7 +4,7 @@
 
     [ApiController]
     [Route("api/[controller]")]
-    public class BaseApiController : Controller
+    public abstract class BaseApiController : Controller
     {
     }
 }

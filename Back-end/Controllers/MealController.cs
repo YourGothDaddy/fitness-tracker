@@ -34,8 +34,8 @@
             return Ok();
         }
 
-        [HttpPost("all")]
-        public async Task<IActionResult> AllMeals()
+        [HttpGet("all")]
+        public async Task<IActionResult> AllMeals([FromQuery] DateTime date)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -44,13 +44,13 @@
                 return BadRequest();
             }
 
-            List<Meal> result = await _mealService.GetAllUserMealsAsync(userId);
+            List<Meal> result = await _mealService.GetAllUserMealsAsync(userId, date);
 
             return Ok(result);
         }
 
-        [HttpPost("calories")]
-        public async Task<IActionResult> AllMealsCalories()
+        [HttpGet("calories")]
+        public async Task<IActionResult> AllMealsCalories([FromQuery] DateTime date)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -59,7 +59,7 @@
                 return BadRequest();
             }
 
-            int result = await _mealService.GetTotalUserMealCaloriesAsync(userId);
+            int result = await _mealService.GetTotalUserMealCaloriesAsync(userId, date);
 
             return Ok(result);
         }

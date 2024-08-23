@@ -33,6 +33,9 @@ namespace Fitness_Tracker.Migrations
                     b.Property<int>("Calories")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("MealOfTheDay")
                         .HasColumnType("int");
 

@@ -26,25 +26,27 @@
                     Name = meal.Name,
                     MealOfTheDay = meal.MealOfTheDay,
                     Calories = meal.Calories,
-                    UserId = userId
+                    UserId = userId,
+                    Date = DateTime.UtcNow.Date
                 });
 
             await _databaseContext.SaveChangesAsync();
         }
 
-        public async Task<List<Meal>> GetAllUserMealsAsync(string userId)
+        public async Task<List<Meal>> GetAllUserMealsAsync(string userId, DateTime date)
         {
+
             return await _databaseContext
                  .Meals
-                 .Where(u => u.UserId == userId)
+                 .Where(m => m.UserId == userId && m.Date == date.Date)
                  .ToListAsync();
         }
 
-        public async Task<int> GetTotalUserMealCaloriesAsync(string userId)
+        public async Task<int> GetTotalUserMealCaloriesAsync(string userId, DateTime date)
         {
             return await _databaseContext
                 .Meals
-                .Where(u => u.UserId == userId)
+                .Where(m => m.UserId == userId && m.Date == date.Date)
                 .SumAsync(m => m.Calories);
         }
     }

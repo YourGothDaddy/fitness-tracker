@@ -13,5 +13,8 @@
 
         [Required]
         public int Calories { get; set; }
+
+        [Required]
+        public DateTime Date { get; set; }
     }
 }
