@@ -21,7 +21,6 @@ const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setUserInfo(user);
     } catch (err) {
-      console.log(err.message);
       setIsAuthenticated(false);
       setUserInfo(null);
     }
@@ -34,7 +33,7 @@ const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ Email: email, Password: password }),
         credentials: 'include',
       });
 
@@ -44,7 +43,6 @@ const AuthProvider = ({ children }) => {
 
       await checkAuthStatus();
     } catch (err) {
-      console.log(err.message);
       setIsAuthenticated(false);
       setUserInfo(null);
     }

@@ -9,6 +9,9 @@ import Login from '../Pages/LoginPage.js';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import { AuthContext } from '../../Contexts/AuthContext.js';
 import ProtectedRoute from "../ProtectedRoute.js";
+import ProfileNavigation from "./ProfileNavigation.js";
+import GeneralForm from '../Forms/GeneralForm.js'
+import GoalsForm from '../Forms/GoalsForm.js'
 
 const Navigation = () => {
   const { isAuthenticated, userInfo, logout } = useContext(AuthContext);
@@ -42,7 +45,9 @@ const Navigation = () => {
                 </>
               ) : (
                 <>
-                  <span className="nav-link">Welcome, {userInfo?.userName}</span>
+                  <NavLink to="/profile" className="nav-link">
+                    Profile
+                  </NavLink>
                   <button onClick={logout} className="nav-link">Logout</button>
                 </>
               )}
@@ -54,6 +59,14 @@ const Navigation = () => {
       <Container>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfileNavigation />
+            </ProtectedRoute>}>
+            <Route index element={<GeneralForm />} />
+            <Route path="general" element={<GeneralForm />} />
+            <Route path="goals" element={<GoalsForm />} />
+          </Route>
           <Route path="/meals/*" element={
             <ProtectedRoute>
               <MealsNavigation />

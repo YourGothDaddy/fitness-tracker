@@ -75,14 +75,7 @@
         [HttpGet(AuthStatusHttpAttributeName)]
         public async Task<IActionResult> AuthStatus()
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-
-            User user = await _userService.FindUserByIdAsync(userId);
+            User user = await GetAuthenticatedUserAsync();
 
             if (user == null)
             {
@@ -96,7 +89,153 @@
             });
         }
 
+        [HttpGet(ProfileHttpAttributeName)]
+        public async Task<IActionResult> Profile()
+        {
+            User user = await GetAuthenticatedUserAsync();
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(new { user.Email });
+        }
+
+        [HttpPost(ChangeProfileInfoHttpAttributeName)]
+        public async Task<IActionResult> ChangeProfileInfo(ChangeProfileInfoModel model)
+        {
+            User user = await GetAuthenticatedUserAsync();
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            User userWithRequestedEmail = await _userService.FindUserByEmailAsync(model.Email);
+
+            if (userWithRequestedEmail != null)
+            {
+                return BadRequest(new { Message = "Email is still being used" });
+            }
+
+            bool isUpdated = false;
+
+            if (!string.Equals(user.Email, model.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                user.Email = model.Email;
+                user.NormalizedEmail = model.Email.ToUpperInvariant();  // Normalize the email
+                isUpdated = true;
+            }
+
+            if (isUpdated)
+            {
+                await _userService.UpdateUserAsync(user);
+                return Ok();
+            }
+
+
+            return Ok();
+        }
+
+        [HttpGet(GoalsInfoHttpAttributeName)]
+        public async Task<IActionResult> GoalsInfo()
+        {
+            User user = await GetAuthenticatedUserAsync();
+
+            if(user == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(new GoalsInfoModel
+            {
+                DailyCaloriesGoal = user.DailyCaloriesGoal,
+                MonthlyCaloriesGoal = user.MonthlyCaloriesGoal,
+                Weight = user.Weight,
+                GoalWeight = user.GoalWeight,
+                Height = user.Height,
+                IsDailyCaloriesGoal = user.IsDailyCaloriesGoal
+            });
+        }
+
+        [HttpPost(ChangeGoalsInfoHttpAttributeName)]
+        public async Task<IActionResult> ChangeGoalsAndDataInfo(GoalsInfoModel model)
+        {
+            User user = await GetAuthenticatedUserAsync();
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+                
+            bool isUpdated = false;
+
+            if(!int.Equals(user.DailyCaloriesGoal, model.DailyCaloriesGoal))
+            {
+                user.DailyCaloriesGoal = model.DailyCaloriesGoal;
+                isUpdated = true;
+            }
+
+            if (!int.Equals(user.MonthlyCaloriesGoal, model.MonthlyCaloriesGoal))
+            {
+                user.MonthlyCaloriesGoal = model.MonthlyCaloriesGoal;
+                isUpdated = true;
+            }
+
+            if (!int.Equals(user.Weight, model.Weight))
+            {
+                user.Weight = model.Weight;
+                isUpdated = true;
+            }
+
+            if (!int.Equals(user.GoalWeight, model.GoalWeight))
+            {
+                user.GoalWeight = model.GoalWeight;
+                isUpdated = true;
+            }
+
+            if (!int.Equals(user.Height, model.Height))
+            {
+                user.Height = model.Height;
+                isUpdated = true;
+            }
+
+            if(!bool.Equals(user.IsDailyCaloriesGoal, model.IsDailyCaloriesGoal))
+            {
+                user.IsDailyCaloriesGoal = model.IsDailyCaloriesGoal;
+                isUpdated = true;
+            }
+
+            if(isUpdated)
+            {
+                await _userService.UpdateUserAsync(user);
+                return Ok();
+            }
+
+            return Ok();
+        }
+
         // PRIVATE METHODS
+
+        private async Task<User> GetAuthenticatedUserAsync()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null)
+            {
+                return null;
+            }
+
+            User user = await _userService.FindUserByIdAsync(userId);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            return user;
+        }
         private static CookieOptions SetCookieOptionsToPassJWT(
             bool isHttpOnly,
             DateTime expireDate,

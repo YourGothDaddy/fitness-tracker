@@ -1,0 +1,53 @@
+.goals-form {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  /* Set the maximum width of the form */
+  text-align: center;  /* Center the content inside the form */
+}
+
+.goals-form h2 {
+  margin-bottom: 20px; /* Add some space below the heading */
+  font-size: 1.75rem;  /* Adjust the font size if needed */
+}
+.active-input {
+  background-color: #fff;
+  border: 2px solid #007bff;
+  transition: border-color 0.3s ease;
+}
+
+.disabled-input {
+  background-color: #e9ecef;
+  border: 2px solid #ced4da;
+}
+
+.disabled-input::placeholder {
+  color: #6c757d;
+}
+
+/* Add margin between radio buttons */
+.goals-form .form-check {
+  margin-right: 20px;
+}
+
+
+
+.fancy-button {
+  background: linear-gradient(90deg, #ff9966 0%, #ff5e62 100%);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.fancy-button:hover {
+  background: linear-gradient(90deg, #ff5e62 0%, #ff9966 100%);
+  transform: scale(1.05);
+}
