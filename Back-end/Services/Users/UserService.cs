@@ -1,5 +1,6 @@
 ﻿namespace Fitness_Tracker.Services.Users
 {
+    using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
     using Microsoft.AspNetCore.Identity;
     using System.Threading.Tasks;
@@ -7,10 +8,14 @@
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
+        private readonly ApplicationDbContext _databaseContext;
 
-        public UserService(UserManager<User> userManager)
+        public UserService(
+            UserManager<User> userManager,
+            ApplicationDbContext databaseContext)
         {
             this._userManager = userManager;
+            this._databaseContext = databaseContext;
         }
 
         public async Task<User> FindUserByEmailAsync(string userEmail)
@@ -29,6 +34,12 @@
         public async Task<IdentityResult> CreateUserAsync(User user, string userPassword)
         {
             return await _userManager.CreateAsync(user, userPassword);
+        }
+
+        public async Task UpdateUserAsync(User user)
+        {
+            this._databaseContext.Users.Update(user);
+            await this._databaseContext.SaveChangesAsync();
         }
     }
 }

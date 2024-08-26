@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import '../../css/AddMealForm.css';
+import { Form, Button, Container } from 'react-bootstrap';
 
 const AddMealForm = () => {
     const [name, setName] = useState('');
@@ -34,68 +36,51 @@ const AddMealForm = () => {
     };
 
     return (
-        <div className="container mt-5">
-            <div className="card shadow-lg">
-                <div className="card-header bg-primary text-white">
-                    <h3>Add a New Meal</h3>
-                </div>
-                <div className="card-body">
-                    <form onSubmit={handleSubmit}>
-                        {errorMessage && (
-                            <div className="alert alert-danger" role="alert">
-                                {errorMessage}
-                            </div>
-                        )}
-                        <div className="mb-3">
-                            <label htmlFor="mealName" className="form-label">
-                                Meal Name
-                            </label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                id="mealName"
-                                placeholder="Enter meal name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="mealType" className="form-label">
-                                Meal Type
-                            </label>
-                            <select
-                                className="form-select"
-                                id="mealType"
-                                value={mealOfTheDay}
-                                onChange={(e) => setMealOfTheDay(e.target.value)}
-                            >
-                                <option value="0">Breakfast</option>
-                                <option value="1">Lunch</option>
-                                <option value="2">Dinner</option>
-                                <option value="3">Snack</option>
-                            </select>
-                        </div>
-                        <div className="mb-3">
-                            <label htmlFor="calories" className="form-label">
-                                Calories
-                            </label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                id="calories"
-                                placeholder="Enter calories"
-                                value={calories}
-                                onChange={(e) => setCalories(e.target.value)}
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary w-100">
-                            Add Meal
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    );
+        <Container className="add-meal-form">
+          <h2>Add a New Meal</h2>
+          <Form onSubmit={handleSubmit} className="meal-form">
+            {errorMessage && (
+              <div className="alert alert-danger" role="alert">
+                {errorMessage}
+              </div>
+            )}
+            <Form.Group controlId="mealName" className="mb-3">
+              <Form.Label>Meal Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter meal name"
+              />
+            </Form.Group>
+            <Form.Group controlId="mealType" className="mb-3">
+              <Form.Label>Meal Type</Form.Label>
+              <Form.Select
+                value={mealOfTheDay}
+                onChange={(e) => setMealOfTheDay(e.target.value)}
+              >
+                <option value="">Select meal type</option>
+                <option value="0">Breakfast</option>
+                <option value="1">Lunch</option>
+                <option value="2">Dinner</option>
+                <option value="3">Snack</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group controlId="calories" className="mb-3">
+              <Form.Label>Calories</Form.Label>
+              <Form.Control
+                type="number"
+                value={calories}
+                onChange={(e) => setCalories(e.target.value)}
+                placeholder="Enter calories"
+              />
+            </Form.Group>
+            <Button type="submit" className="fancy-button">
+              Add Meal
+            </Button>
+          </Form>
+        </Container>
+      );
 };
 
 export default AddMealForm;
