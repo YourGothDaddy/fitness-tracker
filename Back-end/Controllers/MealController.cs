@@ -5,6 +5,8 @@
     using Fitness_Tracker.Services.Meals;
     using Microsoft.AspNetCore.Mvc;
     using System.Security.Claims;
+    using static Constants.MealController;
+    using static System.Runtime.InteropServices.JavaScript.JSType;
 
     public class MealController : BaseApiController
     {
@@ -12,56 +14,74 @@
 
         public MealController(IMealService mealService)
         {
-            this._mealService = mealService;
+            _mealService = mealService;
         }
 
-        [HttpPost("add")]
+        [HttpPost(AddMealHttpAttributeName)]
         public async Task<IActionResult> AddMeal([FromBody] AddMealModel model)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(new { Message = InvalidModelStateError });
             }
 
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if(userId == null) { 
-                return BadRequest();
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
             }
 
             await _mealService.CreateMealAsync(userId, model);
 
-            return Ok();
+            return Ok(new { Message = MealAddedSuccessfully });
         }
 
-        [HttpGet("all")]
+        [HttpGet(AllMealsHttpAttributeName)]
         public async Task<IActionResult> AllMeals([FromQuery] DateTime date)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if(userId == null)
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
             {
-                return BadRequest();
+                return validationResult;
             }
 
-            List<Meal> result = await _mealService.GetAllUserMealsAsync(userId, date);
+            var result = await _mealService.GetAllUserMealsAsync(userId, date);
 
             return Ok(result);
         }
 
-        [HttpGet("calories")]
+        [HttpGet(AllMealsCaloriesHttpAttributeName)]
         public async Task<IActionResult> AllMealsCalories([FromQuery] DateTime date)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var totalCalories = await _mealService.GetTotalUserMealCaloriesAsync(userId, date);
+
+            return Ok(totalCalories);
+        }
+
+        // PRIVATE METHODS
+
+        private string GetUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        private IActionResult ValidateUserAuthentication(out string userId)
+        {
+            userId = GetUserId();
 
             if (userId == null)
             {
-                return BadRequest();
+                return Unauthorized(new { Message = UserIsNotAuthenticatedError });
             }
 
-            int result = await _mealService.GetTotalUserMealCaloriesAsync(userId, date);
-
-            return Ok(result);
+            return null;
         }
+
     }
 }

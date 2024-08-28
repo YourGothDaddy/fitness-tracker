@@ -6,6 +6,10 @@ const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
 
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const checkAuthStatus = async () => {
     try {
       const response = await fetch('https://localhost:7009/api/user/authstatus', {
@@ -58,16 +62,19 @@ const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setUserInfo(null);
     } catch (err) {
-      console.log(err.message);
+      console.error('Logout failed:', err.message);
     }
   };
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  const authContextValue = {
+    isAuthenticated,
+    userInfo,
+    login,
+    logout,
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userInfo, login, logout }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );

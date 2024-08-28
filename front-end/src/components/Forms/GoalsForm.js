@@ -9,7 +9,7 @@ const GoalsForm = () => {
     currentWeight: '',
     goalWeight: '',
     height: '',
-    isDailyCaloriesGoal: ''
+    isDailyCaloriesGoal: true,
   });
 
   const [successMessage, setSuccessMessage] = useState('');
@@ -29,14 +29,15 @@ const GoalsForm = () => {
         }
 
         const data = await response.json();
-        setCaloriesOption(data.isDailyCaloriesGoal ? 'daily' : 'monthly');
+        const isDaily = data.isDailyCaloriesGoal;
+        setCaloriesOption(isDaily ? 'daily' : 'monthly');
         setGoals({
           dailyCalories: data.dailyCaloriesGoal || '',
           monthlyCalories: data.monthlyCaloriesGoal || '',
           currentWeight: data.weight || '',
           goalWeight: data.goalWeight || '',
           height: data.height || '',
-          IsDailyCaloriesGoal: data.isDailyCaloriesGoal
+          isDailyCaloriesGoal: isDaily,
         });
         setErrorMessage('');
       } catch (err) {
@@ -47,20 +48,26 @@ const GoalsForm = () => {
     fetchGoals();
   }, []);
 
-
   const handleChange = (e) => {
-    if (e.target.value == 'daily' || e.target.value == 'monthly') {
-      setCaloriesOption(e.target.value);
-      setGoals({ ...goals, [e.target.name]: e.target.value === 'daily' });
-    } else {
-      setGoals({ ...goals, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+
+    const newValue = type === 'radio' ? value === 'daily' : value;
+
+    setGoals((prevGoals) => ({
+      ...prevGoals,
+      [name]: newValue,
+    }));
+
+    if (type === 'radio') {
+      setCaloriesOption(value);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch('https://localhost:7009/api/user/change-goals-info', {
+      const response = await fetch('https://localhost:7009/api/user/change-goals-and-data-info', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -72,14 +79,14 @@ const GoalsForm = () => {
           Weight: goals.currentWeight,
           GoalWeight: goals.goalWeight,
           Height: goals.height,
-          IsDailyCaloriesGoal: goals.IsDailyCaloriesGoal
-        })
+          IsDailyCaloriesGoal: goals.isDailyCaloriesGoal,
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Changing goals failed');
       }
-      setSuccessMessage('Success');
+      setSuccessMessage('Goals updated successfully');
       setErrorMessage('');
     } catch (err) {
       setSuccessMessage('');
@@ -87,24 +94,27 @@ const GoalsForm = () => {
     }
   };
 
+  const {
+    dailyCalories,
+    monthlyCalories,
+    currentWeight,
+    goalWeight,
+    height,
+  } = goals;
 
   return (
     <Container className="goals-form">
       <h2>Your Goals</h2>
-      {
-        errorMessage
-          ? (errorMessage && (
-            <div className="alert alert-danger" role="alert">
-              {errorMessage}
-            </div>
-          ))
-          :
-          successMessage && (
-            <div className="alert alert-success" role="alert">
-              {successMessage}
-            </div>
-          )
-      }
+      {errorMessage && (
+        <div className="alert alert-danger" role="alert">
+          {errorMessage}
+        </div>
+      )}
+      {successMessage && (
+        <div className="alert alert-success" role="alert">
+          {successMessage}
+        </div>
+      )}
       <Form onSubmit={handleSubmit} className="goals-form">
         <Row className="mb-3">
           <Col md={12}>
@@ -114,7 +124,7 @@ const GoalsForm = () => {
                 <Form.Check
                   type="radio"
                   label="Daily Calories Goal"
-                  name="IsDailyCaloriesGoal"
+                  name="isDailyCaloriesGoal"
                   value="daily"
                   checked={caloriesOption === 'daily'}
                   onChange={handleChange}
@@ -123,7 +133,7 @@ const GoalsForm = () => {
                 <Form.Check
                   type="radio"
                   label="Monthly Calories Goal"
-                  name="IsDailyCaloriesGoal"
+                  name="isDailyCaloriesGoal"
                   value="monthly"
                   checked={caloriesOption === 'monthly'}
                   onChange={handleChange}
@@ -139,10 +149,10 @@ const GoalsForm = () => {
               <Form.Control
                 type="number"
                 name="dailyCalories"
-                value={goals.dailyCalories}
+                value={dailyCalories}
                 onChange={handleChange}
                 disabled={caloriesOption !== 'daily'}
-                className={caloriesOption === 'daily' ? '' : "disabled-input"}
+                className={caloriesOption === 'daily' ? '' : 'disabled-input'}
               />
             </Form.Group>
           </Col>
@@ -152,10 +162,10 @@ const GoalsForm = () => {
               <Form.Control
                 type="number"
                 name="monthlyCalories"
-                value={goals.monthlyCalories}
+                value={monthlyCalories}
                 onChange={handleChange}
                 disabled={caloriesOption !== 'monthly'}
-                className={caloriesOption === 'monthly' ? '' : "disabled-input"}
+                className={caloriesOption === 'monthly' ? '' : 'disabled-input'}
               />
             </Form.Group>
           </Col>
@@ -167,7 +177,7 @@ const GoalsForm = () => {
               <Form.Control
                 type="number"
                 name="currentWeight"
-                value={goals.currentWeight}
+                value={currentWeight}
                 onChange={handleChange}
                 placeholder="Enter current weight"
               />
@@ -179,7 +189,7 @@ const GoalsForm = () => {
               <Form.Control
                 type="number"
                 name="goalWeight"
-                value={goals.goalWeight}
+                value={goalWeight}
                 onChange={handleChange}
                 placeholder="Enter goal weight"
               />
@@ -193,7 +203,7 @@ const GoalsForm = () => {
               <Form.Control
                 type="number"
                 name="height"
-                value={goals.height}
+                value={height}
                 onChange={handleChange}
                 placeholder="Enter height"
               />
