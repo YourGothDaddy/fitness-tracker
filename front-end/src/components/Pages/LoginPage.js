@@ -1,15 +1,19 @@
 import React, { useState, useContext, useEffect } from 'react';
-import Login from '../Forms/Login';
+import LoginForm from '../Forms/LoginForm';
 import { useNavigate } from 'react-router-dom';
 import '../../css/Register.css';
 import { AuthContext } from '../../Contexts/AuthContext'; 
 
 const LoginPage = () => {
-  const { isAuthenticated, login } = useContext(AuthContext);
+  const { isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
+    handleAuthentication();
+  }, [isAuthenticated]);
+
+  const handleAuthentication = () => {
     if (isAuthenticated === null) {
       setLoading(true);
     } else if (isAuthenticated) {
@@ -17,13 +21,13 @@ const LoginPage = () => {
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  };
 
   if (loading) {
     return null;
   }
 
-  return <Login />;
+  return <LoginForm />;
 };
 
 export default LoginPage;
