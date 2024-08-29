@@ -29,15 +29,14 @@ const GoalsForm = () => {
         }
 
         const data = await response.json();
-        const isDaily = data.isDailyCaloriesGoal;
-        setCaloriesOption(isDaily ? 'daily' : 'monthly');
+        setCaloriesOption(data.isDailyCaloriesGoal ? 'daily' : 'monthly');
         setGoals({
           dailyCalories: data.dailyCaloriesGoal || '',
           monthlyCalories: data.monthlyCaloriesGoal || '',
           currentWeight: data.weight || '',
           goalWeight: data.goalWeight || '',
           height: data.height || '',
-          isDailyCaloriesGoal: isDaily,
+          isDailyCaloriesGoal: data.isDailyCaloriesGoal,
         });
         setErrorMessage('');
       } catch (err) {

@@ -1,0 +1,58 @@
+.info-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    transition: transform 0.3s ease-in-out;
+    position: relative;
+  }
+  
+  .info-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .weight-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .weight-value {
+    font-size: 2.5em;
+    font-weight: bold;
+  }
+  
+  .goal-status {
+    font-size: 1.2em;
+    color: #888;
+  }
+  
+  .above-goal {
+    color: #e57373; /* Red for over the goal */
+  }
+  
+  .below-goal {
+    color: #81c784; /* Green for under the goal */
+  }
+  
+  .progress-bar {
+    background: #f3f3f3;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .progress {
+    height: 100%;
+    transition: width 0.4s ease;
+  }
+  
+  .motivational-text {
+    text-align: center;
+    font-weight: bold;
+    color: #666;
+  }
+  

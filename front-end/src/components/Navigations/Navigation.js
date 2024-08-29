@@ -12,6 +12,7 @@ import ProtectedRoute from "../ProtectedRoute.js";
 import ProfileNavigation from "./ProfileNavigation.js";
 import GeneralForm from '../Forms/GeneralForm.js'
 import GoalsForm from '../Forms/GoalsForm.js'
+import DashboardPage from '../Pages/DashboardPage.js';
 
 const Navigation = () => {
   const { isAuthenticated, userInfo, logout } = useContext(AuthContext);
@@ -26,16 +27,21 @@ const Navigation = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <NavLink to="/" className="nav-link">
-                Home
-              </NavLink>
               {isAuthenticated && (
-                <NavLink to="/meals" className="nav-link">
-                  Meals
-                </NavLink>
+                <>
+                  <NavLink to="/dashboard" className="nav-link">
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/meals" className="nav-link">
+                    Meals
+                  </NavLink>
+                </>
               )}
               {!isAuthenticated ? (
                 <>
+                  <NavLink to="/" className="nav-link">
+                    Home
+                  </NavLink>
                   <NavLink to="/register" className="nav-link">
                     Register
                   </NavLink>
@@ -59,6 +65,10 @@ const Navigation = () => {
       <Container>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>} />
           <Route path="/profile" element={
             <ProtectedRoute>
               <ProfileNavigation />
