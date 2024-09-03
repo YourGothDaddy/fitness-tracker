@@ -22,6 +22,67 @@ namespace Fitness_Tracker.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaloriesPer100g")
+                        .HasColumnType("int");
+
+                    b.Property<double>("CarbohydratePer100g")
+                        .HasColumnType("float");
+
+                    b.Property<double>("FatPer100g")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("ProteinPer100g")
+                        .HasColumnType("float");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ConsumableItems");
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.Nutrient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("Amount")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ConsumableItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConsumableItemId");
+
+                    b.ToTable("Nutrients");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Meal", b =>
                 {
                     b.Property<int>("Id")
@@ -270,6 +331,13 @@ namespace Fitness_Tracker.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.Nutrient", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", null)
+                        .WithMany("NutritionalInformation")
+                        .HasForeignKey("ConsumableItemId");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Meal", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.User", "User")
@@ -330,6 +398,11 @@ namespace Fitness_Tracker.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", b =>
+                {
+                    b.Navigation("NutritionalInformation");
                 });
 
             modelBuilder.Entity("Fitness_Tracker.Data.Models.User", b =>

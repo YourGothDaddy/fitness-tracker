@@ -2,11 +2,14 @@ namespace Fitness_Tracker
 {
     using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
+    using Fitness_Tracker.Infrastructure;
+    using Fitness_Tracker.Services.Admins;
     using Fitness_Tracker.Services.Meals;
     using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.IdentityModel.Tokens;
     using System.Text;
 
@@ -25,6 +28,7 @@ namespace Fitness_Tracker
 
             builder.Services.AddTransient<IUserService, UserService>();
             builder.Services.AddTransient<IMealService, MealService>();
+            builder.Services.AddTransient<IAdminService, AdminService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -65,6 +69,11 @@ namespace Fitness_Tracker
                 };
             });
 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("RequireAdministratorRole", policy => policy.RequireRole("Administrator"));
+            });
+
             builder.Services.AddControllers();
 
             builder.Services.AddCors(options =>
@@ -80,6 +89,13 @@ namespace Fitness_Tracker
             });
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                DataSeeder.SeedAdministratorAsync(services).Wait();
+            }
+
 
             app.UseHttpsRedirection();
 

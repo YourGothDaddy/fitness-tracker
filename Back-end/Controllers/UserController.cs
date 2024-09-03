@@ -3,6 +3,7 @@
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Users;
+    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
     using System.IdentityModel.Tokens.Jwt;
@@ -62,7 +63,7 @@
                 return Unauthorized();
             }
 
-            var tokenString = CreateJWT(user);
+            var tokenString = await CreateJWT(user);
             SetJwtCookie(tokenString);
 
             return Ok();
@@ -85,7 +86,9 @@
                 return Unauthorized();
             }
 
-            return Ok(new { user.Email, user.UserName });
+            var roles = await _userService.GetUserRolesAsync(user);
+
+            return Ok(new { user.Email, user.UserName, roles });
         }
 
         [HttpGet(ProfileHttpAttributeName)]
@@ -202,18 +205,27 @@
             Response.Cookies.Append("jwt", tokenString, cookieOptions);
         }
 
-        private string CreateJWT(User user)
+        private async Task<string> CreateJWT(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
 
+            // Get user roles
+            var userRoles = await _userService.GetUserRolesAsync(user);
+
+            // Create the claims, including roles
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email)
+            };
+
+            // Add roles as claims
+            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Email, user.Email)
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _configuration["Jwt:Issuer"],
@@ -223,6 +235,7 @@
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
 
         private bool UpdateUserGoals(User user, GoalsInfoModel model)
         {
