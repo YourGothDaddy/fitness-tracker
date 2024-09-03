@@ -1,12 +1,12 @@
 ﻿namespace Fitness_Tracker.Controllers
 {
-    using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Meals;
     using Fitness_Tracker.Services.Meals;
     using Microsoft.AspNetCore.Mvc;
     using System.Security.Claims;
+
     using static Constants.MealController;
-    using static System.Runtime.InteropServices.JavaScript.JSType;
+    using static Constants.General;
 
     public class MealController : BaseApiController
     {

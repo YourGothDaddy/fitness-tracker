@@ -1,0 +1,43 @@
+/* AddConsumableItem.css */
+
+.add-consumable-form {
+    background-color: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .add-consumable-form h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .add-consumable-form .form-group label {
+    font-weight: bold;
+  }
+  
+  .add-consumable-form .form-control {
+    border-radius: 4px;
+  }
+  
+  .add-consumable-form .btn-primary {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .add-consumable-form .alert {
+    text-align: center;
+  }
+  
+  @media (max-width: 768px) {
+    .add-consumable-form {
+      padding: 20px;
+    }
+  
+    .add-consumable-form .btn-primary {
+      font-size: 14px;
+      padding: 8px;
+    }
+  }
+  

@@ -13,9 +13,11 @@ import ProfileNavigation from "./ProfileNavigation.js";
 import GeneralForm from '../Forms/GeneralForm.js'
 import GoalsForm from '../Forms/GoalsForm.js'
 import DashboardPage from '../Pages/DashboardPage.js';
+import AdminNavigation from "./AdminNavigation.js";
+import AddConsumableForm from "../Forms/AddConsumableForm.js";
 
 const Navigation = () => {
-  const { isAuthenticated, userInfo, logout } = useContext(AuthContext);
+  const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
 
   return (
     <Router>
@@ -29,6 +31,13 @@ const Navigation = () => {
             <Nav className="ms-auto">
               {isAuthenticated && (
                 <>
+                  {isAdmin && (
+                    <>
+                      <NavLink to="/admin" className="nav-link">
+                        Admin Dashboard
+                      </NavLink>
+                    </>
+                  )}
                   <NavLink to="/dashboard" className="nav-link">
                     Dashboard
                   </NavLink>
@@ -65,6 +74,13 @@ const Navigation = () => {
       <Container>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminNavigation />
+            </ProtectedRoute>}>
+            <Route index element={<AddConsumableForm />} />
+            <Route path="add-consumable" element={<AddConsumableForm />} />
+          </Route>
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <DashboardPage />

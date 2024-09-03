@@ -5,6 +5,7 @@ export const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -24,6 +25,13 @@ const AuthProvider = ({ children }) => {
       const user = await response.json();
       setIsAuthenticated(true);
       setUserInfo(user);
+
+      if (user.roles && user.roles.includes('Administrator')) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
+
     } catch (err) {
       setIsAuthenticated(false);
       setUserInfo(null);
@@ -69,6 +77,7 @@ const AuthProvider = ({ children }) => {
   const authContextValue = {
     isAuthenticated,
     userInfo,
+    isAdmin,
     login,
     logout,
   };

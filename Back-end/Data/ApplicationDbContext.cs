@@ -1,9 +1,10 @@
 ﻿namespace Fitness_Tracker.Data
 {
     using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
     using Fitness_Tracker.Data.Models;
+    using Fitness_Tracker.Data.Models.Consumables;
+    using System.Reflection.Emit;
 
     public class ApplicationDbContext : IdentityDbContext<User>
     {
@@ -13,6 +14,8 @@
         }
 
         public DbSet<Meal> Meals { get; set; }
+        public DbSet<ConsumableItem> ConsumableItems { get; set; }
+        public DbSet<Nutrient> Nutrients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

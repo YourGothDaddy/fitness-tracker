@@ -25,8 +25,21 @@
             public const string AllMealsCaloriesHttpAttributeName = "calories";
 
             public const string InvalidModelStateError = "Invalid meal data provided.";
-            public const string UserIsNotAuthenticatedError = "User is not authenticated.";
             public const string MealAddedSuccessfully = "Meal added successfully.";
+        }
+
+        public static class AdminController
+        {
+            public const string AddConsumableItemHttpAttributeName = "add-consumable-item";
+
+            public const string InvalidModelStateError = "Invalid consumable item data provided.";
+            public const string ConsumableItemAddedSuccessfully = "Consumable item added successfully.";
+            public const string ConsumableItemExists = "Consumable item exists already!";
+        }
+
+        public static class General
+        {
+            public const string UserIsNotAuthenticatedError = "User is not authenticated.";
         }
     }
 }

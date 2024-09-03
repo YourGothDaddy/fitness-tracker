@@ -9,7 +9,8 @@
         public Task<User> FindUserByIdAsync(string userId);
         public Task<bool> CheckUserAndPasswordMatchAsync(User user, string userPassword);
         public Task<IdentityResult> CreateUserAsync(User user, string userPassword);
-
         public Task UpdateUserAsync(User user);
+
+        public Task<IList<string>> GetUserRolesAsync(User userId);
     }
 }

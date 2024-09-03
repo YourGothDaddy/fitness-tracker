@@ -41,5 +41,10 @@
             this._databaseContext.Users.Update(user);
             await this._databaseContext.SaveChangesAsync();
         }
+
+        public async Task<IList<string>> GetUserRolesAsync(User user)
+        {
+            return await _userManager.GetRolesAsync(user);
+        }
     }
 }
