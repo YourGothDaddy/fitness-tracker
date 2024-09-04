@@ -1,43 +1,91 @@
-/* AddConsumableItem.css */
+/* Main container for the search */
+.search-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f5f5f5;
+  font-family: 'Arial', sans-serif;
+}
 
-.add-consumable-form {
-    background-color: #f8f9fa;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .add-consumable-form h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .add-consumable-form .form-group label {
-    font-weight: bold;
-  }
-  
-  .add-consumable-form .form-control {
-    border-radius: 4px;
-  }
-  
-  .add-consumable-form .btn-primary {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-  }
-  
-  .add-consumable-form .alert {
-    text-align: center;
-  }
-  
-  @media (max-width: 768px) {
-    .add-consumable-form {
-      padding: 20px;
-    }
-  
-    .add-consumable-form .btn-primary {
-      font-size: 14px;
-      padding: 8px;
-    }
-  }
-  
+/* Search box styling */
+.search-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* Input field styling */
+.search-input {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 18px;
+  border-radius: 50px;
+  border: 2px solid #ddd;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+  outline: none;
+}
+
+/* Loader styling */
+.loader {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 123, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #007bff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Search results dropdown */
+.search-results {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  position: absolute;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* Individual result item */
+.search-result-item {
+  padding: 12px 20px;
+  font-size: 16px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: #f1f1f1;
+}
+
+/* No results found styling */
+.no-results {
+  padding: 12px 20px;
+  color: #777;
+  font-size: 16px;
+  text-align: center;
+}

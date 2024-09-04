@@ -37,6 +37,11 @@
             public const string ConsumableItemExists = "Consumable item exists already!";
         }
 
+        public static class ConsumableController
+        {
+            public const string SearchConsumableItemHttpAttributeName = "search";
+        }
+
         public static class General
         {
             public const string UserIsNotAuthenticatedError = "User is not authenticated.";

@@ -7,7 +7,10 @@ const AdminNavigation = () => {
     <Container>
       <Nav variant="tabs" className="my-3">
         <NavLink to="add-consumable" className="nav-link">
-          Add meal
+          Add consumable
+        </NavLink>
+        <NavLink to="added-consumables" className="nav-link">
+          Added consumables
         </NavLink>
       </Nav>
       <Outlet />
