@@ -15,6 +15,7 @@ import GoalsForm from '../Forms/GoalsForm.js'
 import DashboardPage from '../Pages/DashboardPage.js';
 import AdminNavigation from "./AdminNavigation.js";
 import AddConsumableForm from "../Forms/AddConsumableForm.js";
+import AddedConsumablesPage from "../Pages/AddedConsumablesPage.js";
 
 const Navigation = () => {
   const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
@@ -32,11 +33,9 @@ const Navigation = () => {
               {isAuthenticated && (
                 <>
                   {isAdmin && (
-                    <>
-                      <NavLink to="/admin" className="nav-link">
-                        Admin Dashboard
-                      </NavLink>
-                    </>
+                    <NavLink to="/admin" className="nav-link">
+                      Admin Dashboard
+                    </NavLink>
                   )}
                   <NavLink to="/dashboard" className="nav-link">
                     Dashboard
@@ -80,6 +79,7 @@ const Navigation = () => {
             </ProtectedRoute>}>
             <Route index element={<AddConsumableForm />} />
             <Route path="add-consumable" element={<AddConsumableForm />} />
+            <Route path="added-consumables" element={<AddedConsumablesPage />} />
           </Route>
           <Route path="/dashboard" element={
             <ProtectedRoute>
