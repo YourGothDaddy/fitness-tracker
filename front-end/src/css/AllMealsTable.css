@@ -1,0 +1,99 @@
+/* AllMealsPage.css */
+
+/* Container for all meals */
+.all-meals-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    background-color: #f9f9f9; /* Light background for the container */
+    border-radius: 8px; /* Rounded corners for the container */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for the container */
+  }
+  
+  /* Date navigation styling */
+  .date-navigation {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .date-navigation button {
+    background-color: #007bff; /* Blue background for buttons */
+    color: white; /* White text for buttons */
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s; /* Smooth transition on hover */
+  }
+  
+  .date-navigation button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
+  
+  .date-navigation span {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  /* Table wrapper styling */
+  .table-wrapper {
+    width: 100%;
+    max-height: 200px; /* Maximum height for the table wrapper */
+    overflow-y: auto; /* Add scrolling when content exceeds max height */
+    margin-top: 10px;
+    border-radius: 8px; /* Rounded corners for the table wrapper */
+    border: 1px solid #e0e0e0; /* Light grey border around the table */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+  }
+  
+  /* Table styling */
+  .meals-table {
+    width: 100%; /* Full width of the parent container */
+    border-collapse: collapse; /* Remove space between table cells */
+    margin: 0;
+    font-size: 14px; /* Slightly smaller font size for a clean look */
+  }
+  
+  /* Table headers */
+  .meals-table th {
+    background-color: #f4f4f4; /* Light grey background for headers */
+    color: #333; /* Dark text for headers */
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #ddd; /* Bold border under headers */
+    position: sticky; /* Sticky headers to stay visible when scrolling */
+    top: 0;
+    z-index: 1;
+  }
+  
+  /* Table cells */
+  .meals-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0; /* Light border under each row */
+    color: #555; /* Dark grey text for cells */
+  }
+  
+  /* Hover effect for table rows */
+  .meals-table tr:hover {
+    background-color: #f1f1f1; /* Light grey background on hover */
+    transition: background-color 0.2s; /* Smooth transition on hover */
+  }
+  
+  /* Error message styling */
+  .error-message {
+    color: red;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  
+  

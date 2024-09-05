@@ -1,103 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import InfoCard from '../InfoCard.js';
-import '../../css/DashboardPage.css';
+import React, { useState, useEffect } from "react";
+import InfoCard from "../Cards/InfoCard.js";
+import AddMealForm from "../Forms/AddMealForm.js";
+import AllMealsPage from "../Tables/AllMealsTable.js";
+import InfoCardPieChart from "../Cards/InfoCardPieChart.js";
+import "../../css/DashboardPage.css";
 
 const DashboardPage = () => {
-    const [userDataAndGoals, setUserDataAndGoals] = useState({
-        dailyCalories: 0,
-        monthlyCalories: 0,
-        currentWeight: 0,
-        goalWeight: 0,
-        height: 0,
-        isDailyCaloriesGoal: true,
+  const [userDataAndGoals, setUserDataAndGoals] = useState({
+    dailyCalories: 0,
+    monthlyCalories: 0,
+    currentWeight: 0,
+    goalWeight: 0,
+    height: 0,
+    isDailyCaloriesGoal: true,
+  });
+  const [calories, setCalories] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [fetchMealsFn, setFetchMealsFn] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  useEffect(() => {
+    fetchUserDataAndGoals();
+    fetchCalories();
+  }, []);
+
+  useEffect(() => {
+    fetchCalories();
+  }, [selectedDate]);
+
+  const fetchUserDataAndGoals = async () => {
+    try {
+      const data = await fetchData(`https://localhost:7009/api/user/goals`);
+      setUserDataAndGoals({
+        dailyCalories: data.dailyCaloriesGoal || 0,
+        monthlyCalories: data.monthlyCaloriesGoal || 0,
+        currentWeight: data.weight || 0,
+        goalWeight: data.goalWeight || 0,
+        height: data.height || 0,
+        isDailyCaloriesGoal: data.isDailyCaloriesGoal,
+      });
+      setErrorMessage("");
+    } catch (err) {
+      setErrorMessage(err.message);
+    }
+  };
+
+  const fetchCalories = async () => {
+    try {
+      const data = await fetchData(
+        `https://localhost:7009/api/meal/calories?date=${formatDate(
+          selectedDate
+        )}`
+      );
+      setCalories(data);
+      setErrorMessage("");
+    } catch (err) {
+      setErrorMessage(err.message);
+    }
+  };
+
+  const fetchData = async (url) => {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
-    const [calories, setCalories] = useState(0);
-    const [errorMessage, setErrorMessage] = useState('');
 
-    useEffect(() => {
-        fetchUserDataAndGoals();
-        fetchCalories();
-    }, []);
+    if (!response.ok) {
+      throw new Error("Fetching data failed");
+    }
 
-    const fetchUserDataAndGoals = async () => {
-        try {
-            const data = await fetchData(`https://localhost:7009/api/user/goals`);
-            setUserDataAndGoals({
-                dailyCalories: data.dailyCaloriesGoal || 0,
-                monthlyCalories: data.monthlyCaloriesGoal || 0,
-                currentWeight: data.weight || 0,
-                goalWeight: data.goalWeight || 0,
-                height: data.height || 0,
-                isDailyCaloriesGoal: data.isDailyCaloriesGoal,
-            });
-            setErrorMessage('');
-        } catch (err) {
-            setErrorMessage(err.message);
-        }
-    };
+    return response.json();
+  };
 
-    const fetchCalories = async () => {
-        try {
-            const data = await fetchData(`https://localhost:7009/api/meal/calories?date=${formatDate(new Date())}`);
-            setCalories(data);
-            setErrorMessage('');
-        } catch (err) {
-            setErrorMessage(err.message);
-        }
-    };
+  const formatDate = (date) => {
+    return date.toISOString().split("T")[0];
+  };
 
-    const fetchData = async (url) => {
-        const response = await fetch(url, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+  const handleAddButtonClick = () => {
+    setShowForm(true);
+  };
 
-        if (!response.ok) {
-            throw new Error('Fetching data failed');
-        }
+  const handleCloseForm = () => {
+    setShowForm(false);
+  };
 
-        return response.json();
-    };
+  const handleSelectedDateFromAllMealsTable = (date) => {
+    setSelectedDate(date);
+  };
 
-    const formatDate = (date) => {
-        return date.toISOString().split('T')[0];
-    };
+  const onAddMeal = () => {
+    fetchCalories();
 
-    const {
-        dailyCalories,
-        monthlyCalories,
-        currentWeight,
-        goalWeight,
-        height,
-    } = userDataAndGoals;
+    if (fetchMealsFn) {
+      fetchMealsFn();
+    }
+  };
 
-    return (
-        <div className="dashboard-page">
-            <h1>Your Fitness Dashboard</h1>
-            {errorMessage && (
-                <div className="alert alert-danger" role="alert">
-                    {errorMessage}
-                </div>
-            )}
-            <div className="dashboard-grid">
-                <InfoCard
-                    title="Calories Consumed Today"
-                    current={calories}
-                    goal={dailyCalories}
-                    unit="kcal"
-                />
-                <InfoCard
-                    title="Current Weight"
-                    current={currentWeight}
-                    goal={goalWeight}
-                    unit="kg"
-                />
-            </div>
+  const { dailyCalories, currentWeight, goalWeight } = userDataAndGoals;
+
+  return (
+    <div className="dashboard-page">
+      <div className="button-section">
+        <button className="add-button" onClick={handleAddButtonClick}>
+          Add
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="modal-overlay" onClick={handleCloseForm}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <AddMealForm onAddMeal={onAddMeal} />
+          </div>
         </div>
-    );
+      )}
+
+      <div className="upper-section">
+        <AllMealsPage
+          setFetchMealsFn={setFetchMealsFn}
+          setSelectedDateToDashboard={handleSelectedDateFromAllMealsTable}
+        />
+      </div>
+      {errorMessage && <h1>{errorMessage}</h1>}
+      <div className="main-section">
+        <div className="left-section">
+          <InfoCardPieChart
+            current={calories}
+            goal={dailyCalories}
+            unit="kcal"
+          />
+        </div>
+        <div className="right-section">
+          <InfoCard current={currentWeight} goal={goalWeight} unit="kg" />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default DashboardPage;
