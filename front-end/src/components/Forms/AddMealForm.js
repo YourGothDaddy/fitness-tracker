@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
-import '../../css/AddMealForm.css';
-import { Form, Button, Container } from 'react-bootstrap';
+import React, { useState } from "react";
+import "../../css/AddMealForm.css";
+import { Form, Button, Container } from "react-bootstrap";
 
-const AddMealForm = () => {
-  const [name, setName] = useState('');
-  const [mealOfTheDay, setMealOfTheDay] = useState('');
-  const [calories, setCalories] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+const AddMealForm = ({ onAddMeal }) => {
+  const [name, setName] = useState("");
+  const [mealOfTheDay, setMealOfTheDay] = useState("");
+  const [calories, setCalories] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     if (!name.trim()) {
-      setErrorMessage('Meal name is required.');
+      setErrorMessage("Meal name is required.");
       return false;
     }
-    if (mealOfTheDay === '') {
-      setErrorMessage('Please select a meal type.');
+    if (mealOfTheDay === "") {
+      setErrorMessage("Please select a meal type.");
       return false;
     }
     if (calories <= 0) {
-      setErrorMessage('Calories must be a positive number.');
+      setErrorMessage("Calories must be a positive number.");
       return false;
     }
-    setErrorMessage('');
+    setErrorMessage("");
     return true;
   };
 
@@ -37,23 +37,28 @@ const AddMealForm = () => {
     const mealOfTheDayAsInt = parseInt(mealOfTheDay);
 
     try {
-      const response = await fetch('https://localhost:7009/api/meal/add-meal', {
-        method: 'POST',
-        credentials: 'include',
+      const response = await fetch("https://localhost:7009/api/meal/add-meal", {
+        method: "POST",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, mealOfTheDay: mealOfTheDayAsInt, calories }),
+        body: JSON.stringify({
+          name,
+          mealOfTheDay: mealOfTheDayAsInt,
+          calories,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Adding a meal failed');
+        throw new Error("Adding a meal failed");
       }
 
-      setSuccessMessage('Meal added successfully!');
-      setName('');
-      setMealOfTheDay('');
-      setCalories('');
+      setSuccessMessage("Meal added successfully!");
+      onAddMeal();
+      setName("");
+      setMealOfTheDay("");
+      setCalories("");
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -107,7 +112,7 @@ const AddMealForm = () => {
           />
         </Form.Group>
         <Button type="submit" className="fancy-button" disabled={isLoading}>
-          {isLoading ? 'Adding...' : 'Add Meal'}
+          {isLoading ? "Adding..." : "Add Meal"}
         </Button>
       </Form>
     </Container>

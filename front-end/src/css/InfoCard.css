@@ -1,58 +1,111 @@
 .info-card {
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    margin: 20px 0;
-    transition: transform 0.3s ease-in-out;
-    position: relative;
-  }
-  
-  .info-card:hover {
-    transform: scale(1.05);
-  }
-  
-  .weight-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+  transition: transform 0.3s ease-in-out;
+  position: relative;
+  max-width: 100%; /* Ensure it doesn't overflow on small screens */
+}
+
+.weight-content {
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  justify-content: flex-start; /* Align at the start */
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.weight-value {
+  font-size: 2.5em;
+  font-weight: bold;
+}
+
+.goal-status {
+  font-size: 1.2em;
+  color: #888;
+  margin-top: 10px; /* Add some space between weight and goal status */
+}
+
+.above-goal {
+  color: #e57373; /* Red for over the goal */
+}
+
+.below-goal {
+  color: #81c784; /* Green for under the goal */
+}
+
+.progress-bar {
+  background: #f3f3f3;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+.progress {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.motivational-text {
+  text-align: center;
+  font-weight: bold;
+  color: #666;
+}
+
+/* Responsive Design Adjustments */
+@media (max-width: 1200px) {
   .weight-value {
-    font-size: 2.5em;
-    font-weight: bold;
+    font-size: 2em;
   }
-  
+
   .goal-status {
-    font-size: 1.2em;
-    color: #888;
+    font-size: 1em;
   }
-  
-  .above-goal {
-    color: #e57373; /* Red for over the goal */
+
+  .info-card {
+    padding: 15px;
   }
-  
-  .below-goal {
-    color: #81c784; /* Green for under the goal */
+}
+
+@media (max-width: 768px) {
+  .weight-value {
+    font-size: 1.5em;
   }
-  
+
+  .goal-status {
+    font-size: 0.7em;
+  }
+
+  .info-card {
+    padding: 10px;
+  }
+
   .progress-bar {
-    background: #f3f3f3;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 10px;
-    margin-bottom: 10px;
+    height: 8px;
   }
-  
-  .progress {
-    height: 100%;
-    transition: width 0.4s ease;
+}
+
+@media (max-width: 480px) {
+  .weight-value {
+    font-size: 1.8em;
   }
-  
+
+  .goal-status {
+    font-size: 0.9em;
+  }
+
+  .info-card {
+    padding: 8px;
+  }
+
+  .progress-bar {
+    height: 6px;
+  }
+
   .motivational-text {
-    text-align: center;
-    font-weight: bold;
-    color: #666;
+    font-size: 0.9em;
   }
-  
+}
