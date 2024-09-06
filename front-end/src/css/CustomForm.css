@@ -1,0 +1,41 @@
+.custom-form-container {
+  background-color: #ffffff; /* White background for contrast */
+  border-radius: 12px; /* Rounded corners for modern look */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+  max-width: 500px; /* Maximum width to maintain a clean form size */
+  margin: 0 auto; /* Center the form container */
+}
+
+.custom-form-label {
+  font-weight: 500; /* Slightly bold for form labels */
+  color: #333; /* Darker color for readability */
+}
+
+.custom-form-control {
+  border-radius: 8px; /* Rounded corners for input fields */
+  border: 1px solid #ddd; /* Light border for input fields */
+  padding: 12px; /* Increased padding for better touch targets */
+  font-size: 16px; /* Slightly larger font size */
+  transition: border-color 0.3s ease; /* Smooth transition for border color on focus */
+}
+
+.custom-form-control:focus {
+  border-color: #007bff; /* Blue border on focus */
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.2); /* Subtle glow effect on focus */
+}
+
+.custom-submit-button {
+  width: 100%; /* Full width button for better UX */
+  padding: 12px; /* Padding for a larger touch area */
+  border-radius: 8px; /* Rounded corners for button */
+  background-color: #007bff; /* Primary color for button */
+  border: none; /* No border for a cleaner look */
+  font-size: 16px; /* Slightly larger text for readability */
+  font-weight: bold; /* Bold text for emphasis */
+  transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+.custom-submit-button:hover {
+  background-color: #0056b3; /* Darker shade on hover */
+  cursor: pointer; /* Pointer cursor on hover */
+}

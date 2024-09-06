@@ -22,6 +22,72 @@ namespace Fitness_Tracker.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Activity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CaloriesBurned")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DurationInMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TimeOfTheDay")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityTypeId");
+
+                    b.ToTable("Activities");
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ActivityCategories");
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityCategoryId");
+
+                    b.ToTable("ActivityTypes");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", b =>
                 {
                     b.Property<int>("Id")
@@ -331,6 +397,28 @@ namespace Fitness_Tracker.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Activity", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.ActivityType", "ActivityType")
+                        .WithMany("Activities")
+                        .HasForeignKey("ActivityTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActivityType");
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityType", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.ActivityCategory", "ActivityCategory")
+                        .WithMany("ActivityTypes")
+                        .HasForeignKey("ActivityCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActivityCategory");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.Nutrient", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", null)
@@ -398,6 +486,16 @@ namespace Fitness_Tracker.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityCategory", b =>
+                {
+                    b.Navigation("ActivityTypes");
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityType", b =>
+                {
+                    b.Navigation("Activities");
                 });
 
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", b =>

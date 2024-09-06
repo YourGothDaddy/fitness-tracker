@@ -31,10 +31,20 @@
         public static class AdminController
         {
             public const string AddConsumableItemHttpAttributeName = "add-consumable-item";
+            public const string AddActivityCategoryHttpAttributeName = "add-activity-category";
+            public const string AddActivityTypeHttpAttributeName = "add-activity-type";
+            public const string GetActivityCategoriesHttpAttributeName = "get-activity-categories";
 
-            public const string InvalidModelStateError = "Invalid consumable item data provided.";
+            public const string InvalidModelStateError = "Invalid data provided.";
+
             public const string ConsumableItemAddedSuccessfully = "Consumable item added successfully.";
             public const string ConsumableItemExists = "Consumable item exists already!";
+
+            public const string ActivityCategoryAddedSuccessfully = "Activity category added successfully.";
+            public const string ActivityCategoryExists = "This activity category exists already!";
+
+            public const string ActivityTypeAddedSuccessfully = "Activity type added successfully.";
+            public const string ActivityTypeExists = "This activity type exists already!";
         }
 
         public static class ConsumableController

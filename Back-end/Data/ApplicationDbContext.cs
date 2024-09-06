@@ -16,6 +16,9 @@
         public DbSet<Meal> Meals { get; set; }
         public DbSet<ConsumableItem> ConsumableItems { get; set; }
         public DbSet<Nutrient> Nutrients { get; set; }
+        public DbSet<ActivityCategory> ActivityCategories { get; set; }
+        public DbSet<ActivityType> ActivityTypes { get; set; }
+        public DbSet<Activity> Activities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -25,6 +28,18 @@
                 .HasMany(u => u.Meals)
                 .WithOne(m => m.User)
                 .HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ActivityType>()
+                .HasOne(at => at.ActivityCategory)
+                .WithMany(ac => ac.ActivityTypes)
+                .HasForeignKey(at => at.ActivityCategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Activity>()
+                .HasOne(a => a.ActivityType)
+                .WithMany(at => at.Activities)
+                .HasForeignKey(a => a.ActivityTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
 
