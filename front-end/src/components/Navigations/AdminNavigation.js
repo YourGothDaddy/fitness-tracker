@@ -1,6 +1,6 @@
-import React from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { Container, Nav } from 'react-bootstrap';
+import React from "react";
+import { Outlet, NavLink } from "react-router-dom";
+import { Container, Nav } from "react-bootstrap";
 
 const AdminNavigation = () => {
   return (
@@ -11,6 +11,9 @@ const AdminNavigation = () => {
         </NavLink>
         <NavLink to="added-consumables" className="nav-link">
           Added consumables
+        </NavLink>
+        <NavLink to="activities" className="nav-link">
+          Activities
         </NavLink>
       </Nav>
       <Outlet />

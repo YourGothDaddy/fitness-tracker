@@ -1,0 +1,18 @@
+.main-section {
+  display: flex;
+  justify-content: center; /* Center the form container horizontally */
+  align-items: flex-start; /* Align items at the top */
+  width: 100%;
+  min-height: 100vh; /* Use min-height instead of fixed height to allow content to adjust */
+  padding-top: 60px; /* Padding at the top to move content upwards */
+}
+
+.left-section,
+.right-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  box-sizing: border-box;
+  padding: 20px;
+}

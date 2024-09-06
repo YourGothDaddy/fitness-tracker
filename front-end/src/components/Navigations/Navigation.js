@@ -19,6 +19,7 @@ import DashboardPage from "../Pages/DashboardPage.js";
 import AdminNavigation from "./AdminNavigation.js";
 import AddConsumableForm from "../Forms/AddConsumableForm.js";
 import AddedConsumablesPage from "../Pages/AddedConsumablesPage.js";
+import ActivitiesPage from "../Pages/ActivitiesPage.js";
 
 const Navigation = () => {
   const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
@@ -89,6 +90,7 @@ const Navigation = () => {
               path="added-consumables"
               element={<AddedConsumablesPage />}
             />
+            <Route path="activities" element={<ActivitiesPage />} />
           </Route>
           <Route
             path="/dashboard"
