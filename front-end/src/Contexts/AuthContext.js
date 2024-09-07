@@ -1,89 +1,75 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from "react";
 
 export const AuthContext = createContext();
 
+const API_BASE_URL = "https://localhost:7009/api/user";
+
 const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [authState, setAuthState] = useState({
+    isAuthenticated: null,
+    userInfo: null,
+    isAdmin: false,
+  });
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
-      const response = await fetch('https://localhost:7009/api/user/authstatus', {
-        method: 'GET',
-        credentials: 'include',
+      const response = await fetch(`${API_BASE_URL}/authstatus`, {
+        method: "GET",
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('User is not authenticated');
+        throw new Error("User is not authenticated");
       }
 
       const user = await response.json();
-      setIsAuthenticated(true);
-      setUserInfo(user);
-
-      if (user.roles && user.roles.includes('Administrator')) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
-
+      setAuthState({
+        isAuthenticated: true,
+        userInfo: user,
+        isAdmin: user.roles?.includes("Administrator") || false,
+      });
     } catch (err) {
-      setIsAuthenticated(false);
-      setUserInfo(null);
+      setAuthState({ isAuthenticated: false, userInfo: null, isAdmin: false });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('https://localhost:7009/api/user/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Email: email, Password: password }),
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error("Login failed");
       }
 
       await checkAuthStatus();
     } catch (err) {
-      setIsAuthenticated(false);
-      setUserInfo(null);
+      setAuthState({ isAuthenticated: false, userInfo: null, isAdmin: false });
     }
   };
 
   const logout = async () => {
     try {
-      await fetch('https://localhost:7009/api/user/logout', {
-        method: 'POST',
-        credentials: 'include',
+      await fetch(`${API_BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include",
       });
-
-      setIsAuthenticated(false);
-      setUserInfo(null);
+      setAuthState({ isAuthenticated: false, userInfo: null, isAdmin: false });
     } catch (err) {
-      console.error('Logout failed:', err.message);
+      console.error("Logout failed:", err.message);
     }
   };
 
-  const authContextValue = {
-    isAuthenticated,
-    userInfo,
-    isAdmin,
-    login,
-    logout,
-  };
-
   return (
-    <AuthContext.Provider value={authContextValue}>
+    <AuthContext.Provider value={{ ...authState, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

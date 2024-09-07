@@ -20,6 +20,8 @@ import AdminNavigation from "./AdminNavigation.js";
 import AddConsumableForm from "../Forms/AddConsumableForm.js";
 import AddedConsumablesPage from "../Pages/AddedConsumablesPage.js";
 import ActivitiesPage from "../Pages/ActivitiesPage.js";
+import UnauthorizedPage from "../Pages/UnauthorizedPage.js";
+import NotFoundPage from "../Pages/404Page.js";
 
 const Navigation = () => {
   const { isAuthenticated, isAdmin, logout } = useContext(AuthContext);
@@ -79,7 +81,7 @@ const Navigation = () => {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute isForAdmin={true}>
                 <AdminNavigation />
               </ProtectedRoute>
             }
@@ -114,6 +116,8 @@ const Navigation = () => {
           </Route>
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Container>
     </Router>

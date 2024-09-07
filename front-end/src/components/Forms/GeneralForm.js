@@ -1,77 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import '../../css/GeneralForm.css';
-import { Form, Button, Container } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from "react";
+import { Form, Button, Container, Alert } from "react-bootstrap";
+import "../../css/GeneralForm.css";
+
+const API_BASE_URL = "https://localhost:7009/api";
 
 const GeneralForm = () => {
-  const [email, setEmail] = useState('');
-  const [initialEmail, setInitialEmail] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [initialEmail, setInitialEmail] = useState("");
+  const [message, setMessage] = useState({ type: "", content: "" });
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchEmail = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('https://localhost:7009/api/user/profile', {
-          method: 'GET',
-          credentials: 'include',
-        });
+  const fetchEmail = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        if (!response.ok) {
-          throw new Error('Retrieving email failed');
-        }
+      if (!response.ok) throw new Error("Failed to retrieve email");
 
-        const data = await response.json();
-        setInitialEmail(data.email);
-        setEmail(data.email);
-        setErrorMessage('');
-      } catch (err) {
-        setErrorMessage(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEmail();
+      const { email } = await response.json();
+      setInitialEmail(email);
+      setEmail(email);
+    } catch (err) {
+      setMessage({ type: "danger", content: err.message });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchEmail();
+  }, [fetchEmail]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const trimmedEmail = email.trim();
 
-    if (!email.trim()) {
-      setErrorMessage('Email cannot be empty');
-      setSuccessMessage('');
+    if (!trimmedEmail) {
+      setMessage({ type: "danger", content: "Email cannot be empty" });
       return;
     }
 
-    if(email == initialEmail){
-      setErrorMessage('Email has not changed');
-      setSuccessMessage('');
+    if (trimmedEmail === initialEmail) {
+      setMessage({ type: "danger", content: "Email has not changed" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://localhost:7009/api/user/change-profile-info', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const response = await fetch(`${API_BASE_URL}/user/change-profile-info`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
       });
 
-      if (!response.ok) {
-        throw new Error('Changing data failed');
-      }
+      if (!response.ok) throw new Error("Failed to update email");
 
-      setSuccessMessage('Email updated successfully!');
-      setErrorMessage('');
+      setMessage({ type: "success", content: "Email updated successfully!" });
+      setInitialEmail(trimmedEmail);
     } catch (err) {
-      setErrorMessage(err.message);
-      setSuccessMessage('');
+      setMessage({ type: "danger", content: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -80,17 +72,10 @@ const GeneralForm = () => {
   return (
     <Container className="general-form">
       <h2>General Information</h2>
-      {errorMessage && (
-        <div className="alert alert-danger" role="alert">
-          {errorMessage}
-        </div>
+      {message.content && (
+        <Alert variant={message.type}>{message.content}</Alert>
       )}
-      {successMessage && (
-        <div className="alert alert-success" role="alert">
-          {successMessage}
-        </div>
-      )}
-      <Form onSubmit={handleSubmit} className="general-form">
+      <Form onSubmit={handleSubmit}>
         <Form.Group controlId="email">
           <Form.Label>Email Address</Form.Label>
           <Form.Control
@@ -100,8 +85,13 @@ const GeneralForm = () => {
             placeholder="Enter your email"
           />
         </Form.Group>
-        <Button variant="primary" type="submit" className="fancy-button" disabled={isLoading}>
-          {isLoading ? 'Updating...' : 'Update Email'}
+        <Button
+          variant="primary"
+          type="submit"
+          className="fancy-button"
+          disabled={isLoading}
+        >
+          {isLoading ? "Updating..." : "Update Email"}
         </Button>
       </Form>
     </Container>

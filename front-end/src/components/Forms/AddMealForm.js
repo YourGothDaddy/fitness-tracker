@@ -1,68 +1,73 @@
 import React, { useState } from "react";
+import PropTypes from "prop-types";
+import { Form, Button, Container, Alert } from "react-bootstrap";
 import "../../css/AddMealForm.css";
-import { Form, Button, Container } from "react-bootstrap";
+
+const MEAL_TYPES = [
+  { value: 0, label: "Breakfast" },
+  { value: 1, label: "Lunch" },
+  { value: 2, label: "Dinner" },
+  { value: 3, label: "Snack" },
+];
 
 const AddMealForm = ({ onAddMeal }) => {
-  const [name, setName] = useState("");
-  const [mealOfTheDay, setMealOfTheDay] = useState("");
-  const [calories, setCalories] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    mealOfTheDay: "",
+    calories: "",
+  });
+  const [status, setStatus] = useState({
+    error: "",
+    success: "",
+    isLoading: false,
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const validateForm = () => {
-    if (!name.trim()) {
-      setErrorMessage("Meal name is required.");
-      return false;
-    }
-    if (mealOfTheDay === "") {
-      setErrorMessage("Please select a meal type.");
-      return false;
-    }
-    if (calories <= 0) {
-      setErrorMessage("Calories must be a positive number.");
-      return false;
-    }
-    setErrorMessage("");
-    return true;
+    if (!formData.name.trim()) return "Meal name is required.";
+    if (formData.mealOfTheDay === "") return "Please select a meal type.";
+    if (Number(formData.calories) <= 0)
+      return "Calories must be a positive number.";
+    return "";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const error = validateForm();
+    if (error) {
+      setStatus({ ...status, error });
+      return;
+    }
 
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
-    const mealOfTheDayAsInt = parseInt(mealOfTheDay);
+    setStatus({ ...status, isLoading: true, error: "" });
 
     try {
       const response = await fetch("https://localhost:7009/api/meal/add-meal", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          mealOfTheDay: mealOfTheDayAsInt,
-          calories,
+          ...formData,
+          mealOfTheDay: parseInt(formData.mealOfTheDay),
+          calories: Number(formData.calories),
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Adding a meal failed");
-      }
+      if (!response.ok) throw new Error("Adding a meal failed");
 
-      setSuccessMessage("Meal added successfully!");
+      setStatus({
+        isLoading: false,
+        error: "",
+        success: "Meal added successfully!",
+      });
       onAddMeal();
-      setName("");
-      setMealOfTheDay("");
-      setCalories("");
+      setFormData({ name: "", mealOfTheDay: "", calories: "" });
     } catch (err) {
-      setErrorMessage(err.message);
-    } finally {
-      setIsLoading(false);
+      setStatus({ ...status, isLoading: false, error: err.message });
     }
   };
 
@@ -70,53 +75,61 @@ const AddMealForm = ({ onAddMeal }) => {
     <Container className="add-meal-form">
       <h2>Add a New Meal</h2>
       <Form onSubmit={handleSubmit} className="meal-form">
-        {errorMessage && (
-          <div className="alert alert-danger" role="alert">
-            {errorMessage}
-          </div>
-        )}
-        {successMessage && (
-          <div className="alert alert-success" role="alert">
-            {successMessage}
-          </div>
-        )}
+        {status.error && <Alert variant="danger">{status.error}</Alert>}
+        {status.success && <Alert variant="success">{status.success}</Alert>}
+
         <Form.Group controlId="mealName" className="mb-3">
           <Form.Label>Meal Name</Form.Label>
           <Form.Control
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
             placeholder="Enter meal name"
           />
         </Form.Group>
+
         <Form.Group controlId="mealType" className="mb-3">
           <Form.Label>Meal Type</Form.Label>
           <Form.Select
-            value={mealOfTheDay}
-            onChange={(e) => setMealOfTheDay(e.target.value)}
+            name="mealOfTheDay"
+            value={formData.mealOfTheDay}
+            onChange={handleChange}
           >
             <option value="">Select meal type</option>
-            <option value="0">Breakfast</option>
-            <option value="1">Lunch</option>
-            <option value="2">Dinner</option>
-            <option value="3">Snack</option>
+            {MEAL_TYPES.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Form.Select>
         </Form.Group>
+
         <Form.Group controlId="calories" className="mb-3">
           <Form.Label>Calories</Form.Label>
           <Form.Control
             type="number"
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
+            name="calories"
+            value={formData.calories}
+            onChange={handleChange}
             placeholder="Enter calories"
           />
         </Form.Group>
-        <Button type="submit" className="fancy-button" disabled={isLoading}>
-          {isLoading ? "Adding..." : "Add Meal"}
+
+        <Button
+          type="submit"
+          className="fancy-button"
+          disabled={status.isLoading}
+        >
+          {status.isLoading ? "Adding..." : "Add Meal"}
         </Button>
       </Form>
     </Container>
   );
+};
+
+AddMealForm.propTypes = {
+  onAddMeal: PropTypes.func.isRequired,
 };
 
 export default AddMealForm;
