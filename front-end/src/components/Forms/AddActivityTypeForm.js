@@ -1,98 +1,90 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Container, Form, Alert, Spinner, Button } from "react-bootstrap";
 import "../../css/CustomForm.css";
 
 const AddActivityTypeForm = () => {
-  const [activityType, setActivityType] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [formData, setFormData] = useState({
+    activityType: "",
+    selectedActivityCategoryId: "",
+  });
+  const [status, setStatus] = useState({
+    error: "",
+    success: "",
+    isLoading: false,
+  });
   const [activityOptions, setActivityOptions] = useState([]);
-  const [selectedActivityCategoryId, setSelectedActivityCategoryId] =
-    useState("");
-
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         const response = await fetch(
           "https://localhost:7009/api/admin/get-activity-categories",
-          {
-            method: "GET",
-            credentials: "include",
-          }
+          { method: "GET", credentials: "include" }
         );
-
+        if (!response.ok)
+          throw new Error("Failed to fetch activity categories");
         const data = await response.json();
         setActivityOptions(data);
       } catch (err) {
-        console.log("Couldn't retrieve options");
+        console.error("Couldn't retrieve options:", err);
+        setStatus((prev) => ({
+          ...prev,
+          error: "Failed to load activity categories",
+        }));
       }
     };
 
     fetchOptions();
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    setStatus({ error: "", success: "", isLoading: true });
     try {
       const response = await fetch(
         "https://localhost:7009/api/admin/add-activity-type",
         {
           method: "POST",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            Name: activityType,
-            ActivityCategoryId: selectedActivityCategoryId,
+            Name: formData.activityType,
+            ActivityCategoryId: formData.selectedActivityCategoryId,
           }),
         }
       );
       const data = await response.json();
-
-      if (response.ok) {
-        setSuccessMessage(data.message);
-      } else {
-        setErrorMessage(data.message);
-      }
+      if (!response.ok)
+        throw new Error(data.message || "Failed to add activity type");
+      setStatus((prev) => ({ ...prev, success: data.message }));
+      setFormData((prev) => ({ ...prev, activityType: "" }));
     } catch (err) {
-      console.log(err);
-      setErrorMessage(err.message);
-      setSuccessMessage("");
+      console.error(err);
+      setStatus((prev) => ({ ...prev, error: err.message }));
     } finally {
-      setIsLoading(false);
-      resetForm();
+      setStatus((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    if (name === "Activity Type Name") {
-      setActivityType(value);
-    } else if (name === "Activity Category") {
-      setSelectedActivityCategoryId(value);
-    }
-  };
-
-  const resetForm = () => {
-    setActivityType("");
+    setFormData((prev) => ({
+      ...prev,
+      [name === "Activity Type Name"
+        ? "activityType"
+        : "selectedActivityCategoryId"]: value,
+    }));
   };
 
   return (
     <Container className="custom-form-container mt-5 mb-5 p-4">
-      {errorMessage && (
+      {status.error && (
         <Alert variant="danger" className="mt-3">
-          {errorMessage}
+          {status.error}
         </Alert>
       )}
-      {successMessage && (
+      {status.success && (
         <Alert variant="success" className="mt-3">
-          {successMessage}
+          {status.success}
         </Alert>
       )}
       <Form onSubmit={handleSubmit}>
@@ -103,7 +95,7 @@ const AddActivityTypeForm = () => {
           <Form.Control
             type="text"
             name="Activity Type Name"
-            value={activityType}
+            value={formData.activityType}
             onChange={handleChange}
             required
             placeholder="Enter activity type name"
@@ -116,7 +108,7 @@ const AddActivityTypeForm = () => {
           </Form.Label>
           <Form.Select
             name="Activity Category"
-            value={selectedActivityCategoryId}
+            value={formData.selectedActivityCategoryId}
             onChange={handleChange}
             required
             className="custom-form-control"
@@ -124,9 +116,9 @@ const AddActivityTypeForm = () => {
             <option value="" disabled>
               Choose an option...
             </option>
-            {activityOptions.map((activityOption) => (
-              <option key={activityOption.id} value={activityOption.id}>
-                {activityOption.name}
+            {activityOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
               </option>
             ))}
           </Form.Select>
@@ -134,10 +126,10 @@ const AddActivityTypeForm = () => {
         <Button
           variant="primary"
           type="submit"
-          disabled={isLoading}
+          disabled={status.isLoading}
           className="custom-submit-button"
         >
-          {isLoading ? (
+          {status.isLoading ? (
             <>
               <Spinner
                 as="span"
@@ -150,7 +142,7 @@ const AddActivityTypeForm = () => {
               Loading...
             </>
           ) : (
-            `Add`
+            "Add"
           )}
         </Button>
       </Form>

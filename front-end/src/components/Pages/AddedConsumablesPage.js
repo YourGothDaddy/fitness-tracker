@@ -1,72 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
+import debounce from "lodash/debounce";
+
+const API_URL = "https://localhost:7009/api/consumable/search";
 
 const AddedConsumablesPage = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [results, setResults] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (searchTerm.length === 0) {
-            setResults([]);
-            return;
-        }
+  const fetchResults = useCallback(async () => {
+    if (searchTerm.length === 0) {
+      setResults([]);
+      return;
+    }
 
-        const fetchResults = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch(`https://localhost:7009/api/consumable/search?query=${searchTerm}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setResults(data);
-                } else {
-                    console.error('Error fetching data:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${API_URL}?query=${encodeURIComponent(searchTerm)}`
+      );
+      if (!response.ok) throw new Error(response.statusText);
+      const data = await response.json();
+      setResults(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm]);
 
-        const delayDebounceFn = setTimeout(() => {
-            fetchResults();
-        }, 300);
+  useEffect(() => {
+    const debouncedFetch = debounce(fetchResults, 300);
+    debouncedFetch();
+    return debouncedFetch.cancel;
+  }, [fetchResults]);
 
-        return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm]);
+  const handleResultClick = (item) => {
+    console.log("Selected item:", item);
+  };
 
-    const handleInputChange = (e) => {
-        setSearchTerm(e.target.value);
-    };
-
-    const handleResultClick = (item) => {
-        console.log('Selected item:', item);
-    };
-
-    return (
-        <div className="search-container">
-            <div className="search-box">
-                <input 
-                    type="text" 
-                    value={searchTerm} 
-                    onChange={handleInputChange} 
-                    placeholder="Search for food, drink, or meal..."
-                    className="search-input"
-                />
-                {isLoading && <div className="loader"></div>}
-                <ul className="search-results">
-                    {!isLoading && searchTerm.length > 0 && results.length === 0 && (
-                        <li className="no-results">No results found</li>
-                    )}
-                    {results.map((item, index) => (
-                        <li key={index} onClick={() => handleResultClick(item)} className="search-result-item">
-                            {item}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-        </div>
-    );
+  return (
+    <div className="search-container">
+      <div className="search-box">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search for food, drink, or meal..."
+          className="search-input"
+        />
+        {isLoading && <div className="loader"></div>}
+        {!isLoading && searchTerm && (
+          <ul className="search-results">
+            {results.length === 0 ? (
+              <li className="no-results">No results found</li>
+            ) : (
+              results.map((item, index) => (
+                <li
+                  key={index}
+                  onClick={() => handleResultClick(item)}
+                  className="search-result-item"
+                >
+                  {item}
+                </li>
+              ))
+            )}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default AddedConsumablesPage;

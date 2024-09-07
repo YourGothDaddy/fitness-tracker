@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import InfoCard from "../Cards/InfoCard.js";
 import AddMealForm from "../Forms/AddMealForm.js";
 import AllMealsPage from "../Tables/AllMealsTable.js";
@@ -20,16 +20,23 @@ const DashboardPage = () => {
   const [fetchMealsFn, setFetchMealsFn] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  useEffect(() => {
-    fetchUserDataAndGoals();
-    fetchCalories();
+  const fetchData = useCallback(async (url) => {
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Fetching data failed");
+    }
+
+    return response.json();
   }, []);
 
-  useEffect(() => {
-    fetchCalories();
-  }, [selectedDate]);
-
-  const fetchUserDataAndGoals = async () => {
+  const fetchUserDataAndGoals = useCallback(async () => {
     try {
       const data = await fetchData(`https://localhost:7009/api/user/goals`);
       setUserDataAndGoals({
@@ -44,9 +51,9 @@ const DashboardPage = () => {
     } catch (err) {
       setErrorMessage(err.message);
     }
-  };
+  }, [fetchData]);
 
-  const fetchCalories = async () => {
+  const fetchCalories = useCallback(async () => {
     try {
       const data = await fetchData(
         `https://localhost:7009/api/meal/calories?date=${formatDate(
@@ -58,46 +65,20 @@ const DashboardPage = () => {
     } catch (err) {
       setErrorMessage(err.message);
     }
-  };
+  }, [fetchData, selectedDate]);
 
-  const fetchData = async (url) => {
-    const response = await fetch(url, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  useEffect(() => {
+    fetchUserDataAndGoals();
+    fetchCalories();
+  }, [fetchUserDataAndGoals, fetchCalories]);
 
-    if (!response.ok) {
-      throw new Error("Fetching data failed");
-    }
-
-    return response.json();
-  };
+  const handleAddMeal = useCallback(() => {
+    fetchCalories();
+    fetchMealsFn?.();
+  }, [fetchCalories, fetchMealsFn]);
 
   const formatDate = (date) => {
     return date.toISOString().split("T")[0];
-  };
-
-  const handleAddButtonClick = () => {
-    setShowForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-  };
-
-  const handleSelectedDateFromAllMealsTable = (date) => {
-    setSelectedDate(date);
-  };
-
-  const onAddMeal = () => {
-    fetchCalories();
-
-    if (fetchMealsFn) {
-      fetchMealsFn();
-    }
   };
 
   const { dailyCalories, currentWeight, goalWeight } = userDataAndGoals;
@@ -105,15 +86,15 @@ const DashboardPage = () => {
   return (
     <div className="dashboard-page">
       <div className="button-section">
-        <button className="add-button" onClick={handleAddButtonClick}>
+        <button className="add-button" onClick={() => setShowForm(true)}>
           Add
         </button>
       </div>
 
       {showForm && (
-        <div className="modal-overlay" onClick={handleCloseForm}>
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <AddMealForm onAddMeal={onAddMeal} />
+            <AddMealForm onAddMeal={handleAddMeal} />
           </div>
         </div>
       )}
@@ -121,7 +102,7 @@ const DashboardPage = () => {
       <div className="upper-section">
         <AllMealsPage
           setFetchMealsFn={setFetchMealsFn}
-          setSelectedDateToDashboard={handleSelectedDateFromAllMealsTable}
+          setSelectedDateToDashboard={setSelectedDate}
         />
       </div>
       {errorMessage && <h1>{errorMessage}</h1>}
