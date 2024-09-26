@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Contexts/AuthContext";
 import FormField from "../FormField";
+import "../../css/LoginForm.css";
 
 const LoginForm = () => {
   const { login } = useContext(AuthContext);
@@ -10,7 +11,9 @@ const LoginForm = () => {
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
+    console.log(e.target);
     const { name, value } = e.target;
+    console.log(`${name}`);
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 

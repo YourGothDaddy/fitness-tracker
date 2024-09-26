@@ -1,0 +1,441 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Container */
+.home-container {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Upper Section */
+.upper-section {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content-wrapper {
+  display: flex;
+  height: calc(100% - 60px);
+  padding: 0 10%;
+  margin-top: 60px;
+  align-items: flex-start;
+}
+
+.left-content {
+  position: absolute;
+  top: 45vh;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: 35%;
+  padding-top: 6vh;
+}
+
+.welcome-text {
+  font-size: 6em;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.welcome-to {
+  font-weight: bold;
+  color: black;
+  white-space: nowrap;
+}
+
+.fitness-tracker {
+  font-weight: bold;
+  color: #8cc63f;
+  white-space: nowrap;
+}
+
+.get-started-button {
+  padding: 18px 36px;
+  font-size: 1.65rem;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 37px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.get-started-button:hover {
+  background-color: #333;
+}
+
+.green-circle {
+  position: absolute;
+  top: 50vh;
+  right: -20%;
+  height: calc(100vh - 12%);
+  transform: translate(0, -50%) !important;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  background-color: #8cc63f;
+  opacity: 0;
+  transition: transform 1s ease-out, opacity 1.5s ease-out;
+}
+
+.upper-section.animate .green-circle {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Fruit Styles */
+.fruit {
+  position: absolute;
+  width: 35%;
+  height: auto;
+  z-index: 4;
+  opacity: 0;
+  transform: translateX(100vw) rotate(0deg);
+}
+
+.upper-section.animate .fruit {
+  animation: fruitBounce 1.5s ease-out forwards;
+}
+
+.fruit-1 {
+  top: -3%;
+  right: 50%;
+  width: 22%;
+  rotate: 35deg;
+  animation-delay: 0.8s;
+}
+
+.fruit-2 {
+  top: 35%;
+  right: 50%;
+  rotate: -45deg;
+  animation-delay: 1s;
+}
+
+.fruit-3 {
+  bottom: -3%;
+  right: 50%;
+  animation-delay: 1.2s;
+}
+
+.fruit-4 {
+  top: 20%;
+  right: 78%;
+  animation-delay: 1.4s;
+}
+
+@keyframes fruitBounce {
+  0% {
+    transform: translateX(100vw) rotate(0deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-10%) rotate(360deg);
+    opacity: 1;
+  }
+  80% {
+    transform: translateX(5%) rotate(370deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) rotate(360deg);
+    opacity: 1;
+  }
+}
+
+/* Lower Section */
+.lower-section {
+  padding: 50px 5vw 20vw;
+  background-color: white;
+  text-align: center;
+}
+
+.why-fitness {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 6rem;
+}
+
+.circle-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+}
+
+.circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.circle:hover {
+  transform: translateY(-10px);
+}
+
+.middle-circle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(-60px);
+  background-color: rgb(140, 198, 63);
+  width: 220px;
+  height: 220px;
+  z-index: 2;
+  box-shadow: 0px 7px 16px rgba(0, 0, 0, 0.3);
+}
+
+.middle-circle:hover {
+  transform: translateX(-50%) translateY(-70px);
+}
+
+.circle-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 15px;
+}
+
+.circle p {
+  font-size: 1rem;
+  color: #333;
+  margin: 0;
+}
+
+.circle:first-child {
+  margin-right: 7.8rem;
+  box-shadow: -8px 7px 16px rgba(0, 0, 0, 0.3);
+}
+
+.circle:last-child {
+  margin-left: 1rem;
+  box-shadow: 8px 7px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Small Green Circle */
+.small-green-circle-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 38vw;
+  height: 38vw;
+  transform: translate(-50%, 50%);
+  z-index: 1;
+  overflow: visible;
+}
+
+.small-green-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #8cc63f;
+  transform: scale(0.5);
+  opacity: 0;
+  transition: transform 1s ease-out, opacity 1s ease-out;
+}
+
+.small-green-circle-container.animate .small-green-circle {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.small-fruit {
+  position: absolute;
+  width: 30%;
+  height: auto;
+  z-index: 4;
+  opacity: 0;
+  transform: translateX(100vw) rotate(0deg);
+}
+
+.small-fruit-1 {
+  top: -3%;
+  rotate: -35deg;
+  right: 20%;
+  width: 22%;
+}
+
+.small-fruit-2 {
+  bottom: 50%;
+  right: 1%;
+}
+
+.small-green-circle-container.animate .small-fruit-1 {
+  animation: fruitBounce 1.5s ease-out 0.8s forwards;
+}
+
+.small-green-circle-container.animate .small-fruit-2 {
+  animation: fruitBounce 1.5s ease-out 1s forwards;
+}
+
+/* Quote Section */
+.quote-section {
+  position: absolute;
+  right: 5vw;
+  bottom: 5vw;
+  width: 40%;
+  max-width: 500px;
+  padding: 2rem;
+  text-align: right;
+  z-index: 2;
+}
+
+.quote-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.quote-text {
+  font-size: 1.2rem;
+  font-style: italic;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Circle Fruits */
+.circle-fruit {
+  position: absolute;
+  width: 110px;
+  height: auto;
+  opacity: 0;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.circle-fruit-left {
+  left: -35px;
+  rotate: -20deg;
+  top: 20%;
+  transform: translate(-100%, -50%) rotate(-30deg);
+}
+
+.circle-fruit-right {
+  right: -110px;
+  width: 150px;
+  rotate: -35deg;
+  top: 90%;
+  transform: translate(100%, -50%) rotate(15deg);
+}
+
+@keyframes fruitAppear {
+  0% {
+    opacity: 0;
+    transform: translate(100%, -50%) rotate(15deg);
+  }
+  60% {
+    transform: translate(-10%, -50%) rotate(-5deg);
+  }
+  80% {
+    transform: translate(5%, -50%) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, -50%) rotate(0);
+  }
+}
+
+.lower-section.animate .circle-fruit-left {
+  animation: fruitAppear 1.5s ease-out 0.5s forwards;
+}
+
+.lower-section.animate .circle-fruit-right {
+  animation: fruitAppear 1.5s ease-out 0.7s forwards;
+}
+
+/* Media Queries */
+@media (max-width: 1500px) {
+  .welcome-text {
+    font-size: 5em;
+  }
+
+  .green-circle {
+    height: calc(100vh - 22%) !important;
+    top: 45vh;
+  }
+}
+
+@media (max-width: 1290px) {
+  .green-circle {
+    height: calc(100vh - 32%) !important;
+    top: 45vh;
+  }
+}
+
+@media (max-width: 1150px) {
+  .green-circle {
+    height: calc(100vh - 42%) !important;
+    top: 45vh;
+  }
+}
+
+@media (max-width: 991px) {
+  .left-content {
+    right: 50%;
+    top: 20%;
+    transform: translateX(50%);
+  }
+
+  .green-circle {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .green-circle,
+  .fruit {
+    display: none;
+  }
+
+  .left-content {
+    width: 100%;
+    padding-top: 10vh;
+  }
+
+  .welcome-text {
+    font-size: 8vw;
+  }
+
+  .get-started-button {
+    font-size: 4vw;
+    padding: 2vh 6vw;
+  }
+
+  .circle-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .circle {
+    margin-bottom: 30px;
+  }
+
+  .middle-circle {
+    transform: none;
+  }
+
+  .middle-circle:hover {
+    transform: translateY(-10px);
+  }
+
+  .quote-section {
+    position: static;
+    width: 90%;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 1rem;
+  }
+}
