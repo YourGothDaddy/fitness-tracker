@@ -1,0 +1,18 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.routes-container {
+  flex: 1;
+  overflow: visible;
+}
