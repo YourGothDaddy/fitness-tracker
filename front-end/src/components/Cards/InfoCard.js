@@ -20,8 +20,7 @@ const InfoCard = ({ current, goal, unit }) => {
         </div>
         <div className="goal-status">
           <span className={isAboveGoal ? "above-goal" : "below-goal"}>
-            {isAboveGoal ? "Over goal by" : "Under goal by"}{" "}
-            {Math.abs(difference)} {unit}
+            {isAboveGoal ? "Over by" : "Under by"} {Math.abs(difference)} {unit}
           </span>
         </div>
       </div>

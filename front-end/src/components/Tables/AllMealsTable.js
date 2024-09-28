@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import DateNavigation from "../DateNavigation";
 import "../../css/AllMealsTable.css";
 
-const AllMealsPage = ({ setFetchMealsFn, setSelectedDateToDashboard }) => {
+const AllMealsPage = ({
+  setFetchMealsFn,
+  setSelectedDateToDashboard,
+  setShowForm,
+}) => {
   const [meals, setMeals] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -102,6 +106,12 @@ const AllMealsPage = ({ setFetchMealsFn, setSelectedDateToDashboard }) => {
         onNextDay={handleNextDay}
         isToday={isToday(selectedDate)}
       />
+
+      <div className="button-section">
+        <button className="add-button" onClick={() => setShowForm(true)}>
+          Add
+        </button>
+      </div>
 
       <MealTable meals={meals} />
     </div>
