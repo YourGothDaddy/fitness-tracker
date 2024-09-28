@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
-import RegisterForm from '../Forms/RegisterForm';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../Contexts/AuthContext';
-import '../../css/Register.css';
+import React, { useContext, useEffect, useState } from "react";
+import RegisterForm from "../Forms/RegisterForm";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../Contexts/AuthContext";
+import "../../css/RegisterAndLogin.css";
 
 const RegisterPage = () => {
   const { isAuthenticated } = useContext(AuthContext);
@@ -17,7 +17,7 @@ const RegisterPage = () => {
     if (isAuthenticated === null) {
       setLoading(true);
     } else if (isAuthenticated) {
-      navigate('/');
+      navigate("/");
     } else {
       setLoading(false);
     }

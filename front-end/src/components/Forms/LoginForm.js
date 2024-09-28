@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Contexts/AuthContext";
 import FormField from "../FormField";
-import "../../css/LoginForm.css";
+import "../../css/RegisterAndLogin.css";
 
 const LoginForm = () => {
   const { login } = useContext(AuthContext);
@@ -30,9 +30,9 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2 className="login-title">Login</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="title">Login</h2>
         {error && (
           <div className="alert alert-danger" role="alert">
             {error}
@@ -62,6 +62,10 @@ const LoginForm = () => {
           <button type="submit" className="btn btn-primary btn-block">
             Login
           </button>
+          <div className="login-link">
+            Don't have an account? <a href="/register">Register</a>
+          </div>
+          {error && <p className="error-message">{error}</p>}
         </form>
       </div>
     </div>

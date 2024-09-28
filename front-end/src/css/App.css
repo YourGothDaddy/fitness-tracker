@@ -12,6 +12,21 @@ body,
   --red: #e57373;
 }
 
+.navbar-links {
+  position: absolute;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+.navbar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 10vh;
+}
+
 .app-container {
   display: flex;
   flex-direction: column;
