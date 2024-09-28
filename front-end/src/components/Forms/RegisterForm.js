@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import FormField from "../FormField";
-
+import "../../css/RegisterAndLogin.css";
 const RegisterForm = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
@@ -34,9 +34,9 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <h2 className="register-title">Create an Account</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="title">Create an Account</h2>
         <form onSubmit={handleRegister}>
           <FormField
             id="email"

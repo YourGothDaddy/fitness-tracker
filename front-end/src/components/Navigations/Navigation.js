@@ -14,7 +14,7 @@ const Navigation = () => {
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="mx-auto">
+          <Nav className="mx-auto navbar-links">
             {isAuthenticated && (
               <>
                 {isAdmin && (
