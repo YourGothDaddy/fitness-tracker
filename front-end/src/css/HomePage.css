@@ -1,9 +1,4 @@
 /* Variables */
-:root {
-  --green: #8cc63f;
-  --black: #000000;
-  --white: #ffffff;
-}
 .home-container {
   height: 100%;
 }
@@ -168,7 +163,7 @@
 
   opacity: 0;
   transform: scale(0);
-  transition: opacity 0.3s ease-in-out, transform 1.7s ease-in-out;
+  transition: opacity 0.3s ease-in-out, transform 0.7s ease-in-out;
 }
 
 .info-tab.visible {

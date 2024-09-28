@@ -16,8 +16,8 @@ const InfoCardPieChart = ({ title, current, goal, unit }) => {
     datasets: [
       {
         data: [current, remaining > 0 ? remaining : 0], // Ensure no negative values
-        backgroundColor: [isAboveGoal ? "#e57373" : "#81c784", "#f3f3f3"], // Colors: Red if over goal, Green otherwise
-        hoverBackgroundColor: [isAboveGoal ? "#ef9a9a" : "#a5d6a7", "#e0e0e0"],
+        backgroundColor: [isAboveGoal ? "#e57373" : "#8cc63f", "#f3f3f3"], // Colors: Red if over goal, Green otherwise
+        hoverBackgroundColor: [isAboveGoal ? "#ef9a9a" : "#8cc63f", "#e0e0e0"],
       },
     ],
   };
@@ -52,18 +52,13 @@ const InfoCardPieChart = ({ title, current, goal, unit }) => {
         <span className={isAboveGoal ? "above-goal" : "below-goal"}>
           {isAboveGoal ? (
             <>
-              Over goal by <br />
+              Over by <br />
               {Math.abs(remaining)} {unit}
             </>
           ) : (
             `${Math.abs(current)} ${unit}`
           )}
         </span>
-      </div>
-      <div className="motivational-text">
-        {isAboveGoal
-          ? "Keep going! You're almost there!"
-          : "Great progress! Keep it up!"}
       </div>
     </div>
   );

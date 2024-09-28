@@ -4,6 +4,12 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+
+  --green: #8cc63f;
+  --dark-green: #619819;
+  --black: #000000;
+  --white: #ffffff;
+  --red: #e57373;
 }
 
 .app-container {

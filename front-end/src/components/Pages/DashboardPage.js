@@ -84,38 +84,46 @@ const DashboardPage = () => {
   const { dailyCalories, currentWeight, goalWeight } = userDataAndGoals;
 
   return (
-    <div className="dashboard-page">
-      <div className="button-section">
-        <button className="add-button" onClick={() => setShowForm(true)}>
-          Add
-        </button>
-      </div>
-
-      {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <AddMealForm onAddMeal={handleAddMeal} />
+    <div className="dashboard-container">
+      <div className="dashboard-page">
+        {showForm && (
+          <div className="modal-overlay" onClick={() => setShowForm(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <AddMealForm onAddMeal={handleAddMeal} />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="upper-section">
-        <AllMealsPage
-          setFetchMealsFn={setFetchMealsFn}
-          setSelectedDateToDashboard={setSelectedDate}
-        />
-      </div>
-      {errorMessage && <h1>{errorMessage}</h1>}
-      <div className="main-section">
-        <div className="left-section">
-          <InfoCardPieChart
-            current={calories}
-            goal={dailyCalories}
-            unit="kcal"
+        <div className="upper-section">
+          <AllMealsPage
+            setFetchMealsFn={setFetchMealsFn}
+            setSelectedDateToDashboard={setSelectedDate}
+            setShowForm={setShowForm}
           />
         </div>
-        <div className="right-section">
-          <InfoCard current={currentWeight} goal={goalWeight} unit="kg" />
+        {errorMessage && <h1>{errorMessage}</h1>}
+        <div className="main-section">
+          <div className="left-section">
+            <InfoCardPieChart
+              current={calories}
+              goal={dailyCalories}
+              unit="kcal"
+            />{" "}
+            <InfoCardPieChart
+              current={calories}
+              goal={dailyCalories}
+              unit="kcal"
+            />
+            <InfoCardPieChart
+              current={calories}
+              goal={dailyCalories}
+              unit="kcal"
+            />
+          </div>
+          <div className="right-section">
+            <InfoCard current={currentWeight} goal={goalWeight} unit="kg" />
+            <InfoCard current={currentWeight} goal={goalWeight} unit="kg" />
+          </div>
         </div>
       </div>
     </div>
