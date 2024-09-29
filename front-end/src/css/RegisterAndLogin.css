@@ -3,6 +3,10 @@
   justify-content: center;
   align-items: center;
   height: calc(100vh - 10vh);
+  background-image: url("../Images/fruits.png ");
+  background-size: 100vw 100vh;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .auth-card {
@@ -76,8 +80,23 @@
   text-decoration: underline;
 }
 
+@media (max-width: 1324px) {
+  .auth-container {
+    background-size: 100vw 80vh;
+  }
+}
+
+@media (max-width: 948px) {
+  .auth-container {
+    background-size: 100vw 60vh;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
+  .auth-container {
+    background-size: 100vw 40vh;
+  }
   .register-card {
     padding: 20px;
   }
