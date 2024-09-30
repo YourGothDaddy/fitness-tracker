@@ -100,18 +100,17 @@ const AllMealsPage = ({
     <div className="all-meals-container">
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
+      <div className="button-section">
+        <button className="add-button" onClick={() => setShowForm(true)}>
+          Add
+        </button>
+      </div>
       <DateNavigation
         selectedDate={selectedDate}
         onPreviousDay={handlePreviousDay}
         onNextDay={handleNextDay}
         isToday={isToday(selectedDate)}
       />
-
-      <div className="button-section">
-        <button className="add-button" onClick={() => setShowForm(true)}>
-          Add
-        </button>
-      </div>
 
       <MealTable meals={meals} />
     </div>
