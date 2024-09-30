@@ -89,7 +89,10 @@ const DashboardPage = () => {
         {showForm && (
           <div className="modal-overlay" onClick={() => setShowForm(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <AddMealForm onAddMeal={handleAddMeal} />
+              <AddMealForm
+                onAddMeal={handleAddMeal}
+                selectedDate={selectedDate}
+              />
             </div>
           </div>
         )}

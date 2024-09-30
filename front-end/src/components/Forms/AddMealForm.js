@@ -10,11 +10,12 @@ const MEAL_TYPES = [
   { value: 3, label: "Snack" },
 ];
 
-const AddMealForm = ({ onAddMeal }) => {
+const AddMealForm = ({ onAddMeal, selectedDate }) => {
   const [formData, setFormData] = useState({
     name: "",
     mealOfTheDay: "",
     calories: "",
+    date: "",
   });
   const [status, setStatus] = useState({
     error: "",
@@ -54,6 +55,7 @@ const AddMealForm = ({ onAddMeal }) => {
           ...formData,
           mealOfTheDay: parseInt(formData.mealOfTheDay),
           calories: Number(formData.calories),
+          date: selectedDate,
         }),
       });
 
@@ -65,7 +67,7 @@ const AddMealForm = ({ onAddMeal }) => {
         success: "Meal added successfully!",
       });
       onAddMeal();
-      setFormData({ name: "", mealOfTheDay: "", calories: "" });
+      setFormData({ name: "", mealOfTheDay: "", calories: "", date: "" });
     } catch (err) {
       setStatus({ ...status, isLoading: false, error: err.message });
     }

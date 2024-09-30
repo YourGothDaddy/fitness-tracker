@@ -27,7 +27,7 @@
                     MealOfTheDay = meal.MealOfTheDay,
                     Calories = meal.Calories,
                     UserId = userId,
-                    Date = DateTime.UtcNow.Date
+                    Date = (meal.Date != DateTime.MinValue) ? meal.Date : DateTime.UtcNow.Date
                 });
 
             await _databaseContext.SaveChangesAsync();
@@ -38,7 +38,9 @@
 
             return await _databaseContext
                  .Meals
-                 .Where(m => m.UserId == userId && m.Date == date.Date)
+                 .Where(m => m.UserId == userId && m.Date.Year == date.Date.Year
+                 && m.Date.Month == date.Date.Month
+                 && m.Date.Day == date.Date.Day)
                  .ToListAsync();
         }
 
