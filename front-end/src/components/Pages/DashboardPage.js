@@ -17,8 +17,8 @@ const DashboardPage = () => {
   const [calories, setCalories] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [fetchMealsFn, setFetchMealsFn] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [refreshMeals, setRefreshMeals] = useState(false);
 
   const fetchData = useCallback(async (url) => {
     const response = await fetch(url, {
@@ -74,8 +74,9 @@ const DashboardPage = () => {
 
   const handleAddMeal = useCallback(() => {
     fetchCalories();
-    fetchMealsFn?.();
-  }, [fetchCalories, fetchMealsFn]);
+    setRefreshMeals((prev) => !prev);
+    setShowForm(false);
+  }, [fetchCalories]);
 
   const formatDate = (date) => {
     return date.toISOString().split("T")[0];
@@ -92,6 +93,7 @@ const DashboardPage = () => {
               <AddMealForm
                 onAddMeal={handleAddMeal}
                 selectedDate={selectedDate}
+                setShowForm={setShowForm}
               />
             </div>
           </div>
@@ -99,9 +101,9 @@ const DashboardPage = () => {
 
         <div className="upper-section">
           <AllMealsPage
-            setFetchMealsFn={setFetchMealsFn}
             setSelectedDateToDashboard={setSelectedDate}
             setShowForm={setShowForm}
+            refreshMeals={refreshMeals}
           />
         </div>
         {errorMessage && <h1>{errorMessage}</h1>}
