@@ -1,35 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import DateNavigation from "../DateNavigation";
 import "../../css/AllMealsTable.css";
 
 const AllMealsPage = ({
-  setFetchMealsFn,
   setSelectedDateToDashboard,
   setShowForm,
+  refreshMeals,
 }) => {
   const [meals, setMeals] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  useEffect(() => {
-    fetchMeals();
-    fetchCalories();
-    setSelectedDateToDashboard(selectedDate);
-  }, [selectedDate]);
-
-  useEffect(() => {
-    if (setFetchMealsFn) {
-      setFetchMealsFn(() => fetchMeals);
-    }
-
-    return () => {
-      if (setFetchMealsFn) {
-        setFetchMealsFn(null);
-      }
-    };
-  }, [setFetchMealsFn]);
-
-  const fetchMeals = async () => {
+  const fetchMeals = useCallback(async () => {
     try {
       const data = await fetchData(
         `https://localhost:7009/api/meal/all?date=${formatDate(selectedDate)}`
@@ -39,7 +21,13 @@ const AllMealsPage = ({
     } catch (err) {
       setErrorMessage(err.message);
     }
-  };
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchMeals();
+    fetchCalories();
+    setSelectedDateToDashboard(selectedDate);
+  }, [selectedDate, refreshMeals, fetchMeals, setSelectedDateToDashboard]);
 
   const fetchCalories = async () => {
     try {
