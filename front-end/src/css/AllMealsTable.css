@@ -142,3 +142,44 @@
   margin-bottom: 10px;
   font-weight: bold;
 }
+
+/* Date navigation wrapper styling */
+
+.date-picker-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.react-datepicker {
+  font-family: Arial, sans-serif;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.react-datepicker__header {
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+  padding: 10px;
+}
+
+.react-datepicker__day {
+  width: 2em;
+  line-height: 2em;
+  margin: 0.166em;
+}
+
+.react-datepicker__day--selected {
+  background-color: var(--green);
+  color: white;
+}
+.react-datepicker__day--selected:hover {
+  background-color: var(--dark-green);
+}
+
+.react-datepicker__day--selected:not([aria-disabled="true"]):hover {
+  background-color: var(--dark-green);
+}
