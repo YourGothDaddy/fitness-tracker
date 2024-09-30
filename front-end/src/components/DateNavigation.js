@@ -6,14 +6,25 @@ const DateNavigation = ({
   onPreviousDay,
   onNextDay,
   isToday,
-}) => (
-  <div className="date-navigation">
-    <button onClick={onPreviousDay}>←</button>
-    <span>{selectedDate.toDateString()}</span>
-    <button onClick={onNextDay} disabled={isToday}>
-      →
-    </button>
-  </div>
-);
+  onDateClick,
+}) => {
+  const formattedDate = selectedDate.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  return (
+    <div className="date-navigation">
+      <button onClick={onPreviousDay}>←</button>
+      <span onClick={onDateClick} style={{ cursor: "pointer" }}>
+        {formattedDate}
+      </span>
+      <button onClick={onNextDay} disabled={isToday}>
+        →
+      </button>
+    </div>
+  );
+};
 
 export default DateNavigation;

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
+import DatePicker from "react-datepicker";
 import DateNavigation from "../DateNavigation";
+import "react-datepicker/dist/react-datepicker.css";
 import "../../css/AllMealsTable.css";
 
 const AllMealsPage = ({
@@ -10,6 +12,7 @@ const AllMealsPage = ({
   const [meals, setMeals] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const fetchMeals = useCallback(async () => {
     try {
@@ -84,6 +87,15 @@ const AllMealsPage = ({
     return date.toDateString() === new Date().toDateString();
   };
 
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    setIsDatePickerOpen(false);
+  };
+
+  const toggleDatePicker = () => {
+    setIsDatePickerOpen(!isDatePickerOpen);
+  };
+
   return (
     <div className="all-meals-container">
       {errorMessage && <p className="error-message">{errorMessage}</p>}
@@ -98,7 +110,17 @@ const AllMealsPage = ({
         onPreviousDay={handlePreviousDay}
         onNextDay={handleNextDay}
         isToday={isToday(selectedDate)}
+        onDateClick={toggleDatePicker}
       />
+      <div className="date-picker-wrapper">
+        {isDatePickerOpen && (
+          <DatePicker
+            selected={selectedDate}
+            onChange={handleDateChange}
+            inline
+          />
+        )}
+      </div>
 
       <MealTable meals={meals} />
     </div>
