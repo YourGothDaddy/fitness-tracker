@@ -1,20 +1,13 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Keyboard,
-  TextInput,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import CustomField from "@/app/components/CustomField";
-import CustomButton from "@/app/components/CustomButton";
 import { router } from "expo-router";
 import React, { useState, useEffect } from "react";
 import { Colors } from "@/constants/Colors";
 import Slider from "@react-native-community/slider";
 import Checkbox from "expo-checkbox";
+import CustomField from "@/app/components/CustomField";
+import CustomButton from "@/app/components/CustomButton";
 
 const SignUp = () => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -220,7 +213,7 @@ const SignUp = () => {
     if (currentStage < 4) {
       setCurrentStage(currentStage + 1);
     } else {
-      router.push("/dashboard");
+      router.push("/home");
     }
   };
 

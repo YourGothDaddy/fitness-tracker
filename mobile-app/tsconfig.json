@@ -16,6 +16,8 @@
     "app/index.jsx",
     "app/(auth)/_layout.jsx",
     "app/_layout.jsx",
-    "app/(auth)/sign-up.jsx"
+    "app/(auth)/sign-up.jsx",
+    "app/(tabs)/home.jsx",
+    "app/(auth)/sign-in.jsx"
   ]
 }

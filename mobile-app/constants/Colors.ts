@@ -36,6 +36,9 @@ export const Colors = {
   black: {
     color: "#000000",
   },
+  blue: {
+    color: "#0000ff",
+  },
   white: {
     color: "#ffffff",
   },
@@ -44,5 +47,8 @@ export const Colors = {
   },
   red: {
     color: "#e57373",
+  },
+  brightRed: {
+    color: "#ed2100",
   },
 };
