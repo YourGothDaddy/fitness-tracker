@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React from "react";
 import { Colors } from "@/constants/Colors";
 import { PieChart } from "react-native-svg-charts";
+import React from "react";
 
 const Home = () => {
   const caloriesConsumed = 1500;
@@ -68,117 +68,248 @@ const Home = () => {
     },
   ];
 
+  const target = 2000;
+  const exerciseAboveBaseline = exercise;
+  const consumed = caloriesConsumed;
+  const remaining = target - consumed;
+
+  const energyBudgetData = [
+    {
+      key: 1,
+      value: consumed,
+      svg: { fill: Colors.green.color },
+    },
+    {
+      key: 2,
+      value: remaining,
+      svg: { fill: Colors.blue.color },
+    },
+  ];
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.chartsContainer}>
-        <View style={styles.chartContainer}>
-          <Text numberOfLines={1} style={styles.chartTitle}>
-            Calories Consumed (kcal)
+    <SafeAreaView style={styles.safeAreaViewContainer}>
+      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <View>
+          <Text className="text-4xl font-pextrabold text-center text-green pt-10">
+            Fitlicious
           </Text>
-          <View style={styles.chartSection}>
-            <PieChart
-              style={styles.chart}
-              data={consumptionData}
-              innerRadius="80%"
-              padAngle={0}
-            />
-            <View style={styles.calorieTextContainer}>
-              <Text style={styles.calorieText}>{caloriesConsumed}</Text>
-              <Text style={styles.calorieSubtext}>kcal</Text>
+        </View>
+        <View>
+          <Text className="text-2xl font-psemibold text-center text-green pb-10">
+            Charts
+          </Text>
+        </View>
+        {/* CHARTS CONTAINER */}
+        <View style={styles.chartsContainer}>
+          {/* CONSUMED */}
+          <View style={styles.chartContainer}>
+            <View>
+              <Text style={styles.chartTitle}>Calories Consumed (kcal)</Text>
             </View>
-            <View style={styles.chartSubtitleContainer}>
-              <Text numberOfLines={1}>Consumed</Text>
+            <View style={styles.chartMainSection}>
+              <View style={styles.pieChartSection}>
+                <PieChart
+                  style={styles.pieChart}
+                  data={consumptionData}
+                  innerRadius="80%"
+                  padAngel={0}
+                >
+                  <View style={styles.pieChartInnerTextContainer}>
+                    <Text>{caloriesConsumed}</Text>
+                    <Text>kcal</Text>
+                  </View>
+                </PieChart>
+                <View style={styles.pieChartOutterTextContainer}>
+                  <Text style={styles.pieChartOutterText}>Consumed</Text>
+                </View>
+              </View>
+              <View style={styles.tableSection}>
+                <View style={styles.tableContainer}>
+                  {[
+                    {
+                      title: "Protein",
+                      value: proteinConsumed,
+                      percentage: proteinPercentage,
+                    },
+                    {
+                      title: "Carbs",
+                      value: carbsConsumed,
+                      percentage: carbsPercentage,
+                    },
+                    {
+                      title: "Fat",
+                      value: fatConsumed,
+                      percentage: fatPercentage,
+                    },
+                  ].map((row, index, array) => (
+                    <View
+                      key={row.title}
+                      style={[
+                        styles.tableRow,
+                        index !== array.length - 1 && styles.tableRowWithBorder,
+                      ]}
+                    >
+                      <View style={styles.tableCellContainer}>
+                        <Text style={[styles.tableCellTitle, styles.tableCell]}>
+                          {row.title}
+                        </Text>
+                      </View>
+                      <View style={styles.tableCellContainer}>
+                        <Text style={styles.tableCell}>{row.value}</Text>
+                      </View>
+                      <View style={styles.tableCellContainer}>
+                        <Text style={styles.tableCell}>{row.percentage}%</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
             </View>
           </View>
-          <View style={styles.tableSection}>
-            <View style={styles.consumedTableContainer}>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCellProtein} className="font-pbold">
-                  Protein
-                </Text>
-                <Text style={styles.tableCell}>{proteinConsumed}g</Text>
-                <Text style={styles.tableCell}>{proteinPercentage}%</Text>
+
+          {/* BURNED */}
+          <View style={styles.chartContainer}>
+            <View>
+              <Text style={styles.chartTitle}>Calories Burned (kcal)</Text>
+            </View>
+            <View style={styles.chartMainSection}>
+              <View style={styles.pieChartSection}>
+                <PieChart
+                  style={styles.pieChart}
+                  data={burnedData}
+                  innerRadius="80%"
+                  padAngel={0}
+                >
+                  <View style={styles.pieChartInnerTextContainer}>
+                    <Text>{totalEnergyBurned}</Text>
+                    <Text>kcal</Text>
+                  </View>
+                </PieChart>
+                <View style={styles.pieChartOutterTextContainer}>
+                  <Text style={styles.pieChartOutterText}>Burned</Text>
+                </View>
               </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCellCarbs} className="font-pbold">
-                  Carbs
-                </Text>
-                <Text style={styles.tableCell}>{carbsConsumed}g</Text>
-                <Text style={styles.tableCell}>{carbsPercentage}%</Text>
+              <View style={styles.tableSection}>
+                <View style={styles.tableContainer}>
+                  {[
+                    {
+                      title: "BMR",
+                      value: bmr,
+                      percentage: bmrPercentage,
+                    },
+                    {
+                      title: "Exercise",
+                      value: exercise,
+                      percentage: exercisePercentage,
+                    },
+                    {
+                      title: "Baseline Activity",
+                      value: baselineActivity,
+                      percentage: baselineActivityPercentage,
+                    },
+                    {
+                      title: "TEF",
+                      value: tef,
+                      percentage: tefPercentage,
+                    },
+                  ].map((row, index, array) => (
+                    <View
+                      key={row.title}
+                      style={[
+                        styles.tableRow,
+                        index !== array.length - 1 && styles.tableRowWithBorder,
+                      ]}
+                    >
+                      <View style={[styles.tableCellContainer, { flex: 2 }]}>
+                        <Text
+                          style={[styles.tableCellTitle, styles.tableCell]}
+                          numberOfLines={2}
+                        >
+                          {row.title}
+                        </Text>
+                      </View>
+                      <View style={styles.tableCellContainer}>
+                        <Text style={styles.tableCell}>{row.value}</Text>
+                      </View>
+                      <View style={styles.tableCellContainer}>
+                        <Text style={styles.tableCell}>{row.percentage}%</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
               </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCellFat} className="font-pbold">
-                  Fat
-                </Text>
-                <Text style={styles.tableCell}>{fatConsumed}g</Text>
-                <Text style={styles.tableCell}>{fatPercentage}%</Text>
+            </View>
+          </View>
+
+          {/* REMAINING */}
+          <View style={styles.chartContainer}>
+            <View>
+              <Text style={styles.chartTitle}>Energy Budget (kcal)</Text>
+            </View>
+            <View style={styles.chartMainSection}>
+              <View style={styles.pieChartSection}>
+                <PieChart
+                  style={styles.pieChart}
+                  data={energyBudgetData}
+                  innerRadius="80%"
+                  padAngel={0}
+                >
+                  <View style={styles.pieChartInnerTextContainer}>
+                    <Text>{remaining}</Text>
+                    <Text>kcal</Text>
+                  </View>
+                </PieChart>
+                <View style={styles.pieChartOutterTextContainer}>
+                  <Text style={styles.pieChartOutterText}>Remaining</Text>
+                </View>
+              </View>
+              <View style={styles.tableSection}>
+                <View style={styles.tableContainer}>
+                  {[
+                    {
+                      title: "Target",
+                      value: target,
+                    },
+                    {
+                      title: "Exercise Above Baseline",
+                      value: exerciseAboveBaseline,
+                    },
+                    {
+                      title: "TEF",
+                      value: tef,
+                    },
+                    {
+                      title: "Consumed",
+                      value: consumed,
+                    },
+                    {
+                      title: "Remaining",
+                      value: remaining,
+                    },
+                  ].map((row, index, array) => (
+                    <View
+                      key={row.title}
+                      style={[
+                        styles.tableRow,
+                        index !== array.length - 1 && styles.tableRowWithBorder,
+                      ]}
+                    >
+                      <View style={styles.tableCellContainer}>
+                        <Text style={[styles.tableCellTitle, styles.tableCell]}>
+                          {row.title}
+                        </Text>
+                      </View>
+                      <View style={styles.tableCellContainer}>
+                        <Text style={styles.tableCell}>{row.value}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
               </View>
             </View>
           </View>
         </View>
-        <View style={styles.chartContainer}>
-          <Text numberOfLines={1} style={styles.chartTitle}>
-            Calories Burned (kcal)
-          </Text>
-          <View style={styles.chartSection}>
-            <PieChart
-              style={styles.chart}
-              data={burnedData}
-              innerRadius="80%"
-              padAngle={0}
-            />
-            <View style={styles.calorieTextContainer}>
-              <Text style={styles.calorieText}>{caloriesConsumed}</Text>
-              <Text style={styles.calorieSubtext}>kcal</Text>
-            </View>
-            <View style={styles.chartSubtitleContainer}>
-              <Text numberOfLines={1}>Burned</Text>
-            </View>
-          </View>
-          <View style={styles.tableSection}>
-            <View style={styles.burnedTableContainer}>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCellBMR} className="font-pbold">
-                  BMR
-                </Text>
-                <Text style={styles.tableCell}>{bmr}</Text>
-                <Text style={styles.tableCell}>{bmrPercentage}%</Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text
-                  style={styles.tableCellExercise}
-                  numberOfLines={1}
-                  className="font-pbold"
-                >
-                  Exercise
-                </Text>
-                <Text style={styles.tableCell}>{exercise}</Text>
-                <Text style={styles.tableCell}>{exercisePercentage}%</Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text
-                  style={styles.tableCellBaselineActivity}
-                  className="font-pbold"
-                  numberOfLines={2}
-                >
-                  Baseline Activity
-                </Text>
-                <Text style={styles.tableCell}>{baselineActivity}</Text>
-                <Text style={styles.tableCell}>
-                  {baselineActivityPercentage}%
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableCellTEF} className="font-pbold">
-                  TEF
-                </Text>
-                <Text style={styles.tableCell}>{tef}</Text>
-                <Text style={styles.tableCell}>{tefPercentage}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -186,123 +317,89 @@ const Home = () => {
 export default Home;
 
 const styles = StyleSheet.create({
-  container: {
+  safeAreaViewContainer: {
     flex: 1,
-    backgroundColor: "white",
   },
-  chartsContainer: {
-    flex: 1,
+  scrollViewContainer: {
+    flexGrow: 1,
     alignItems: "center",
-    paddingTop: "5%",
-    justifyContent: "space-around",
+  },
+  // CHART
+  chartsContainer: {
+    width: "90%",
   },
   chartContainer: {
-    flex: 0.31,
+    flex: 1,
+    marginBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
+    maxHeight: 300,
+
     backgroundColor: Colors.lightGreen.color,
-    width: "90%",
-    flexDirection: "row",
-  },
-  chartTitle: {
-    position: "absolute",
-    top: 5,
-    left: 5,
-  },
-  chartSubtitleContainer: {
-    position: "absolute",
-    bottom: "10%",
+
+    borderWidth: 0.3,
+    borderRadius: 15,
+    borderColor: Colors.darkGreen.color,
     justifyContent: "center",
   },
-  chartSection: {
-    flex: 1.3,
+  chartTitle: {},
+  chartMainSection: {
+    flexDirection: "row",
+    height: "70%",
+  },
+  pieChartSection: {
+    flex: 0.7,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+  },
+  pieChart: {
+    height: "90%",
+    width: "90%",
+    maxHeight: 150,
+  },
+  pieChartInnerTextContainer: {
+    position: "relative",
     justifyContent: "center",
     alignItems: "center",
   },
-  chart: {
-    height: "90%",
-    width: "90%",
+  pieChartOutterText: {
+    position: "relative",
+    textAlign: "center",
   },
+  // TABLE
   tableSection: {
-    flex: 1.7,
+    flex: 1,
     justifyContent: "center",
-    paddingHorizontal: "3%",
+    paddingLeft: 10,
   },
-  consumedTableContainer: {
-    flex: 0.6,
-    width: "100%",
-    borderWidth: 2,
+  tableContainer: {
+    borderWidth: 1,
+    borderRadius: 10,
     borderColor: Colors.darkGreen.color,
-    borderRadius: 15,
-    justifyContent: "center",
-  },
-  burnedTableContainer: {
-    flex: 0.7,
-    width: "100%",
-    borderWidth: 2,
-    borderColor: Colors.darkGreen.color,
-    borderRadius: 15,
-    justifyContent: "center",
+    padding: 5,
   },
   tableRow: {
     flexDirection: "row",
-    flex: 1,
+    justifyContent: "space-between",
+    minHeight: 20,
   },
-  tableCell: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 12,
+  tableRowWithBorder: {
+    borderBottomWidth: 1,
+    borderColor: Colors.darkGreen.color,
   },
-  tableCellProtein: {
+  tableCellContainer: {
     flex: 1,
-    textAlign: "center",
-    color: Colors.green.color,
-    fontSize: 12,
-  },
-  tableCellCarbs: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.blue.color,
-    fontSize: 12,
-  },
-  tableCellFat: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.red.color,
-    fontSize: 12,
-  },
-  tableCellBMR: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.green.color,
-    fontSize: 12,
-  },
-  tableCellExercise: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.blue.color,
-    fontSize: 12,
-  },
-  tableCellBaselineActivity: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.red.color,
-    fontSize: 12,
-  },
-  tableCellTEF: {
-    flex: 1,
-    textAlign: "center",
-    color: Colors.red.color,
-    fontSize: 12,
-  },
-  calorieTextContainer: {
-    position: "absolute",
     justifyContent: "center",
     alignItems: "center",
   },
-  calorieText: {
-    fontSize: 24,
-    fontWeight: "bold",
+  tableCell: {
+    fontSize: 11,
+    textAlign: "center",
   },
-  calorieSubtext: {
-    fontSize: 14,
+  tableCellTitle: {
+    color: Colors.green.color,
+    fontWeight: "500",
+    textAlign: "left",
   },
 });
