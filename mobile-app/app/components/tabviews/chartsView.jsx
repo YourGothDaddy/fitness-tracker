@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors";
 import { PieChart } from "react-native-svg-charts";
 import React from "react";
 
-const Home = () => {
+const ChartsView = () => {
   const caloriesConsumed = 1500;
   const proteinConsumed = 30;
   const carbsConsumed = 5;
@@ -89,16 +89,6 @@ const Home = () => {
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View>
-          <Text className="text-4xl font-pextrabold text-center text-green pt-10">
-            Fitlicious
-          </Text>
-        </View>
-        <View>
-          <Text className="text-2xl font-psemibold text-center text-green pb-10">
-            Charts
-          </Text>
-        </View>
         {/* CHARTS CONTAINER */}
         <View style={styles.chartsContainer}>
           {/* CONSUMED */}
@@ -314,7 +304,7 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default ChartsView;
 
 const styles = StyleSheet.create({
   safeAreaViewContainer: {

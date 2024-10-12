@@ -213,7 +213,7 @@ const SignUp = () => {
     if (currentStage < 4) {
       setCurrentStage(currentStage + 1);
     } else {
-      router.push("/home");
+      router.push("/dashboard");
     }
   };
 

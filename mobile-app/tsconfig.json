@@ -17,7 +17,7 @@
     "app/(auth)/_layout.jsx",
     "app/_layout.jsx",
     "app/(auth)/sign-up.jsx",
-    "app/(tabs)/home.jsx",
+    "app/(tabs)/dashboard.jsx",
     "app/(auth)/sign-in.jsx"
   ]
 }
