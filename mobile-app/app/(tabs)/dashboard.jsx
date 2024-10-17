@@ -10,9 +10,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { Colors } from "@/constants/Colors";
 import GeneralView from "../components/tabviews/generalView";
 import ChartsView from "../components/tabviews/chartsView";
+import TargetsView from "../components/tabviews/targetsView";
 
 const Dashboard = () => {
-  const tabs = ["General", "Charts"];
+  const tabs = ["General", "Charts", "Targets"];
 
   const [activeTab, setActiveTab] = useState("General");
   const translateX = useRef(new Animated.Value(0)).current;
@@ -60,6 +61,8 @@ const Dashboard = () => {
         return <GeneralView />;
       case "Charts":
         return <ChartsView />;
+      case "Targets":
+        return <TargetsView />;
       default:
         return <GeneralView />;
     }

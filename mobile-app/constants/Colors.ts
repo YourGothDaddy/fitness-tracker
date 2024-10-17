@@ -46,6 +46,9 @@ export const Colors = {
     color: "#808080",
   },
   red: {
+    color: "#ff000d",
+  },
+  lightRed: {
     color: "#e57373",
   },
   brightRed: {
