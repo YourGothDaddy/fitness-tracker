@@ -7,18 +7,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
-import React from "react";
+import React, { useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AccountView from "../components/tabviews/more/accountView";
 
-const Tab = ({ icon, title, href }) => {
-  const router = useRouter();
-
+const Tab = ({ icon, title, href, component, onPress }) => {
   return (
-    <TouchableOpacity
-      style={styles.tabContainer}
-      onPress={() => router.push(href)}
-    >
+    <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
       <MaterialIcons name={icon} size={24} />
       <Text style={styles.tabTitle}>{title}</Text>
       <MaterialIcons
@@ -31,6 +27,17 @@ const Tab = ({ icon, title, href }) => {
 };
 
 const More = () => {
+  const [activeComponent, setActiveComponent] = useState(null);
+  const router = useRouter();
+
+  const handleTabPress = (href, Component) => {
+    if (href) {
+      router.push(href);
+    } else if (Component) {
+      setActiveComponent(<Component />);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
       <Text className="text-4xl font-pextrabold text-center text-green pt-10">
@@ -38,10 +45,26 @@ const More = () => {
       </Text>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.tabsContainer}>
-          <Tab icon="account-circle" title="Account" href="/" />
-          <Tab icon="person" title="Profile" href="/" />
-          <Tab icon="flag" title="Targets" href="/" />
+          <Tab
+            icon="account-circle"
+            title="Account"
+            component={AccountView}
+            onPress={() => handleTabPress(null, AccountView)}
+          />
+          <Tab
+            icon="person"
+            title="Profile"
+            href="/"
+            onPress={() => handleTabPress("/", null)}
+          />
+          <Tab
+            icon="flag"
+            title="Targets"
+            href="/"
+            onPress={() => handleTabPress("/", null)}
+          />
         </View>
+        {activeComponent}
       </ScrollView>
     </SafeAreaView>
   );
