@@ -7,12 +7,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
-import React, { useState } from "react";
+import React from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import AccountView from "../components/tabviews/more/accountView";
 
-const Tab = ({ icon, title, href, component, onPress }) => {
+const Tab = ({ icon, title, href, onPress }) => {
   return (
     <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
       <MaterialIcons name={icon} size={24} />
@@ -27,15 +26,13 @@ const Tab = ({ icon, title, href, component, onPress }) => {
 };
 
 const More = () => {
-  const [activeComponent, setActiveComponent] = useState(null);
   const router = useRouter();
 
-  const handleTabPress = (href, Component) => {
-    if (href) {
-      router.push(href);
-    } else if (Component) {
-      setActiveComponent(<Component />);
-    }
+  const handleTabPress = (href) => {
+    router.push({
+      pathname: href,
+      params: { hideHeader: "true" },
+    });
   };
 
   return (
@@ -48,23 +45,26 @@ const More = () => {
           <Tab
             icon="account-circle"
             title="Account"
-            component={AccountView}
-            onPress={() => handleTabPress(null, AccountView)}
+            href="/components/tabviews/more/accountView"
+            onPress={() =>
+              handleTabPress("/components/tabviews/more/accountView")
+            }
           />
           <Tab
             icon="person"
             title="Profile"
-            href="/"
-            onPress={() => handleTabPress("/", null)}
+            href="/profile"
+            onPress={() =>
+              handleTabPress("/components/tabviews/more/profileView")
+            }
           />
           <Tab
             icon="flag"
             title="Targets"
             href="/"
-            onPress={() => handleTabPress("/", null)}
+            onPress={() => handleTabPress("/")}
           />
         </View>
-        {activeComponent}
       </ScrollView>
     </SafeAreaView>
   );
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
   },
-  arrowContainer: {
-    justifyContent: "flex-end",
+  arrowIcon: {
+    marginLeft: "auto",
   },
 });

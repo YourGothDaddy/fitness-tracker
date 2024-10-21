@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -28,74 +27,28 @@ const Field = React.memo(({ title, value, onPress }) => (
 
 const ModalContent = React.memo(
   ({ activeField, fieldValues, onChangeText, onSave }) => {
-    switch (activeField) {
-      case "changePassword":
-        return (
-          <>
-            <Text style={styles.modalTitle}>Change Password</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={fieldValues.newPassword}
-              onChangeText={(text) => onChangeText("newPassword", text)}
-              placeholder="New Password"
-              secureTextEntry
-            />
-            <TextInput
-              style={styles.modalInput}
-              value={fieldValues.confirmNewPassword}
-              onChangeText={(text) => onChangeText("confirmNewPassword", text)}
-              placeholder="Confirm New Password"
-              secureTextEntry
-            />
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() =>
-                onSave({
-                  newPassword: fieldValues.newPassword,
-                  confirmNewPassword: fieldValues.confirmNewPassword,
-                })
-              }
-            >
-              <Text style={styles.modalButtonText}>Save</Text>
-            </TouchableOpacity>
-          </>
-        );
-      case "notifications":
-        return (
-          <>
-            <Text style={styles.modalTitle}>Notifications</Text>
-            <View style={styles.switchContainer}>
-              <Text>Enable Notifications</Text>
-              <Switch
-                value={fieldValues.notifications}
-                onValueChange={(value) => onSave(value)}
-              />
-            </View>
-          </>
-        );
-      default:
-        return (
-          <>
-            <Text style={styles.modalTitle}>{`Enter ${activeField}`}</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={fieldValues[activeField]}
-              onChangeText={(text) => onChangeText(activeField, text)}
-              autoFocus
-            />
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => onSave(fieldValues[activeField])}
-            >
-              <Text style={styles.modalButtonText}>Save</Text>
-            </TouchableOpacity>
-          </>
-        );
-    }
+    return (
+      <>
+        <Text style={styles.modalTitle}>{`Enter ${activeField}`}</Text>
+        <TextInput
+          style={styles.modalInput}
+          value={fieldValues[activeField].toString()}
+          onChangeText={(text) => onChangeText(activeField, text)}
+          keyboardType={activeField === "sex" ? "default" : "numeric"}
+          autoFocus
+        />
+        <TouchableOpacity
+          style={styles.modalButton}
+          onPress={() => onSave(fieldValues[activeField])}
+        >
+          <Text style={styles.modalButtonText}>Save</Text>
+        </TouchableOpacity>
+      </>
+    );
   }
 );
 
-const AccountView = () => {
+const ProfileView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
 
@@ -108,12 +61,12 @@ const AccountView = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [fieldValues, setFieldValues] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    newPassword: "",
-    confirmNewPassword: "",
-    notifications: false,
+    age: "",
+    sex: "",
+    weight: "",
+    height: "",
+    bmi: "",
+    bodyFat: "",
   });
 
   const handleFieldPress = useCallback((field) => {
@@ -124,19 +77,11 @@ const AccountView = () => {
   const handleModalClose = useCallback(
     (newValue) => {
       if (newValue !== undefined) {
-        setFieldValues((prevValues) => {
-          if (activeField === "changePassword") {
-            return {
-              ...prevValues,
-              newPassword: newValue.newPassword,
-              confirmNewPassword: newValue.confirmNewPassword,
-            };
-          } else if (activeField === "notifications") {
-            return { ...prevValues, notifications: newValue };
-          } else {
-            return { ...prevValues, [activeField]: newValue };
-          }
-        });
+        setFieldValues((prevValues) => ({
+          ...prevValues,
+          [activeField]:
+            typeof newValue === "object" ? newValue.nativeEvent.text : newValue,
+        }));
       }
       setModalVisible(false);
     },
@@ -164,12 +109,12 @@ const AccountView = () => {
       <Stack.Screen
         options={{
           headerShown: hideHeader !== "true",
-          title: "Account",
+          title: "Profile",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>
         {hideHeader === "true" && (
-          <View style={styles.header}>
+          <View>
             <Text className="text-4xl font-pextrabold text-center text-green pt-10">
               Fitlicious
             </Text>
@@ -187,15 +132,12 @@ const AccountView = () => {
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.fieldsContainer}>
-            {renderField("Name", fieldValues.name, "name")}
-            {renderField("Email", fieldValues.email, "email")}
-            {renderField("Phone", fieldValues.phone, "phone")}
-            {renderField("Change Password", "********", "changePassword")}
-            {renderField(
-              "Notifications",
-              fieldValues.notifications ? "On" : "Off",
-              "notifications"
-            )}
+            {renderField("Age", fieldValues.age, "age")}
+            {renderField("Sex", fieldValues.sex, "sex")}
+            {renderField("Weight (kg)", fieldValues.weight, "weight")}
+            {renderField("Height (cm)", fieldValues.height, "height")}
+            {renderField("Body Mass Index (BMI)", fieldValues.bmi, "bmi")}
+            {renderField("Body Fat (%)", fieldValues.bodyFat, "bodyFat")}
           </View>
         </ScrollView>
         <Modal
@@ -220,7 +162,7 @@ const AccountView = () => {
   );
 };
 
-export default AccountView;
+export default ProfileView;
 
 const styles = StyleSheet.create({
   backButton: {
@@ -295,11 +237,5 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: Colors.white.color,
     fontWeight: "bold",
-  },
-  switchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
   },
 });

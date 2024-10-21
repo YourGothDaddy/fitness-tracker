@@ -22,41 +22,44 @@ const TabIcon = ({ icon, color, name, focused }) => {
 
 const TabsLayout = () => {
   return (
-    <>
-      <Tabs
-        screenOptions={{
-          tabBarShowLabel: false,
-          tabBarActiveTintColor: Colors.darkGreen.color,
-          tabBarInactiveTintColor: Colors.green.color,
+    <Tabs
+      screenOptions={{
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: Colors.darkGreen.color,
+        tabBarInactiveTintColor: Colors.green.color,
+      }}
+    >
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={icons.home}
+              color={color}
+              name="Dashboard"
+              focused={focused}
+            />
+          ),
         }}
-      >
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: "Dashboard",
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                icon={icons.home}
-                color={color}
-                name="Dashboard"
-                focused={focused}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="more"
-          options={{
-            title: "More",
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon color={color} name="More" focused={focused} />
-            ),
-          }}
-        />
-      </Tabs>
-    </>
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: "More",
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon
+              icon={icons.menu}
+              color={color}
+              name="More"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+    </Tabs>
   );
 };
 
