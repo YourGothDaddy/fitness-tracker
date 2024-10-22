@@ -62,7 +62,9 @@ const More = () => {
             icon="flag"
             title="Targets"
             href="/"
-            onPress={() => handleTabPress("/")}
+            onPress={() =>
+              handleTabPress("/components/tabviews/more/targetsView")
+            }
           />
         </View>
       </ScrollView>

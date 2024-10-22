@@ -54,4 +54,7 @@ export const Colors = {
   brightRed: {
     color: "#ed2100",
   },
+  yellow: {
+    color: "#ffea00",
+  },
 };
