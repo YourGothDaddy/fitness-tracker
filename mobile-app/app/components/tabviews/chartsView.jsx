@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
-import { PieChart } from "react-native-svg-charts";
+import { PieChart } from "react-native-chart-kit";
 import React from "react";
 
 const ChartsView = () => {
@@ -86,33 +86,95 @@ const ChartsView = () => {
     },
   ];
 
+  const screenWidth = Dimensions.get("window").width * 0.9;
+
+  const chartConfig = {
+    backgroundGradientFrom: Colors.lightGreen.color,
+    backgroundGradientTo: Colors.lightGreen.color,
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  };
+
+  const macroData = [
+    {
+      name: "Protein",
+      population: proteinConsumed,
+      color: Colors.green.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "Carbs",
+      population: carbsConsumed,
+      color: Colors.blue.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "Fat",
+      population: fatConsumed,
+      color: Colors.brightRed.color,
+      legendFontColor: "#7F7F7F",
+    },
+  ];
+
+  const burnedChartData = [
+    {
+      name: "BMR",
+      population: bmr,
+      color: Colors.green.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "Exercise",
+      population: exercise,
+      color: Colors.blue.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "Baseline",
+      population: baselineActivity,
+      color: Colors.brightRed.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "TEF",
+      population: tef,
+      color: Colors.red.color,
+      legendFontColor: "#7F7F7F",
+    },
+  ];
+
+  const budgetData = [
+    {
+      name: "Consumed",
+      population: consumed,
+      color: Colors.green.color,
+      legendFontColor: "#7F7F7F",
+    },
+    {
+      name: "Remaining",
+      population: remaining,
+      color: Colors.blue.color,
+      legendFontColor: "#7F7F7F",
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        {/* CHARTS CONTAINER */}
         <View style={styles.chartsContainer}>
           {/* CONSUMED */}
           <View style={styles.chartContainer}>
-            <View>
-              <Text style={styles.chartTitle}>Calories Consumed (kcal)</Text>
-            </View>
+            <Text style={styles.chartTitle}>Calories Consumed (kcal)</Text>
             <View style={styles.chartMainSection}>
-              <View style={styles.pieChartSection}>
-                <PieChart
-                  style={styles.pieChart}
-                  data={consumptionData}
-                  innerRadius="80%"
-                  padAngel={0}
-                >
-                  <View style={styles.pieChartInnerTextContainer}>
-                    <Text>{caloriesConsumed}</Text>
-                    <Text>kcal</Text>
-                  </View>
-                </PieChart>
-                <View style={styles.pieChartOutterTextContainer}>
-                  <Text style={styles.pieChartOutterText}>Consumed</Text>
-                </View>
-              </View>
+              <PieChart
+                data={macroData}
+                width={screenWidth}
+                height={200}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="0"
+                absolute
+              />
               <View style={styles.tableSection}>
                 <View style={styles.tableContainer}>
                   {[
@@ -159,26 +221,18 @@ const ChartsView = () => {
 
           {/* BURNED */}
           <View style={styles.chartContainer}>
-            <View>
-              <Text style={styles.chartTitle}>Calories Burned (kcal)</Text>
-            </View>
+            <Text style={styles.chartTitle}>Calories Burned (kcal)</Text>
             <View style={styles.chartMainSection}>
-              <View style={styles.pieChartSection}>
-                <PieChart
-                  style={styles.pieChart}
-                  data={burnedData}
-                  innerRadius="80%"
-                  padAngel={0}
-                >
-                  <View style={styles.pieChartInnerTextContainer}>
-                    <Text>{totalEnergyBurned}</Text>
-                    <Text>kcal</Text>
-                  </View>
-                </PieChart>
-                <View style={styles.pieChartOutterTextContainer}>
-                  <Text style={styles.pieChartOutterText}>Burned</Text>
-                </View>
-              </View>
+              <PieChart
+                data={burnedChartData}
+                width={screenWidth}
+                height={200}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="0"
+                absolute
+              />
               <View style={styles.tableSection}>
                 <View style={styles.tableContainer}>
                   {[
@@ -233,26 +287,18 @@ const ChartsView = () => {
 
           {/* REMAINING */}
           <View style={styles.chartContainer}>
-            <View>
-              <Text style={styles.chartTitle}>Energy Budget (kcal)</Text>
-            </View>
+            <Text style={styles.chartTitle}>Energy Budget (kcal)</Text>
             <View style={styles.chartMainSection}>
-              <View style={styles.pieChartSection}>
-                <PieChart
-                  style={styles.pieChart}
-                  data={energyBudgetData}
-                  innerRadius="80%"
-                  padAngel={0}
-                >
-                  <View style={styles.pieChartInnerTextContainer}>
-                    <Text>{remaining}</Text>
-                    <Text>kcal</Text>
-                  </View>
-                </PieChart>
-                <View style={styles.pieChartOutterTextContainer}>
-                  <Text style={styles.pieChartOutterText}>Remaining</Text>
-                </View>
-              </View>
+              <PieChart
+                data={budgetData}
+                width={screenWidth}
+                height={200}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="0"
+                absolute
+              />
               <View style={styles.tableSection}>
                 <View style={styles.tableContainer}>
                   {[
@@ -334,14 +380,14 @@ const styles = StyleSheet.create({
   },
   chartTitle: {},
   chartMainSection: {
-    flexDirection: "row",
-    height: "70%",
+    flexDirection: "column",
+    alignItems: "center",
+    height: "auto",
   },
   pieChartSection: {
-    flex: 0.7,
+    width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    height: "100%",
   },
   pieChart: {
     height: "90%",

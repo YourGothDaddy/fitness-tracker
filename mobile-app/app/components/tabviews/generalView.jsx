@@ -1,15 +1,8 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
-import {
-  StackedBarChart,
-  XAxis,
-  YAxis,
-  Grid,
-  LineChart,
-} from "react-native-svg-charts";
-import { G, Line } from "react-native-svg";
+import { BarChart, LineChart } from "react-native-chart-kit";
 
 const GeneralView = () => {
   const calorieData = [
@@ -26,77 +19,38 @@ const GeneralView = () => {
   const minWeight = Math.min(...weightData) - 5;
   const maxWeight = Math.max(...weightData);
 
-  const colors = [Colors.green.color, Colors.red.color, Colors.blue.color];
-  const keys = ["protein", "fats", "carbs"];
+  const screenWidth = Dimensions.get("window").width * 0.85;
 
-  const renderYAxis = (data, min, max) => (
-    <YAxis
-      data={data}
-      contentInset={{ top: 10, bottom: 10 }}
-      svg={{ fill: "grey", fontSize: 10 }}
-      numberOfTicks={5}
-      min={min}
-      max={max}
-      formatLabel={(value) => `${value}`}
-    />
-  );
+  const chartConfig = {
+    backgroundColor: Colors.lightGreen.color,
+    backgroundGradientFrom: Colors.lightGreen.color,
+    backgroundGradientTo: Colors.lightGreen.color,
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+  };
 
-  const renderStackedBarChart = () => (
-    <StackedBarChart
-      style={styles.stackedBarChart}
-      data={calorieData}
-      keys={keys}
-      colors={colors}
-      showGrid={false}
-      contentInset={{ top: 10, bottom: 10 }}
-      spacingInner={0.8}
-      spacingOuter={0.4}
-    >
-      <Grid direction={Grid.Direction.HORIZONTAL} />
-      <G>
-        <Line
-          x1="0%"
-          x2="100%"
-          y1="0%"
-          y2="0%"
-          stroke="grey"
-          strokeWidth={0.5}
-        />
-      </G>
-    </StackedBarChart>
-  );
+  const barData = {
+    labels: calorieData.map((item) => item.date),
+    datasets: [
+      {
+        data: calorieData.map((item) => item.protein + item.fats + item.carbs),
+      },
+    ],
+  };
 
-  const renderLineChart = () => (
-    <LineChart
-      style={styles.lineChart}
-      data={weightData}
-      svg={{ stroke: Colors.darkGreen.color, strokeWidth: 2 }}
-      contentInset={{ top: 10, bottom: 10 }}
-      yMin={minWeight}
-      yMax={maxWeight}
-    >
-      <Grid direction={Grid.Direction.HORIZONTAL} />
-    </LineChart>
-  );
-
-  const renderXAxis = () => (
-    <XAxis
-      style={styles.xAxis}
-      data={calorieData}
-      formatLabel={(value, index) => {
-        if (
-          index === 0 ||
-          index === Math.floor(calorieData.length / 2) ||
-          index === calorieData.length - 1
-        ) {
-          return calorieData[index].date;
-        }
-        return "";
-      }}
-      contentInset={{ left: 20, right: 20 }}
-      svg={{ fontSize: 10, fill: "black" }}
-    />
-  );
+  const lineData = {
+    labels: calorieData.map((item) => item.date),
+    datasets: [
+      {
+        data: weightData,
+        color: (opacity = 1) => Colors.darkGreen.color,
+      },
+    ],
+  };
 
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
@@ -104,31 +58,32 @@ const GeneralView = () => {
         <View style={styles.historiesContainer}>
           <View style={styles.historyContainer}>
             <Text>Calorie History</Text>
-            <View style={styles.chartContainer}>
-              {renderYAxis([0, 500, 1000, 1500], 0, 1500)}
-              <View style={styles.barChartContainer}>
-                {renderStackedBarChart()}
-                {renderXAxis()}
-              </View>
-            </View>
+            <BarChart
+              data={barData}
+              width={screenWidth}
+              height={220}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              showValuesOnTopOfBars
+            />
           </View>
+
           <View style={styles.historyContainer}>
             <Text>Weight History</Text>
-            <View style={styles.chartContainer}>
-              {renderYAxis(weightData, minWeight, maxWeight)}
-              <View style={styles.barChartContainer}>
-                {renderLineChart()}
-                {renderXAxis()}
-              </View>
-            </View>
+            <LineChart
+              data={lineData}
+              width={screenWidth}
+              height={220}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              bezier
+            />
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-export default GeneralView;
 
 const styles = StyleSheet.create({
   safeAreaViewContainer: {
@@ -142,33 +97,17 @@ const styles = StyleSheet.create({
     width: "90%",
   },
   historyContainer: {
-    flex: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
-    maxHeight: 300,
+    marginBottom: 20,
+    padding: 10,
     backgroundColor: Colors.lightGreen.color,
     borderWidth: 0.3,
     borderRadius: 15,
     borderColor: Colors.darkGreen.color,
-    justifyContent: "center",
   },
-  chartContainer: {
-    flexDirection: "row",
-    height: 200,
-    padding: 10,
-  },
-  barChartContainer: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  stackedBarChart: {
-    flex: 1,
-  },
-  lineChart: {
-    flex: 1,
-  },
-  xAxis: {
-    marginHorizontal: -10,
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
 });
+
+export default GeneralView;
