@@ -72,7 +72,14 @@ const TargetsView = () => {
                 handleTabPress("/components/tabviews/more/targets/macroView")
               }
             />
-            <Tab title="Energy Settings" onPress={() => handleTabPress("/")} />
+            <Tab
+              title="Energy Settings"
+              onPress={() =>
+                handleTabPress(
+                  "/components/tabviews/more/targets/energySettingsView"
+                )
+              }
+            />
             <Tab title="Nutrient Targets" onPress={() => handleTabPress("/")} />
           </View>
         </ScrollView>
