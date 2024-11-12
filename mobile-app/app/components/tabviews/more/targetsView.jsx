@@ -80,7 +80,14 @@ const TargetsView = () => {
                 )
               }
             />
-            <Tab title="Nutrient Targets" onPress={() => handleTabPress("/")} />
+            <Tab
+              title="Nutrient Targets"
+              onPress={() =>
+                handleTabPress(
+                  "/components/tabviews/more/targets/nutrientTargetsView"
+                )
+              }
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
