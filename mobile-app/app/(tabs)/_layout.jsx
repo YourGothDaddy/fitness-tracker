@@ -11,6 +11,7 @@ import { icons } from "../../constants";
 import { Colors } from "../../constants/Colors";
 import React from "react";
 import { BlurView } from "expo-blur";
+import { useRouter } from "expo-router";
 
 const TabIcon = ({ icon, color, name, focused, size }) => {
   return (
@@ -34,6 +35,7 @@ const TabsLayout = () => {
   const [showAddMenu, setShowAddMenu] = React.useState(false);
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
   const showMenu = () => {
     setShowAddMenu(true);
@@ -66,6 +68,16 @@ const TabsLayout = () => {
         useNativeDriver: true,
       }),
     ]).start(() => setShowAddMenu(false));
+  };
+
+  const handleTrackMeal = () => {
+    hideMenu();
+    router.push("/components/tabviews/add/trackMealView");
+  };
+
+  const handleLogWorkout = () => {
+    hideMenu();
+    router.push("/components/tabviews/add/trackExerciseView");
   };
 
   return (
@@ -158,7 +170,7 @@ const TabsLayout = () => {
 
             <Pressable
               style={styles.menuItem}
-              onPress={hideMenu}
+              onPress={handleTrackMeal}
               android_ripple={{ color: "rgba(0,0,0,0.1)" }}
             >
               <View
@@ -188,7 +200,7 @@ const TabsLayout = () => {
 
             <Pressable
               style={styles.menuItem}
-              onPress={hideMenu}
+              onPress={handleLogWorkout}
               android_ripple={{ color: "rgba(0,0,0,0.1)" }}
             >
               <View
