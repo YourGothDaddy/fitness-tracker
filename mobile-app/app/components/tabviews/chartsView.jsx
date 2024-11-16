@@ -1,8 +1,17 @@
-import { View, Text, ScrollView, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
 import { PieChart } from "react-native-chart-kit";
 import React from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons } from "@expo/vector-icons";
 
 const ChartsView = () => {
   const caloriesConsumed = 1500;
@@ -158,284 +167,373 @@ const ChartsView = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.safeAreaViewContainer}>
-      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={styles.chartsContainer}>
-          {/* CONSUMED */}
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>Calories Consumed (kcal)</Text>
-            <View style={styles.chartMainSection}>
-              <PieChart
-                data={macroData}
-                width={screenWidth}
-                height={200}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                absolute
-              />
-              <View style={styles.tableSection}>
-                <View style={styles.tableContainer}>
-                  {[
-                    {
-                      title: "Protein",
-                      value: proteinConsumed,
-                      percentage: proteinPercentage,
-                    },
-                    {
-                      title: "Carbs",
-                      value: carbsConsumed,
-                      percentage: carbsPercentage,
-                    },
-                    {
-                      title: "Fat",
-                      value: fatConsumed,
-                      percentage: fatPercentage,
-                    },
-                  ].map((row, index, array) => (
-                    <View
-                      key={row.title}
-                      style={[
-                        styles.tableRow,
-                        index !== array.length - 1 && styles.tableRowWithBorder,
-                      ]}
-                    >
-                      <View style={styles.tableCellContainer}>
-                        <Text style={[styles.tableCellTitle, styles.tableCell]}>
-                          {row.title}
-                        </Text>
-                      </View>
-                      <View style={styles.tableCellContainer}>
-                        <Text style={styles.tableCell}>{row.value}</Text>
-                      </View>
-                      <View style={styles.tableCellContainer}>
-                        <Text style={styles.tableCell}>{row.percentage}%</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* BURNED */}
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>Calories Burned (kcal)</Text>
-            <View style={styles.chartMainSection}>
-              <PieChart
-                data={burnedChartData}
-                width={screenWidth}
-                height={200}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                absolute
-              />
-              <View style={styles.tableSection}>
-                <View style={styles.tableContainer}>
-                  {[
-                    {
-                      title: "BMR",
-                      value: bmr,
-                      percentage: bmrPercentage,
-                    },
-                    {
-                      title: "Exercise",
-                      value: exercise,
-                      percentage: exercisePercentage,
-                    },
-                    {
-                      title: "Baseline Activity",
-                      value: baselineActivity,
-                      percentage: baselineActivityPercentage,
-                    },
-                    {
-                      title: "TEF",
-                      value: tef,
-                      percentage: tefPercentage,
-                    },
-                  ].map((row, index, array) => (
-                    <View
-                      key={row.title}
-                      style={[
-                        styles.tableRow,
-                        index !== array.length - 1 && styles.tableRowWithBorder,
-                      ]}
-                    >
-                      <View style={[styles.tableCellContainer, { flex: 2 }]}>
-                        <Text
-                          style={[styles.tableCellTitle, styles.tableCell]}
-                          numberOfLines={2}
-                        >
-                          {row.title}
-                        </Text>
-                      </View>
-                      <View style={styles.tableCellContainer}>
-                        <Text style={styles.tableCell}>{row.value}</Text>
-                      </View>
-                      <View style={styles.tableCellContainer}>
-                        <Text style={styles.tableCell}>{row.percentage}%</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* REMAINING */}
-          <View style={styles.chartContainer}>
-            <Text style={styles.chartTitle}>Energy Budget (kcal)</Text>
-            <View style={styles.chartMainSection}>
-              <PieChart
-                data={budgetData}
-                width={screenWidth}
-                height={200}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                absolute
-              />
-              <View style={styles.tableSection}>
-                <View style={styles.tableContainer}>
-                  {[
-                    {
-                      title: "Target",
-                      value: target,
-                    },
-                    {
-                      title: "Exercise Above Baseline",
-                      value: exerciseAboveBaseline,
-                    },
-                    {
-                      title: "TEF",
-                      value: tef,
-                    },
-                    {
-                      title: "Consumed",
-                      value: consumed,
-                    },
-                    {
-                      title: "Remaining",
-                      value: remaining,
-                    },
-                  ].map((row, index, array) => (
-                    <View
-                      key={row.title}
-                      style={[
-                        styles.tableRow,
-                        index !== array.length - 1 && styles.tableRowWithBorder,
-                      ]}
-                    >
-                      <View style={styles.tableCellContainer}>
-                        <Text style={[styles.tableCellTitle, styles.tableCell]}>
-                          {row.title}
-                        </Text>
-                      </View>
-                      <View style={styles.tableCellContainer}>
-                        <Text style={styles.tableCell}>{row.value}</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-          </View>
+    <View style={styles.container}>
+      {/* Macronutrients Card */}
+      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="pie-chart" size={24} color="#619819" />
+          <Text style={styles.cardTitle}>Macronutrients</Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        <View style={styles.chartSection}>
+          <PieChart
+            data={macroData}
+            width={screenWidth * 0.85}
+            height={180}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="0"
+            absolute
+          />
+        </View>
+
+        <View style={styles.macroDetailsContainer}>
+          {[
+            {
+              title: "Protein",
+              value: proteinConsumed,
+              percentage: proteinPercentage,
+              color: Colors.green.color,
+              icon: "fitness-center",
+            },
+            {
+              title: "Carbs",
+              value: carbsConsumed,
+              percentage: carbsPercentage,
+              color: Colors.blue.color,
+              icon: "grain",
+            },
+            {
+              title: "Fat",
+              value: fatConsumed,
+              percentage: fatPercentage,
+              color: Colors.brightRed.color,
+              icon: "opacity",
+            },
+          ].map((macro, index) => (
+            <View key={macro.title} style={styles.macroRow}>
+              <View style={styles.macroIconContainer}>
+                <LinearGradient
+                  colors={[macro.color, shadeColor(macro.color, 20)]}
+                  style={styles.macroIconGradient}
+                >
+                  <MaterialIcons name={macro.icon} size={20} color="white" />
+                </LinearGradient>
+              </View>
+              <View style={styles.macroInfo}>
+                <Text style={styles.macroTitle}>{macro.title}</Text>
+                <Text style={styles.macroValue}>{macro.value}g</Text>
+              </View>
+              <View style={styles.percentageContainer}>
+                <Text style={styles.percentageText}>{macro.percentage}%</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+
+      {/* Energy Expenditure Card */}
+      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons
+            name="local-fire-department"
+            size={24}
+            color="#619819"
+          />
+          <Text style={styles.cardTitle}>Energy Expenditure</Text>
+        </View>
+
+        <View style={styles.chartSection}>
+          <PieChart
+            data={burnedChartData}
+            width={screenWidth * 0.85}
+            height={180}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="0"
+            absolute
+          />
+        </View>
+
+        <View style={styles.energyDetailsContainer}>
+          {[
+            {
+              title: "BMR",
+              value: bmr,
+              percentage: bmrPercentage,
+              color: Colors.green.color,
+              icon: "battery-charging-full",
+            },
+            {
+              title: "Exercise",
+              value: exercise,
+              percentage: exercisePercentage,
+              color: Colors.blue.color,
+              icon: "directions-run",
+            },
+            {
+              title: "Activity",
+              value: baselineActivity,
+              percentage: baselineActivityPercentage,
+              color: Colors.brightRed.color,
+              icon: "directions-walk",
+            },
+            {
+              title: "TEF",
+              value: tef,
+              percentage: tefPercentage,
+              color: Colors.red.color,
+              icon: "whatshot",
+            },
+          ].map((item) => (
+            <View key={item.title} style={styles.energyRow}>
+              <View style={styles.energyIconContainer}>
+                <LinearGradient
+                  colors={[item.color, shadeColor(item.color, 20)]}
+                  style={styles.energyIconGradient}
+                >
+                  <MaterialIcons name={item.icon} size={20} color="white" />
+                </LinearGradient>
+              </View>
+              <View style={styles.energyInfo}>
+                <Text style={styles.energyTitle}>{item.title}</Text>
+                <Text style={styles.energyValue}>{item.value} kcal</Text>
+              </View>
+              <View style={styles.percentageContainer}>
+                <Text style={styles.percentageText}>{item.percentage}%</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+
+      {/* Energy Budget Card */}
+      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="account-balance" size={24} color="#619819" />
+          <Text style={styles.cardTitle}>Energy Budget</Text>
+        </View>
+
+        <View style={styles.chartSection}>
+          <PieChart
+            data={budgetData}
+            width={screenWidth * 0.85}
+            height={180}
+            chartConfig={chartConfig}
+            accessor="population"
+            backgroundColor="transparent"
+            paddingLeft="0"
+            absolute
+          />
+        </View>
+
+        <View style={styles.budgetDetailsContainer}>
+          {[
+            {
+              title: "Target",
+              value: target,
+              icon: "flag",
+              color: Colors.darkGreen.color,
+            },
+            {
+              title: "Consumed",
+              value: consumed,
+              icon: "restaurant",
+              color: Colors.green.color,
+            },
+            {
+              title: "Remaining",
+              value: remaining,
+              icon: "hourglass-empty",
+              color: Colors.blue.color,
+            },
+          ].map((item) => (
+            <View key={item.title} style={styles.budgetRow}>
+              <View style={styles.budgetIconContainer}>
+                <LinearGradient
+                  colors={[item.color, shadeColor(item.color, 20)]}
+                  style={styles.budgetIconGradient}
+                >
+                  <MaterialIcons name={item.icon} size={20} color="white" />
+                </LinearGradient>
+              </View>
+              <View style={styles.budgetInfo}>
+                <Text style={styles.budgetTitle}>{item.title}</Text>
+                <Text style={styles.budgetValue}>{item.value} kcal</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+    </View>
   );
 };
 
-export default ChartsView;
-
 const styles = StyleSheet.create({
-  safeAreaViewContainer: {
+  container: {
     flex: 1,
+    gap: 20,
   },
-  scrollViewContainer: {
-    flexGrow: 1,
-    alignItems: "center",
+  card: {
+    borderRadius: 20,
+    padding: 20,
+    backgroundColor: "#ffffff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  // CHART
-  chartsContainer: {
-    width: "90%",
-  },
-  chartContainer: {
-    flex: 1,
-    marginBottom: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
-    maxHeight: 300,
-
-    backgroundColor: Colors.lightGreen.color,
-
-    borderWidth: 0.3,
-    borderRadius: 15,
-    borderColor: Colors.darkGreen.color,
-    justifyContent: "center",
-  },
-  chartTitle: {},
-  chartMainSection: {
-    flexDirection: "column",
-    alignItems: "center",
-    height: "auto",
-  },
-  pieChartSection: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pieChart: {
-    height: "90%",
-    width: "90%",
-    maxHeight: 150,
-  },
-  pieChartInnerTextContainer: {
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pieChartOutterText: {
-    position: "relative",
-    textAlign: "center",
-  },
-  // TABLE
-  tableSection: {
-    flex: 1,
-    justifyContent: "center",
-    paddingLeft: 10,
-  },
-  tableContainer: {
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: Colors.darkGreen.color,
-    padding: 5,
-  },
-  tableRow: {
+  cardHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: 20,
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 10,
   },
-  tableRowWithBorder: {
-    borderBottomWidth: 1,
-    borderColor: Colors.darkGreen.color,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
   },
-  tableCellContainer: {
-    flex: 1,
+  chartSection: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  macroDetailsContainer: {
+    gap: 12,
+  },
+  macroRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+  },
+  macroIconContainer: {
+    marginRight: 12,
+  },
+  macroIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
-  tableCell: {
-    fontSize: 11,
-    textAlign: "center",
+  macroInfo: {
+    flex: 1,
   },
-  tableCellTitle: {
-    color: Colors.green.color,
+  macroTitle: {
+    fontSize: 16,
     fontWeight: "500",
-    textAlign: "left",
+    color: "#2d3436",
+  },
+  macroValue: {
+    fontSize: 14,
+    color: "#636e72",
+  },
+  percentageContainer: {
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  percentageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#619819",
+  },
+  energyDetailsContainer: {
+    gap: 12,
+  },
+  energyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+  },
+  energyIconContainer: {
+    marginRight: 12,
+  },
+  energyIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  energyInfo: {
+    flex: 1,
+  },
+  energyTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#2d3436",
+  },
+  energyValue: {
+    fontSize: 14,
+    color: "#636e72",
+  },
+  budgetDetailsContainer: {
+    gap: 12,
+  },
+  budgetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+  },
+  budgetIconContainer: {
+    marginRight: 12,
+  },
+  budgetIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  budgetInfo: {
+    flex: 1,
+  },
+  budgetTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#2d3436",
+  },
+  budgetValue: {
+    fontSize: 14,
+    color: "#636e72",
   },
 });
+
+// Helper function to darken/lighten colors
+const shadeColor = (color, percent) => {
+  const num = parseInt(color.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+  return `#${(
+    0x1000000 +
+    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+    (B < 255 ? (B < 1 ? 0 : B) : 255)
+  )
+    .toString(16)
+    .slice(1)}`;
+};
+
+export default ChartsView;

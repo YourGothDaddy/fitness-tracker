@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "../../../constants/Colors";
+import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
+import { Colors } from "../../../constants/Colors";
 
 const TargetsView = () => {
   const categories = {
@@ -195,177 +196,266 @@ const TargetsView = () => {
 
   console.log("Colors object:", Colors);
 
+  const renderProgressBar = (consumed, required) => {
+    const percentage = Math.min((consumed / required) * 100, 100);
+    return (
+      <View style={styles.progressBarContainer}>
+        <View style={styles.progressBar}>
+          <LinearGradient
+            colors={
+              percentage > 90 ? ["#ff7675", "#d63031"] : ["#8cc63f", "#619819"]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${percentage}%` }]}
+          />
+        </View>
+        <Text style={styles.progressText}>{percentage.toFixed(0)}%</Text>
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.safeAreaViewContainer}>
-      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={styles.targetsContainer}>
-          {/* First targetContainer for main data */}
-          <View style={styles.targetContainer}>
-            <Text style={styles.categoryLabel}>Main Targets</Text>
-            {data.map((item, index) => {
-              const percentage = (
-                (item.consumed / item.required) *
-                100
-              ).toFixed(0);
+    <View style={styles.container}>
+      {/* Main Targets Card */}
+      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.mainCard}>
+        <View style={styles.cardHeader}>
+          <MaterialIcons name="stars" size={24} color="#619819" />
+          <Text style={styles.cardTitle}>Main Targets</Text>
+        </View>
+
+        {data.map((item, index) => (
+          <View key={index} style={styles.mainTargetRow}>
+            <View style={styles.targetIconContainer}>
+              <LinearGradient
+                colors={[item.color, shadeColor(item.color, 20)]}
+                style={styles.targetIconGradient}
+              >
+                <MaterialIcons
+                  name={
+                    item.label === "Energy"
+                      ? "local-fire-department"
+                      : item.label === "Protein"
+                      ? "fitness-center"
+                      : item.label === "Net Carbs"
+                      ? "grain"
+                      : "opacity"
+                  }
+                  size={20}
+                  color="white"
+                />
+              </LinearGradient>
+            </View>
+            <View style={styles.targetInfo}>
+              <Text style={styles.targetLabel}>{item.label}</Text>
+              <Text style={styles.targetValues}>
+                {item.consumed}/{item.required}{" "}
+                {item.label === "Energy" ? "kcal" : "g"}
+              </Text>
+            </View>
+            {renderProgressBar(item.consumed, item.required)}
+          </View>
+        ))}
+      </LinearGradient>
+
+      {/* Category Cards */}
+      {Object.entries(categories).map(([category, nutrients], catIndex) => (
+        <LinearGradient
+          key={catIndex}
+          colors={["#ffffff", "#f8faf5"]}
+          style={styles.categoryCard}
+        >
+          <View style={styles.cardHeader}>
+            <MaterialIcons
+              name={
+                category === "Carbohydrates"
+                  ? "grain"
+                  : category === "AminoAcids"
+                  ? "science"
+                  : category === "Fats"
+                  ? "opacity"
+                  : category === "Minerals"
+                  ? "diamond"
+                  : category === "Vitamins"
+                  ? "medication"
+                  : category === "Sterols"
+                  ? "biotech"
+                  : "category"
+              }
+              size={24}
+              color="#619819"
+            />
+            <Text style={styles.cardTitle}>{category}</Text>
+          </View>
+
+          <View style={styles.nutrientsGrid}>
+            {nutrients.map((nutrient, index) => {
+              const item = sampleData.find((d) => d.label === nutrient) || {
+                label: nutrient,
+                consumed: 0,
+                required: 100,
+              };
+
               return (
-                <View key={index} style={styles.mainRowContainer}>
-                  <Text style={styles.rowLabel}>
-                    {item.label}: {item.consumed}/{item.required}{" "}
-                    {item.label === "Energy" ? "kcal" : "g"}
+                <View key={index} style={styles.nutrientItem}>
+                  <Text style={styles.nutrientLabel}>{nutrient}</Text>
+                  <Text style={styles.nutrientValues}>
+                    {item.consumed}/{item.required}g
                   </Text>
-                  <View style={styles.rowBarContainer}>
-                    <View style={styles.rowBar}>
-                      <View
-                        style={[
-                          styles.rowFill,
-                          {
-                            width: `${percentage}%`,
-                            backgroundColor: Colors.green.color,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.rowPercentage}>{percentage}%</Text>
-                  </View>
+                  {renderProgressBar(item.consumed, item.required)}
                 </View>
               );
             })}
           </View>
-
-          {/* Additional targetContainers for each category */}
-          {Object.entries(categories).map(([category, nutrients], catIndex) => (
-            <View key={catIndex} style={styles.compactTargetContainer}>
-              <Text style={styles.categoryLabel}>{category}</Text>
-              {nutrients
-                .reduce((result, nutrient, index) => {
-                  if (index % 2 === 0) {
-                    result.push(nutrients.slice(index, index + 2));
-                  }
-                  return result;
-                }, [])
-                .map((pair, pairIndex) => (
-                  <View key={pairIndex} style={styles.rowContainer}>
-                    {pair.map((nutrient, index) => {
-                      const item = sampleData.find(
-                        (d) => d.label === nutrient
-                      ) || {
-                        label: nutrient,
-                        consumed: 0,
-                        required: 100,
-                      };
-
-                      const percentage = (
-                        (item.consumed / item.required) *
-                        100
-                      ).toFixed(0);
-                      return (
-                        <View key={index} style={styles.halfRowContainer}>
-                          <Text style={styles.rowLabel}>
-                            {item.label}: {item.consumed}/{item.required}{" "}
-                            {item.label === "Energy" ? "kcal" : "g"}
-                          </Text>
-                          <View style={styles.rowBarContainer}>
-                            <View style={styles.rowBar}>
-                              <View
-                                style={[
-                                  styles.rowFill,
-                                  {
-                                    width: `${percentage}%`,
-                                    backgroundColor: Colors.green.color,
-                                  },
-                                ]}
-                              />
-                            </View>
-                            <Text style={styles.rowPercentage}>
-                              {percentage}%
-                            </Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ))}
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </LinearGradient>
+      ))}
+    </View>
   );
 };
 
-export default TargetsView;
-
 const styles = StyleSheet.create({
-  safeAreaViewContainer: {
+  container: {
     flex: 1,
+    gap: 20,
   },
-  scrollViewContainer: {
-    flexGrow: 1,
+  mainCard: {
+    borderRadius: 20,
+    padding: 20,
+    backgroundColor: "#ffffff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  categoryCard: {
+    borderRadius: 20,
+    padding: 20,
+    backgroundColor: "#ffffff",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  cardHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-  },
-  targetsContainer: {
-    width: "90%",
-  },
-  targetContainer: {
-    flex: 1,
     marginBottom: 20,
-    padding: 10,
-    backgroundColor: Colors.lightGreen.color,
-    borderWidth: 0.3,
-    borderRadius: 15,
-    borderColor: Colors.darkGreen.color,
-    justifyContent: "center",
+    gap: 10,
   },
-  compactTargetContainer: {
-    flex: 1,
-    marginBottom: 10,
-    padding: 5,
-    backgroundColor: Colors.lightGreen.color,
-    borderWidth: 0.3,
-    borderRadius: 10,
-    borderColor: Colors.darkGreen.color,
-    justifyContent: "center",
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
   },
-  categoryLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: Colors.darkGreen.color,
-    marginBottom: 5,
-  },
-  mainRowContainer: {
-    marginVertical: 5,
-  },
-  rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 5,
-  },
-  halfRowContainer: {
-    flex: 0.48,
-  },
-  rowLabel: {
-    fontSize: 14,
-    color: Colors.darkGreen.color,
-    marginBottom: 5,
-  },
-  rowBarContainer: {
+  mainTargetRow: {
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+    marginBottom: 12,
   },
-  rowBar: {
+  targetIconContainer: {
+    marginRight: 12,
+  },
+  targetIconGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  targetInfo: {
     flex: 1,
-    height: 10,
-    backgroundColor: Colors.gray.color,
-    borderRadius: 10,
-    overflow: "hidden",
-    marginRight: 10,
+    marginRight: 12,
   },
-  rowFill: {
-    height: "100%",
+  targetLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#2d3436",
   },
-  rowPercentage: {
+  targetValues: {
     fontSize: 14,
-    color: Colors.darkGreen.color,
+    color: "#636e72",
+  },
+  progressBarContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#619819",
+    width: 40,
+    textAlign: "right",
+  },
+  nutrientsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  nutrientItem: {
+    width: "48%",
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+    padding: 12,
+  },
+  nutrientLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2d3436",
+    marginBottom: 4,
+  },
+  nutrientValues: {
+    fontSize: 12,
+    color: "#636e72",
+    marginBottom: 8,
   },
 });
+
+// Helper function to darken/lighten colors
+const shadeColor = (color, percent) => {
+  const num = parseInt(color.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+  return `#${(
+    0x1000000 +
+    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+    (B < 255 ? (B < 1 ? 0 : B) : 255)
+  )
+    .toString(16)
+    .slice(1)}`;
+};
+
+export default TargetsView;
