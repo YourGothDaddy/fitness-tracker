@@ -13,13 +13,26 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 
-const Field = React.memo(({ title, value, onPress }) => (
-  <TouchableOpacity style={styles.fieldContainer} onPress={onPress}>
-    <Text style={styles.fieldTitle}>{title}</Text>
-    <Text style={styles.fieldValue}>{value}</Text>
+const Field = React.memo(({ title, value, onPress, icon, unit }) => (
+  <TouchableOpacity
+    style={styles.fieldContainer}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.fieldIconContainer}>
+      <MaterialIcons name={icon} size={24} color={Colors.darkGreen.color} />
+    </View>
+    <View style={styles.fieldTextContainer}>
+      <Text style={styles.fieldTitle}>{title}</Text>
+      <View style={styles.valueContainer}>
+        <Text style={styles.fieldValue}>{value || "–"}</Text>
+        {unit && <Text style={styles.unitText}>{unit}</Text>}
+      </View>
+    </View>
     <MaterialIcons
-      name="arrow-forward-ios"
+      name="chevron-right"
       size={24}
+      color={Colors.darkGreen.color}
       style={styles.arrowIcon}
     />
   </TouchableOpacity>
@@ -27,6 +40,66 @@ const Field = React.memo(({ title, value, onPress }) => (
 
 const ModalContent = React.memo(
   ({ activeField, fieldValues, onChangeText, onSave }) => {
+    if (activeField === "sex") {
+      return (
+        <>
+          <Text style={styles.modalTitle}>Select Sex</Text>
+          <View style={styles.sexButtonsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.sexButton,
+                fieldValues.sex === "Male" && styles.sexButtonSelected,
+              ]}
+              onPress={() => onSave("Male")}
+            >
+              <MaterialIcons
+                name="male"
+                size={24}
+                color={
+                  fieldValues.sex === "Male"
+                    ? Colors.white.color
+                    : Colors.darkGreen.color
+                }
+              />
+              <Text
+                style={[
+                  styles.sexButtonText,
+                  fieldValues.sex === "Male" && styles.sexButtonTextSelected,
+                ]}
+              >
+                Male
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.sexButton,
+                fieldValues.sex === "Female" && styles.sexButtonSelected,
+              ]}
+              onPress={() => onSave("Female")}
+            >
+              <MaterialIcons
+                name="female"
+                size={24}
+                color={
+                  fieldValues.sex === "Female"
+                    ? Colors.white.color
+                    : Colors.darkGreen.color
+                }
+              />
+              <Text
+                style={[
+                  styles.sexButtonText,
+                  fieldValues.sex === "Female" && styles.sexButtonTextSelected,
+                ]}
+              >
+                Female
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      );
+    }
+
     return (
       <>
         <Text style={styles.modalTitle}>{`Enter ${activeField}`}</Text>
@@ -34,7 +107,7 @@ const ModalContent = React.memo(
           style={styles.modalInput}
           value={fieldValues[activeField].toString()}
           onChangeText={(text) => onChangeText(activeField, text)}
-          keyboardType={activeField === "sex" ? "default" : "numeric"}
+          keyboardType="numeric"
           autoFocus
         />
         <TouchableOpacity
@@ -93,11 +166,13 @@ const ProfileView = () => {
   }, []);
 
   const renderField = useCallback(
-    (title, value, field) => (
+    (title, value, field, icon, unit) => (
       <Field
         key={field}
         title={title}
         value={value}
+        icon={icon}
+        unit={unit}
         onPress={() => handleFieldPress(field)}
       />
     ),
@@ -110,11 +185,19 @@ const ProfileView = () => {
         options={{
           headerShown: hideHeader !== "true",
           title: "Profile",
+          headerStyle: {
+            backgroundColor: Colors.white.color,
+          },
+          headerTitleStyle: {
+            color: Colors.darkGreen.color,
+            fontSize: 24,
+            fontWeight: "bold",
+          },
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>
         {hideHeader === "true" && (
-          <View>
+          <View style={styles.header}>
             <Text className="text-4xl font-pextrabold text-center text-green pt-10">
               Fitlicious
             </Text>
@@ -131,33 +214,85 @@ const ProfileView = () => {
           </View>
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-          <View style={styles.fieldsContainer}>
-            {renderField("Age", fieldValues.age, "age")}
-            {renderField("Sex", fieldValues.sex, "sex")}
-            {renderField("Weight (kg)", fieldValues.weight, "weight")}
-            {renderField("Height (cm)", fieldValues.height, "height")}
-            {renderField("Body Mass Index (BMI)", fieldValues.bmi, "bmi")}
-            {renderField("Body Fat (%)", fieldValues.bodyFat, "bodyFat")}
-          </View>
-        </ScrollView>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => handleModalClose()}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <ModalContent
-                activeField={activeField}
-                fieldValues={fieldValues}
-                onChangeText={handleChangeText}
-                onSave={handleModalClose}
-              />
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{fieldValues.bmi || "–"}</Text>
+              <Text style={styles.statLabel}>BMI</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>
+                {fieldValues.bodyFat || "–"}%
+              </Text>
+              <Text style={styles.statLabel}>Body Fat</Text>
             </View>
           </View>
-        </Modal>
+
+          <View style={styles.sectionTitle}>
+            <MaterialIcons
+              name="person-outline"
+              size={24}
+              color={Colors.darkGreen.color}
+            />
+            <Text style={styles.sectionTitleText}>Basic Information</Text>
+          </View>
+
+          <View style={styles.fieldsContainer}>
+            {renderField("Age", fieldValues.age, "age", "cake", "years")}
+            {renderField("Sex", fieldValues.sex, "sex", "wc")}
+          </View>
+
+          <View style={styles.sectionTitle}>
+            <MaterialIcons
+              name="straighten"
+              size={24}
+              color={Colors.darkGreen.color}
+            />
+            <Text style={styles.sectionTitleText}>Body Measurements</Text>
+          </View>
+
+          <View style={styles.fieldsContainer}>
+            {renderField(
+              "Weight",
+              fieldValues.weight,
+              "weight",
+              "monitor-weight",
+              "kg"
+            )}
+            {renderField(
+              "Height",
+              fieldValues.height,
+              "height",
+              "height",
+              "cm"
+            )}
+          </View>
+        </ScrollView>
       </SafeAreaView>
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => handleModalClose()}
+      >
+        <TouchableOpacity
+          style={styles.modalContainer}
+          activeOpacity={1}
+          onPress={() => handleModalClose()}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <ModalContent
+              activeField={activeField}
+              fieldValues={fieldValues}
+              onChangeText={handleChangeText}
+              onSave={handleModalClose}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 };
@@ -165,77 +300,171 @@ const ProfileView = () => {
 export default ProfileView;
 
 const styles = StyleSheet.create({
+  header: {
+    position: "relative",
+  },
   backButton: {
     paddingLeft: 20,
-    paddingBottom: 30,
   },
   safeAreaViewContainer: {
-    height: "100%",
-    width: "100%",
+    flex: 1,
     backgroundColor: Colors.white.color,
   },
   scrollViewContainer: {
     flexGrow: 1,
+    paddingHorizontal: 20,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 20,
+    gap: 15,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.lightGreen.color,
+    borderRadius: 15,
+    padding: 20,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  sectionTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+    gap: 10,
+  },
+  sectionTitleText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
   },
   fieldsContainer: {
-    width: "90%",
-    backgroundColor: Colors.lightGreen.color,
-    padding: 15,
-    borderRadius: 15,
+    gap: 10,
+    marginBottom: 20,
   },
   fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 15,
+    backgroundColor: Colors.white.color,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  fieldIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.lightGreen.color,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white.color,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  fieldTextContainer: {
+    flex: 1,
   },
   fieldTitle: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  valueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
   },
   fieldValue: {
-    marginRight: 10,
     fontSize: 16,
     color: Colors.darkGreen.color,
+    fontWeight: "600",
   },
-  arrowIcon: {
-    color: Colors.darkGreen.color,
+  unitText: {
+    fontSize: 12,
+    color: "#666",
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
     backgroundColor: Colors.white.color,
     padding: 20,
-    borderRadius: 10,
-    width: "80%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    width: "100%",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 20,
+    color: Colors.darkGreen.color,
   },
   modalInput: {
     borderWidth: 1,
     borderColor: Colors.lightGreen.color,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
   },
   modalButton: {
     backgroundColor: Colors.green.color,
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 10,
     alignItems: "center",
+    elevation: 2,
   },
   modalButtonText: {
     color: Colors.white.color,
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  sexButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: 15,
+    marginBottom: 20,
+  },
+  sexButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: Colors.lightGreen.color,
+    gap: 10,
+    borderWidth: 2,
+    borderColor: Colors.darkGreen.color,
+  },
+  sexButtonSelected: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  sexButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+  },
+  sexButtonTextSelected: {
+    color: Colors.white.color,
   },
 });

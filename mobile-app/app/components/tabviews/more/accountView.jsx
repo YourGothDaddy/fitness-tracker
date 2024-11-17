@@ -14,13 +14,23 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 
-const Field = React.memo(({ title, value, onPress }) => (
-  <TouchableOpacity style={styles.fieldContainer} onPress={onPress}>
-    <Text style={styles.fieldTitle}>{title}</Text>
-    <Text style={styles.fieldValue}>{value}</Text>
+const Field = React.memo(({ title, value, onPress, icon }) => (
+  <TouchableOpacity
+    style={styles.fieldContainer}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.fieldIconContainer}>
+      <MaterialIcons name={icon} size={24} color={Colors.darkGreen.color} />
+    </View>
+    <View style={styles.fieldTextContainer}>
+      <Text style={styles.fieldTitle}>{title}</Text>
+      <Text style={styles.fieldValue}>{value}</Text>
+    </View>
     <MaterialIcons
-      name="arrow-forward-ios"
+      name="chevron-right"
       size={24}
+      color={Colors.darkGreen.color}
       style={styles.arrowIcon}
     />
   </TouchableOpacity>
@@ -148,11 +158,12 @@ const AccountView = () => {
   }, []);
 
   const renderField = useCallback(
-    (title, value, field) => (
+    (title, value, field, icon) => (
       <Field
         key={field}
         title={title}
         value={value}
+        icon={icon}
         onPress={() => handleFieldPress(field)}
       />
     ),
@@ -165,6 +176,14 @@ const AccountView = () => {
         options={{
           headerShown: hideHeader !== "true",
           title: "Account",
+          headerStyle: {
+            backgroundColor: Colors.white.color,
+          },
+          headerTitleStyle: {
+            color: Colors.darkGreen.color,
+            fontSize: 24,
+            fontWeight: "bold",
+          },
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>
@@ -186,14 +205,25 @@ const AccountView = () => {
           </View>
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+          <View style={styles.profileSection}>
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>JD</Text>
+            </View>
+          </View>
           <View style={styles.fieldsContainer}>
-            {renderField("Name", fieldValues.name, "name")}
-            {renderField("Email", fieldValues.email, "email")}
-            {renderField("Phone", fieldValues.phone, "phone")}
-            {renderField("Change Password", "********", "changePassword")}
+            {renderField("Name", fieldValues.name, "name", "person")}
+            {renderField("Email", fieldValues.email, "email", "email")}
+            {renderField("Phone", fieldValues.phone, "phone", "phone")}
+            {renderField(
+              "Change Password",
+              "********",
+              "changePassword",
+              "lock"
+            )}
             {renderField(
               "Notifications",
               fieldValues.notifications ? "On" : "Off",
+              "notifications",
               "notifications"
             )}
           </View>
@@ -223,83 +253,127 @@ const AccountView = () => {
 export default AccountView;
 
 const styles = StyleSheet.create({
+  safeAreaViewContainer: {
+    flex: 1,
+    backgroundColor: Colors.white.color,
+  },
+  header: {
+    position: "relative",
+  },
   backButton: {
     paddingLeft: 20,
-    paddingBottom: 30,
   },
-  safeAreaViewContainer: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: Colors.white.color,
+  profileSection: {
+    alignItems: "center",
+    paddingVertical: 30,
+  },
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.green.color,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  avatarText: {
+    fontSize: 36,
+    color: Colors.white.color,
+    fontWeight: "bold",
   },
   scrollViewContainer: {
     flexGrow: 1,
-    alignItems: "center",
   },
   fieldsContainer: {
-    width: "90%",
-    backgroundColor: Colors.lightGreen.color,
-    padding: 15,
-    borderRadius: 15,
+    paddingHorizontal: 20,
+    gap: 10,
   },
   fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 15,
+    backgroundColor: Colors.white.color,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  fieldIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.lightGreen.color,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white.color,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  fieldTextContainer: {
+    flex: 1,
   },
   fieldTitle: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
   },
   fieldValue: {
-    marginRight: 10,
     fontSize: 16,
     color: Colors.darkGreen.color,
-  },
-  arrowIcon: {
-    color: Colors.darkGreen.color,
+    fontWeight: "600",
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end", // Changed to slide from bottom
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
     backgroundColor: Colors.white.color,
     padding: 20,
-    borderRadius: 10,
-    width: "80%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    width: "100%",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 20,
+    color: Colors.darkGreen.color,
   },
   modalInput: {
     borderWidth: 1,
     borderColor: Colors.lightGreen.color,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
   },
   modalButton: {
     backgroundColor: Colors.green.color,
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 10,
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   modalButtonText: {
     color: Colors.white.color,
     fontWeight: "bold",
+    fontSize: 16,
   },
   switchContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    backgroundColor: Colors.lightGreen.color,
+    padding: 15,
+    borderRadius: 10,
   },
 });
