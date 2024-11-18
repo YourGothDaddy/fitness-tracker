@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -95,56 +96,97 @@ const categories = {
 
 const CategoryTab = ({ title, onPress }) => (
   <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
-    <Text style={styles.tabTitle}>{title}</Text>
-    <MaterialIcons
-      name="arrow-forward-ios"
-      size={24}
-      style={styles.arrowIcon}
-    />
+    <View style={styles.tabContent}>
+      <View style={styles.categoryIconContainer}>
+        <MaterialIcons
+          name={getCategoryIcon(title)}
+          size={28}
+          color={Colors.darkGreen.color}
+        />
+      </View>
+      <View style={styles.categoryTextContainer}>
+        <Text style={styles.tabTitle}>{title}</Text>
+        <Text
+          style={styles.itemCount}
+        >{`${categories[title].length} items`}</Text>
+      </View>
+      <MaterialIcons
+        name="chevron-right"
+        size={24}
+        color={Colors.darkGreen.color}
+      />
+    </View>
   </TouchableOpacity>
 );
 
 const NutrientRow = ({ nutrient }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isCustom, setIsCustom] = useState(false);
+  const [target, setTarget] = useState("");
+  const [threshold, setThreshold] = useState("");
 
   return (
-    <View style={styles.nutrientRow}>
-      <View style={styles.inputContainer}>
-        <Text style={styles.nutrientTitle}>{nutrient}</Text>
-        <View style={styles.inputSwitchRow}>
+    <Animated.View style={styles.nutrientCard}>
+      <Text style={styles.nutrientTitle}>{nutrient}</Text>
+      <View style={styles.targetContainer}>
+        <View style={styles.inputWrapper}>
+          <Text style={styles.inputLabel}>Daily Target</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Daily target"
+            style={[styles.input, isVisible && styles.activeInput]}
+            placeholder="0"
             keyboardType="numeric"
+            value={target}
+            onChangeText={setTarget}
           />
-          <View style={styles.switchRow}>
-            <Text>Visible</Text>
-            <Switch
-              value={isVisible}
-              onValueChange={setIsVisible}
-              trackColor={{ false: "#767577", true: Colors.darkGreen.color }}
-            />
-          </View>
+          <Text style={styles.unit}>mg</Text>
         </View>
-        <View style={styles.inputSwitchRow}>
+        <TouchableOpacity
+          style={[
+            styles.visibilityButton,
+            isVisible && styles.visibilityButtonActive,
+          ]}
+          onPress={() => setIsVisible(!isVisible)}
+        >
+          <MaterialIcons
+            name={isVisible ? "visibility" : "visibility-off"}
+            size={20}
+            color={isVisible ? Colors.white.color : Colors.darkGreen.color}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.thresholdContainer}>
+        <View style={styles.inputWrapper}>
+          <Text style={styles.inputLabel}>Max Threshold</Text>
           <TextInput
-            style={[styles.input, !isCustom && styles.disabledInput]}
-            placeholder="Max threshold"
+            style={[
+              styles.input,
+              !isCustom && styles.disabledInput,
+              isCustom && styles.activeInput,
+            ]}
+            placeholder="0"
             keyboardType="numeric"
+            value={threshold}
+            onChangeText={setThreshold}
             editable={isCustom}
           />
-          <View style={styles.switchRow}>
-            <Text>Custom</Text>
-            <Switch
-              value={isCustom}
-              onValueChange={setIsCustom}
-              trackColor={{ false: "#767577", true: Colors.darkGreen.color }}
-            />
-          </View>
+          <Text style={styles.unit}>mg</Text>
         </View>
+        <TouchableOpacity
+          style={[styles.customButton, isCustom && styles.customButtonActive]}
+          onPress={() => setIsCustom(!isCustom)}
+        >
+          <Text
+            style={[
+              styles.customButtonText,
+              isCustom && styles.customButtonTextActive,
+            ]}
+          >
+            Custom
+          </Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -172,12 +214,10 @@ const NutrientTargetsView = () => {
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>
         {hideHeader === "true" && (
-          <>
-            <View style={styles.headerContainer}>
-              <Text className="text-4xl font-pextrabold text-center text-green pt-10">
-                Fitlicious
-              </Text>
-            </View>
+          <View style={styles.header}>
+            <Text className="text-4xl font-pextrabold text-center text-green pt-10">
+              Fitlicious
+            </Text>
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => router.back()}
@@ -188,7 +228,7 @@ const NutrientTargetsView = () => {
                 color={Colors.darkGreen.color}
               />
             </TouchableOpacity>
-          </>
+          </View>
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.tabsContainer}>
@@ -202,7 +242,19 @@ const NutrientTargetsView = () => {
               ))
             ) : (
               <View style={styles.nutrientsContainer}>
-                <Text style={styles.categoryTitle}>{category}</Text>
+                <View style={styles.categoryHeaderContainer}>
+                  <View style={styles.categoryTitleWrapper}>
+                    <MaterialIcons
+                      name={getCategoryIcon(category)}
+                      size={28}
+                      color={Colors.darkGreen.color}
+                    />
+                    <Text style={styles.categoryTitle}>{category}</Text>
+                  </View>
+                  <Text style={styles.categoryItemCount}>
+                    {categories[category].length} items
+                  </Text>
+                </View>
                 {categories[category].map((nutrient) => (
                   <NutrientRow key={nutrient} nutrient={nutrient} />
                 ))}
@@ -219,86 +271,188 @@ export default NutrientTargetsView;
 
 const styles = StyleSheet.create({
   safeAreaViewContainer: {
-    height: "100%",
-    width: "100%",
+    flex: 1,
     backgroundColor: Colors.white.color,
   },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
+  header: {
+    position: "relative",
+    paddingBottom: 20,
+    backgroundColor: Colors.white.color,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGreen.color,
   },
   backButton: {
     paddingLeft: 20,
-    paddingBottom: 30,
   },
   scrollViewContainer: {
     flexGrow: 1,
-    alignItems: "center",
+    paddingHorizontal: 20,
   },
   tabsContainer: {
-    width: "90%",
-    backgroundColor: Colors.lightGreen.color,
-    padding: 15,
-    borderRadius: 15,
+    width: "100%",
+    marginTop: 20,
   },
   tabContainer: {
+    marginBottom: 12,
+    borderRadius: 16,
+    backgroundColor: Colors.white.color,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  tabContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 16,
+  },
+  categoryIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: Colors.lightGreen.color,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white.color,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  categoryTextContainer: {
+    flex: 1,
+    marginLeft: 16,
   },
   tabTitle: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3748",
   },
-  arrowIcon: {
-    color: Colors.darkGreen.color,
+  itemCount: {
+    fontSize: 14,
+    color: "#718096",
+    marginTop: 4,
   },
-  nutrientsContainer: {
-    width: "100%",
-  },
-  categoryTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-    color: Colors.darkGreen.color,
-  },
-  nutrientRow: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white.color,
-  },
-  inputContainer: {
-    flex: 1,
-  },
-  inputSwitchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 2,
-  },
-  input: {
-    flex: 1,
+  nutrientCard: {
     backgroundColor: Colors.white.color,
-    padding: 5,
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 100,
-    justifyContent: "space-between",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   nutrientTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3748",
+    marginBottom: 16,
+  },
+  targetContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  thresholdContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  inputWrapper: {
+    flex: 1,
+    marginRight: 12,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: "#718096",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#F7FAFC",
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
-    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  activeInput: {
+    borderColor: Colors.darkGreen.color,
+    backgroundColor: Colors.white.color,
+  },
+  unit: {
+    position: "absolute",
+    right: 12,
+    top: 40,
+    color: "#718096",
+  },
+  visibilityButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.lightGreen.color,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.darkGreen.color,
+  },
+  visibilityButtonActive: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  customButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#F0F0F0",
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+  },
+  customButtonActive: {
+    backgroundColor: Colors.darkGreen.color,
+    borderColor: Colors.darkGreen.color,
+  },
+  customButtonText: {
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  customButtonTextActive: {
+    color: Colors.white.color,
   },
   disabledInput: {
-    backgroundColor: "#f0f0f0",
-    color: "#888",
+    backgroundColor: "#EDF2F7",
+    borderColor: "#E2E8F0",
+    color: "#A0AEC0",
+  },
+  categoryHeaderContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGreen.color,
+    marginBottom: 20,
+  },
+  categoryTitleWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  categoryTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+    marginLeft: 12,
+  },
+  categoryItemCount: {
+    fontSize: 14,
+    color: "#718096",
+    marginLeft: 40,
   },
 });
+
+const getCategoryIcon = (category) => {
+  const icons = {
+    Carbohydrates: "grain",
+    AminoAcids: "science",
+    Fats: "opacity",
+    Minerals: "diamond",
+    Other: "more-horiz",
+    Sterols: "architecture",
+    Vitamins: "medication",
+  };
+  return icons[category] || "circle";
+};
