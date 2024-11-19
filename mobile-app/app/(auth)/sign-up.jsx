@@ -8,6 +8,10 @@ import Slider from "@react-native-community/slider";
 import Checkbox from "expo-checkbox";
 import CustomField from "@/app/components/CustomField";
 import CustomButton from "@/app/components/CustomButton";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { BlurView } from "expo-blur";
 
 const SignUp = () => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -58,151 +62,296 @@ const SignUp = () => {
     switch (currentStage) {
       case 1:
         return (
-          <>
-            <CustomField
-              styles={styles.customField}
-              placeholder="Въведете своите килограми"
-              placeHolderTextColor={Colors.gray.color}
-              numeric={true}
-              allowDecimal={true}
-              value={weight}
-              onChangeText={setWeight}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Въведете своят ръст"
-              placeHolderTextColor={Colors.gray.color}
-              numeric={true}
-              value={height}
-              onChangeText={setHeight}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Изберете своя пол"
-              placeHolderTextColor={Colors.gray.color}
-              value={gender}
-              onChangeText={setGender}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Изберете своята възраст"
-              placeHolderTextColor={Colors.gray.color}
-              numeric={true}
-              value={age}
-              onChangeText={setAge}
-            />
-          </>
+          <Animated.View
+            entering={FadeIn}
+            exiting={FadeOut}
+            style={styles.stageWrapper}
+          >
+            <BlurView intensity={20} tint="light" style={styles.glassCard}>
+              <View style={styles.contentWrapper}>
+                <View style={styles.decorativeCircle} />
+                <View style={styles.decorativeCircle2} />
+
+                <Text style={styles.stageTitle}>Basic Information</Text>
+                <View style={styles.inputWrapper}>
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="scale"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Weight (kg)"
+                      value={weight}
+                      onChangeText={setWeight}
+                      numeric={true}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="human-male-height"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Height (cm)"
+                      value={height}
+                      onChangeText={setHeight}
+                      numeric={true}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="calendar"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Age"
+                      value={age}
+                      onChangeText={setAge}
+                      numeric={true}
+                    />
+                  </View>
+                </View>
+              </View>
+            </BlurView>
+          </Animated.View>
         );
       case 2:
         return (
-          <View style={styles.activityContainer}>
-            <Text style={styles.activityLabel}>
-              Изберете вашето ниво на активност:
-            </Text>
-            <Text style={styles.activityValue}>{activityLevels[activity]}</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={0}
-              maximumValue={4}
-              step={1}
-              value={activity}
-              onValueChange={setActivity}
-              minimumTrackTintColor={Colors.green.color}
-              maximumTrackTintColor={Colors.lightGreen.color}
-              thumbTintColor={Colors.darkGreen.color}
-            />
-          </View>
+          <Animated.View
+            entering={FadeIn}
+            exiting={FadeOut}
+            style={styles.stageWrapper}
+          >
+            <BlurView intensity={20} tint="light" style={styles.glassCard}>
+              <View style={styles.contentWrapper}>
+                <Text style={styles.stageTitle}>Activity Level</Text>
+                <View style={styles.activityDisplay}>
+                  <Text style={styles.activityText}>
+                    {activityLevels[activity]}
+                  </Text>
+
+                  <View style={styles.activityVisualization}>
+                    {[0, 1, 2, 3, 4].map((level) => (
+                      <View
+                        key={level}
+                        style={[
+                          styles.activityBar,
+                          level <= activity && styles.activityBarActive,
+                        ]}
+                      />
+                    ))}
+                  </View>
+
+                  <Slider
+                    style={styles.customSlider}
+                    minimumValue={0}
+                    maximumValue={4}
+                    step={1}
+                    value={activity}
+                    onValueChange={setActivity}
+                    minimumTrackTintColor={Colors.green.color}
+                    maximumTrackTintColor={Colors.lightGreen.color}
+                    thumbTintColor={Colors.darkGreen.color}
+                  />
+
+                  <View style={styles.activityIconsRow}>
+                    {activityLevels.map((_, index) => (
+                      <MaterialCommunityIcons
+                        key={index}
+                        name={
+                          index === 0
+                            ? "sleep"
+                            : index === 1
+                            ? "walk"
+                            : index === 2
+                            ? "run"
+                            : index === 3
+                            ? "bike"
+                            : "weight-lifter"
+                        }
+                        size={24}
+                        color={
+                          index <= activity
+                            ? Colors.darkGreen.color
+                            : Colors.lightGreen.color
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
+              </View>
+            </BlurView>
+          </Animated.View>
         );
       case 3:
         return (
-          <View style={styles.weightGoalContainer}>
-            <Text style={styles.weightGoalLabel}>
-              Изберете вашата седмична цел за тегло:
-            </Text>
-            {!manualKcal && (
-              <>
-                <Text style={styles.weightGoalValue}>
-                  {weightGoal === 0
-                    ? "Maintain"
-                    : weightGoal < 0
-                    ? `Lose ${Math.abs(weightGoal).toFixed(1)}kg/week`
-                    : `Gain ${weightGoal.toFixed(1)}kg/week`}
-                </Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={-1}
-                  maximumValue={1}
-                  step={0.1}
-                  value={weightGoal}
-                  onValueChange={setWeightGoal}
-                  minimumTrackTintColor={Colors.red.color}
-                  maximumTrackTintColor={Colors.green.color}
-                  thumbTintColor={Colors.darkGreen.color}
-                  disabled={manualKcal}
-                />
-                <View style={styles.sliderLabels}>
-                  <Text style={styles.sliderLabel}>-1kg</Text>
-                  <Text style={styles.sliderLabel}>Maintain</Text>
-                  <Text style={styles.sliderLabel}>+1kg</Text>
+          <Animated.View
+            entering={FadeIn.duration(400)}
+            exiting={FadeOut.duration(400)}
+            style={styles.stageWrapper}
+          >
+            <BlurView intensity={20} tint="light" style={styles.glassCard}>
+              <View style={styles.contentWrapper}>
+                <Text style={styles.stageTitle}>Weight Goal</Text>
+                <View style={styles.weightGoalContainer}>
+                  {!manualKcal && (
+                    <>
+                      <Text style={styles.weightGoalValue}>
+                        {weightGoal === 0
+                          ? "Maintain Weight"
+                          : weightGoal < 0
+                          ? `Lose ${Math.abs(weightGoal).toFixed(1)}kg/week`
+                          : `Gain ${weightGoal.toFixed(1)}kg/week`}
+                      </Text>
+
+                      <View style={styles.goalVisualization}>
+                        <MaterialCommunityIcons
+                          name={
+                            weightGoal < 0
+                              ? "trending-down"
+                              : weightGoal > 0
+                              ? "trending-up"
+                              : "trending-neutral"
+                          }
+                          size={32}
+                          color={Colors.darkGreen.color}
+                        />
+                      </View>
+
+                      <Slider
+                        style={styles.customSlider}
+                        minimumValue={-1}
+                        maximumValue={1}
+                        step={0.1}
+                        value={weightGoal}
+                        onValueChange={setWeightGoal}
+                        minimumTrackTintColor={Colors.red.color}
+                        maximumTrackTintColor={Colors.green.color}
+                        thumbTintColor={Colors.darkGreen.color}
+                      />
+
+                      <View style={styles.sliderLabels}>
+                        <Text style={styles.sliderLabel}>Loss</Text>
+                        <Text style={styles.sliderLabel}>Maintain</Text>
+                        <Text style={styles.sliderLabel}>Gain</Text>
+                      </View>
+                    </>
+                  )}
+
+                  <View style={styles.checkboxContainer}>
+                    <Checkbox
+                      value={manualKcal}
+                      onValueChange={setManualKcal}
+                      color={manualKcal ? Colors.darkGreen.color : undefined}
+                    />
+                    <Text style={styles.checkboxLabel}>
+                      Set custom calorie goal
+                    </Text>
+                  </View>
+
+                  {manualKcal && (
+                    <View style={styles.manualKcalContainer}>
+                      <View style={styles.inputContainer}>
+                        <MaterialCommunityIcons
+                          name="fire"
+                          size={24}
+                          color={Colors.darkGreen.color}
+                        />
+                        <CustomField
+                          styles={styles.input}
+                          placeholder="Daily calorie goal"
+                          value={kcalGoal}
+                          onChangeText={setKcalGoal}
+                          numeric={true}
+                        />
+                      </View>
+                    </View>
+                  )}
                 </View>
-              </>
-            )}
-            <View style={styles.checkboxContainer}>
-              <Checkbox
-                value={manualKcal}
-                onValueChange={setManualKcal}
-                color={manualKcal ? Colors.green.color : undefined}
-              />
-              <Text style={styles.checkboxLabel}>
-                Ръчно въведете месечните калории, които желаете
-              </Text>
-            </View>
-            {manualKcal && (
-              <CustomField
-                styles={styles.customField}
-                placeholder="Въведете месечните си калории"
-                placeHolderTextColor={Colors.gray.color}
-                numeric={true}
-                value={kcalGoal}
-                onChangeText={setKcalGoal}
-              />
-            )}
-          </View>
+              </View>
+            </BlurView>
+          </Animated.View>
         );
       case 4:
         return (
-          <>
-            <CustomField
-              styles={styles.customField}
-              placeholder="Име"
-              placeHolderTextColor={Colors.gray.color}
-              value={name}
-              onChangeText={setName}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Е-майл"
-              placeHolderTextColor={Colors.gray.color}
-              value={email}
-              onChangeText={setEmail}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Парола"
-              placeHolderTextColor={Colors.gray.color}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={true}
-            />
-            <CustomField
-              styles={styles.customField}
-              placeholder="Повторна парола"
-              placeHolderTextColor={Colors.gray.color}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry={true}
-            />
-          </>
+          <Animated.View
+            entering={FadeIn.duration(400)}
+            exiting={FadeOut.duration(400)}
+            style={styles.stageWrapper}
+          >
+            <BlurView intensity={20} tint="light" style={styles.glassCard}>
+              <View style={styles.contentWrapper}>
+                <Text style={styles.stageTitle}>Create Account</Text>
+                <View style={styles.accountInputs}>
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="account"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Full Name"
+                      value={name}
+                      onChangeText={setName}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="email"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Email Address"
+                      value={email}
+                      onChangeText={setEmail}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="lock"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={true}
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="lock-check"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.input}
+                      placeholder="Confirm Password"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={true}
+                    />
+                  </View>
+                </View>
+              </View>
+            </BlurView>
+          </Animated.View>
         );
       default:
         return null;
@@ -226,48 +375,80 @@ const SignUp = () => {
   };
 
   return (
-    <SafeAreaView className="bg-white h-full w-full">
-      <ScrollView contentContainerStyle={{ flex: 1 }}>
-        <View style={styles.topContainer}>
-          <Text className="text-4xl font-pextrabold text-center text-green pt-10">
-            Fitlicious
-          </Text>
-        </View>
-        <View style={styles.middleContainer}>
-          <Text className="text-3xl font-extrabold text-green text-center pb-2">
-            Регистрация
-          </Text>
-          <Text className="text-xl font-extrabold text-green text-center pb-2">
-            (Стъпка {currentStage} от 4)
-          </Text>
-          <Text className="font-pregular text-black text-center pb-5">
-            Въведете своите данни, за да можем да персонализираме плана Ви
-          </Text>
-          <View style={styles.fieldsContainer} className="items-center">
-            {renderStageContent()}
+    <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={["#e8f5e9", "#ffffff", "#e8f5e9"]}
+        style={styles.gradient}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <View style={styles.header}>
+            <View style={styles.logoCircle}>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={40}
+                color={Colors.darkGreen.color}
+              />
+            </View>
+            <Text style={styles.appTitle}>Fitlicious</Text>
           </View>
-        </View>
-        {!isKeyboardVisible && (
-          <View
-            className="justify-center items-center"
-            style={styles.bottomContainer}
-          >
-            <CustomButton
-              title={currentStage === 4 ? "Завърши" : "Продължи"}
-              containerStyles={styles.customButton}
-              textStyles={styles.customButtonText}
-              handleOnPress={handleContinue}
-            />
-            <CustomButton
-              title="Назад"
-              containerStyles={styles.goBackButton}
-              textStyles={styles.goBackButtonText}
-              handleOnPress={handleGoBack}
-            />
+
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            {[1, 2, 3, 4].map((stage) => (
+              <View key={stage} style={styles.progressItem}>
+                <View
+                  style={[
+                    styles.progressCircle,
+                    currentStage >= stage && styles.activeProgress,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.progressNumber,
+                      currentStage >= stage && styles.activeProgressNumber,
+                    ]}
+                  >
+                    {stage}
+                  </Text>
+                </View>
+                {stage < 4 && (
+                  <View
+                    style={[
+                      styles.progressLine,
+                      currentStage > stage && styles.activeProgressLine,
+                    ]}
+                  />
+                )}
+              </View>
+            ))}
           </View>
-        )}
-      </ScrollView>
-      <StatusBar style="dark" />
+
+          {/* Main Content */}
+          {renderStageContent()}
+
+          {/* Navigation Buttons */}
+          {!isKeyboardVisible && (
+            <View style={styles.buttonContainer}>
+              <CustomButton
+                title={currentStage === 4 ? "Start Journey" : "Next Step"}
+                containerStyles={styles.nextButton}
+                textStyles={styles.nextButtonText}
+                handleOnPress={handleContinue}
+              />
+              <CustomButton
+                title="Go Back"
+                containerStyles={styles.backButton}
+                textStyles={styles.backButtonText}
+                handleOnPress={handleGoBack}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -275,83 +456,175 @@ const SignUp = () => {
 export default SignUp;
 
 const styles = StyleSheet.create({
-  topContainer: {
-    flex: 0.3,
-  },
-  middleContainer: {
+  container: {
     flex: 1,
-    alignItems: "center",
   },
-  fieldsContainer: {
+  gradient: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+  },
+  header: {
+    alignItems: "center",
+    marginTop: 40,
+    marginBottom: 30,
+  },
+  appTitle: {
+    fontSize: 36,
+    fontWeight: "800",
+    color: Colors.darkGreen.color,
+    letterSpacing: 1,
+  },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 15,
+  },
+  progressContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 40,
+    paddingHorizontal: 20,
+  },
+  progressItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  progressCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: Colors.lightGreen.color,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  activeProgress: {
+    backgroundColor: Colors.darkGreen.color,
+    borderColor: Colors.darkGreen.color,
+  },
+  progressNumber: {
+    color: Colors.lightGreen.color,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  activeProgressNumber: {
+    color: "#ffffff",
+  },
+  progressLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: Colors.lightGreen.color,
+    marginHorizontal: 5,
+  },
+  activeProgressLine: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  stageWrapper: {
+    marginBottom: 30,
+  },
+  glassCard: {
+    overflow: "hidden",
+    borderRadius: 30,
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  contentWrapper: {
+    padding: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+  },
+  stageTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.darkGreen.color,
+    textAlign: "center",
+    marginBottom: 25,
+  },
+  inputWrapper: {
+    gap: 15,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+    width: "100%",
+  },
+  input: {
+    flex: 1,
+    marginLeft: 15,
+    fontSize: 16,
+    color: Colors.darkGreen.color,
+    opacity: 0.8,
+  },
+  nextButton: {
+    backgroundColor: Colors.darkGreen.color,
+    borderRadius: 30,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: Colors.darkGreen.color,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+    marginTop: 20,
+  },
+  nextButtonText: {
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  backButton: {
+    marginTop: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 2,
     borderColor: Colors.darkGreen.color,
     borderRadius: 30,
-    width: "95%",
-    paddingVertical: "3%",
-  },
-  bottomContainer: {
-    flex: 0.3,
-  },
-  customButton: {
-    borderWidth: 2,
-    borderColor: "transparent",
-    backgroundColor: Colors.green.color,
-    borderRadius: 30,
-    width: "80%",
     height: 50,
-    position: "relative",
-    top: "7%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  customButtonText: {
-    color: Colors.white.color,
-    fontSize: 20,
-  },
-  customField: {
-    width: "90%",
-    height: 50,
-    borderWidth: 2,
-    borderColor: "transparent",
-    borderRadius: 30,
-    backgroundColor: Colors.lightGreen.color,
-    marginTop: 10,
-  },
-  goBackButton: {
-    borderWidth: 2,
-    borderColor: "transparent",
-    backgroundColor: Colors.darkGreen.color,
-    borderRadius: 30,
-    width: "40%",
-    height: 25,
-    position: "relative",
-    top: "10%",
-  },
-  goBackButtonText: {
-    color: Colors.white.color,
-    fontSize: 13,
-  },
-  activityContainer: {
-    width: "90%",
-    alignItems: "center",
-  },
-  activityLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
+  backButtonText: {
     color: Colors.darkGreen.color,
-  },
-  activityValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: Colors.green.color,
-  },
-  slider: {
-    width: "100%",
-    height: 40,
+    fontSize: 16,
+    fontWeight: "600",
   },
   weightGoalContainer: {
-    width: "90%",
+    width: "100%",
     alignItems: "center",
+    padding: 20,
   },
   weightGoalLabel: {
     fontSize: 16,
@@ -394,5 +667,72 @@ const styles = StyleSheet.create({
     borderColor: Colors.green.color,
     borderRadius: 10,
     marginTop: 10,
+  },
+  decorativeCircle: {
+    position: "absolute",
+    top: -50,
+    right: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(129, 199, 132, 0.3)",
+  },
+
+  decorativeCircle2: {
+    position: "absolute",
+    bottom: -30,
+    left: -30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(129, 199, 132, 0.2)",
+  },
+  activityDisplay: {
+    alignItems: "center",
+    padding: 20,
+  },
+  activityText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    color: Colors.darkGreen.color,
+  },
+  activityVisualization: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 10,
+  },
+  activityBar: {
+    flex: 1,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.lightGreen.color,
+  },
+  activityBarActive: {
+    backgroundColor: Colors.green.color,
+  },
+  customSlider: {
+    width: "100%",
+    height: 40,
+  },
+  activityIconsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 10,
+  },
+  goalVisualization: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  customFieldPlaceholder: {
+    color: Colors.darkGreen.color,
+    opacity: 0.5,
+  },
+  manualKcalContainer: {
+    width: "100%",
+    alignItems: "center",
+    marginTop: 20,
   },
 });

@@ -201,6 +201,120 @@ const GeneralView = () => {
           </View>
         </View>
       </LinearGradient>
+
+      {/* Activity Log Card */}
+      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.titleContainer}>
+            <MaterialIcons
+              name="event-note"
+              size={24}
+              color="#619819"
+              style={styles.headerIcon}
+            />
+            <Text style={styles.cardTitle}>Today's Activity</Text>
+          </View>
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>Today</Text>
+          </View>
+        </View>
+
+        {/* Meals Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Meals</Text>
+          <View style={styles.tableContainer}>
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Meal & Calories</Text>
+              <Text style={styles.tableHeaderText}>Time</Text>
+            </View>
+
+            {/* Sample Meal Row */}
+            <View style={styles.tableRow}>
+              <View style={styles.mainContent}>
+                <View style={styles.titleContainer}>
+                  <MaterialIcons name="restaurant" size={20} color="#619819" />
+                  <Text style={styles.tableCellTitle} numberOfLines={1}>
+                    Oatmeal with Berries and Honey
+                  </Text>
+                </View>
+                <View style={styles.detailsContainer}>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="scale" size={16} color="#636e72" />
+                    <Text style={styles.detailText}>300g</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons
+                      name="local-fire-department"
+                      size={16}
+                      color="#636e72"
+                    />
+                    <Text style={styles.detailText}>285 kcal</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.timeContainer}>
+                <MaterialIcons
+                  name="schedule"
+                  size={14}
+                  color="#619819"
+                  style={styles.timeIcon}
+                />
+                <Text style={styles.timeText}>08:30</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Exercises Section */}
+        <View style={[styles.sectionContainer, { marginTop: 20 }]}>
+          <Text style={styles.sectionTitle}>Exercises</Text>
+          <View style={styles.tableContainer}>
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Exercise & Calories</Text>
+              <Text style={styles.tableHeaderText}>Time</Text>
+            </View>
+
+            {/* Sample Exercise Row */}
+            <View style={styles.tableRow}>
+              <View style={styles.mainContent}>
+                <View style={styles.titleContainer}>
+                  <MaterialIcons
+                    name="fitness-center"
+                    size={20}
+                    color="#619819"
+                  />
+                  <Text style={styles.tableCellTitle}>Running</Text>
+                </View>
+                <View style={styles.detailsContainer}>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="timer" size={16} color="#636e72" />
+                    <Text style={styles.detailText}>30 min</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons
+                      name="local-fire-department"
+                      size={16}
+                      color="#636e72"
+                    />
+                    <Text style={styles.detailText}>320 kcal</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.timeContainer}>
+                <MaterialIcons
+                  name="schedule"
+                  size={14}
+                  color="#619819"
+                  style={styles.timeIcon}
+                />
+                <Text style={styles.timeText}>07:00</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
     </View>
   );
 };
@@ -309,6 +423,76 @@ const styles = StyleSheet.create({
   chart: {
     borderRadius: 16,
     marginLeft: -10,
+  },
+  sectionContainer: {
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 12,
+  },
+  tableContainer: {
+    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  tableRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.1)",
+  },
+  mainContent: {
+    flex: 1,
+    gap: 6,
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tableCellTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#2d3436",
+  },
+  detailsContainer: {
+    gap: 4,
+    paddingLeft: 28, // Aligns with title text
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 13,
+    color: "#636e72",
+  },
+  timeContainer: {
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  timeText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#619819",
   },
 });
 
