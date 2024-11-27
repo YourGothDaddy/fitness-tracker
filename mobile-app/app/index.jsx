@@ -34,6 +34,14 @@ export default function Index() {
                 router.push("/sign-up");
               }}
             />
+            <CustomButton
+              title="Влизане"
+              containerStyles={[styles.customButton]}
+              textStyles={styles.customButtonText}
+              handleOnPress={() => {
+                router.push("/sign-in");
+              }}
+            />
           </View>
         </ScrollView>
         <StatusBar style="dark" />
@@ -59,6 +67,11 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     width: "80%",
     height: 50,
+    marginVertical: 5,
+  },
+  signInButton: {
+    backgroundColor: "transparent",
+    borderColor: Colors.green.color,
   },
   customButtonText: {
     color: Colors.white.color,
