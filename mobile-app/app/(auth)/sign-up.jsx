@@ -1,4 +1,12 @@
-import { View, Text, ScrollView, StyleSheet, Keyboard } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Keyboard,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
@@ -12,6 +20,36 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
+import axios from "axios";
+
+const validateStage = (stage, data) => {
+  switch (stage) {
+    case 1:
+      if (!data.gender) return "Please select your gender";
+      if (!data.weight) return "Please enter your weight";
+      if (!data.height) return "Please enter your height";
+      if (!data.age) return "Please enter your age";
+      if (isNaN(data.weight) || data.weight <= 0)
+        return "Please enter a valid weight";
+      if (isNaN(data.height) || data.height <= 0)
+        return "Please enter a valid height";
+      if (isNaN(data.age) || data.age <= 0) return "Please enter a valid age";
+      break;
+    case 4:
+      if (!data.name.trim()) return "Please enter your full name";
+      if (!data.email.trim()) return "Please enter your email";
+      if (!data.password) return "Please enter a password";
+      if (!data.confirmPassword) return "Please confirm your password";
+      if (data.password !== data.confirmPassword)
+        return "Passwords do not match";
+      if (data.password.length < 6)
+        return "Password must be at least 6 characters long";
+      if (!/\S+@\S+\.\S+/.test(data.email))
+        return "Please enter a valid email address";
+      break;
+  }
+  return null;
+};
 
 const SignUp = () => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -74,6 +112,62 @@ const SignUp = () => {
 
                 <Text style={styles.stageTitle}>Basic Information</Text>
                 <View style={styles.inputWrapper}>
+                  <View style={styles.genderContainer}>
+                    <Text style={styles.genderLabel}>Gender</Text>
+                    <View style={styles.genderButtonsContainer}>
+                      <TouchableOpacity
+                        style={[
+                          styles.genderButton,
+                          gender === "male" && styles.genderButtonActive,
+                        ]}
+                        onPress={() => setGender("male")}
+                      >
+                        <MaterialCommunityIcons
+                          name="gender-male"
+                          size={24}
+                          color={
+                            gender === "male" ? "#fff" : Colors.darkGreen.color
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.genderButtonText,
+                            gender === "male" && styles.genderButtonTextActive,
+                          ]}
+                        >
+                          Male
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.genderButton,
+                          gender === "female" && styles.genderButtonActive,
+                        ]}
+                        onPress={() => setGender("female")}
+                      >
+                        <MaterialCommunityIcons
+                          name="gender-female"
+                          size={24}
+                          color={
+                            gender === "female"
+                              ? "#fff"
+                              : Colors.darkGreen.color
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.genderButtonText,
+                            gender === "female" &&
+                              styles.genderButtonTextActive,
+                          ]}
+                        >
+                          Female
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
                   <View style={styles.inputContainer}>
                     <MaterialCommunityIcons
                       name="scale"
@@ -358,11 +452,65 @@ const SignUp = () => {
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    // Validate current stage
+    const stageData = {
+      gender,
+      weight,
+      height,
+      age,
+      name,
+      email,
+      password,
+      confirmPassword,
+    };
+
+    const validationError = validateStage(currentStage, stageData);
+    if (validationError) {
+      Alert.alert("Validation Error", validationError);
+      return;
+    }
+
     if (currentStage < 4) {
       setCurrentStage(currentStage + 1);
     } else {
-      router.push("/dashboard");
+      try {
+        // Prepare registration data
+        const registrationData = {
+          fullName: name,
+          email: email,
+          password: password,
+          gender: gender === "male" ? 1 : 2,
+          weight: parseFloat(weight),
+          height: parseFloat(height),
+          age: parseInt(age),
+          activityLevelId: activity + 1,
+          weeklyWeightChangeGoal: manualKcal ? 0 : weightGoal,
+          dailyCalorieGoal: manualKcal ? parseInt(kcalGoal) : null,
+        };
+
+        // Send registration request
+        const response = await axios.post(
+          "http://172.16.1.147:7009/api/user/register",
+          registrationData
+        );
+
+        if (response.status === 200) {
+          Alert.alert("Success", "Registration successful!", [
+            { text: "OK", onPress: () => router.push("/dashboard") },
+          ]);
+        }
+      } catch (error) {
+        Alert.alert(
+          "Registration Failed",
+          error.response?.data?.message ||
+            "An error occurred during registration"
+        );
+        console.error(
+          "Registration failed:",
+          error.response?.data || error.message
+        );
+      }
     }
   };
 
@@ -734,5 +882,42 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginTop: 20,
+  },
+  genderContainer: {
+    marginBottom: 20,
+  },
+  genderLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  genderButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 15,
+  },
+  genderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 15,
+    padding: 15,
+    paddingHorizontal: 25,
+    borderWidth: 1,
+    borderColor: Colors.darkGreen.color,
+  },
+  genderButtonActive: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  genderButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: Colors.darkGreen.color,
+    fontWeight: "600",
+  },
+  genderButtonTextActive: {
+    color: "#ffffff",
   },
 });
