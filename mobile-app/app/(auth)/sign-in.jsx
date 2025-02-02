@@ -1,10 +1,48 @@
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import React from "react";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import React, { useState } from "react";
+import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 
 const SignIn = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://172.16.1.147:7009/api/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError("Invalid email or password");
+        } else {
+          setError("An error occurred during login");
+        }
+        return;
+      }
+
+      if (response.status === 200) {
+        Alert.alert("Success", "Login successful!", [
+          { text: "OK", onPress: () => router.push("/dashboard") },
+        ]);
+      }
+    } catch (err) {
+      setError("Network error occurred");
+      console.error("Login error:", err);
+    }
+  };
+
   return (
     <View style={[styles.backgroundImage, { backgroundColor: "#f0f8f0" }]}>
       <LinearGradient
@@ -32,6 +70,10 @@ const SignIn = () => {
               placeholder="Email"
               style={styles.input}
               placeholderTextColor="#666"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
 
@@ -46,6 +88,8 @@ const SignIn = () => {
               secureTextEntry
               style={styles.input}
               placeholderTextColor="#666"
+              value={password}
+              onChangeText={setPassword}
             />
           </View>
 
@@ -53,7 +97,9 @@ const SignIn = () => {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.signInButton}>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
             <Text style={styles.signInButtonText}>Sign In</Text>
           </TouchableOpacity>
 
@@ -159,6 +205,11 @@ const styles = {
     color: Colors.darkGreen.color,
     fontSize: 14,
     fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 16,
   },
 };
 
