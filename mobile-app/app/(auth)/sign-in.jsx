@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -12,34 +13,23 @@ const SignIn = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("http://172.16.1.147:7009/api/user/login", {
+      const response = await fetch("http://172.16.1.233:7009/api/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          setError("Invalid email or password");
-        } else {
-          setError("An error occurred during login");
-        }
         return;
       }
 
-      if (response.status === 200) {
-        Alert.alert("Success", "Login successful!", [
-          { text: "OK", onPress: () => router.push("/dashboard") },
-        ]);
-      }
+      // Get token from response body for mobile
+      router.push("/dashboard");
     } catch (err) {
-      setError("Network error occurred");
-      console.error("Login error:", err);
+      console.log(err);
     }
   };
 

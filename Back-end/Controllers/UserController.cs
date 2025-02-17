@@ -3,7 +3,6 @@
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Users;
-    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
     using System.IdentityModel.Tokens.Jwt;
@@ -23,51 +22,6 @@
         }
 
         // PUBLIC METHODS
-
-        [HttpPost(RegisterHttpAttributeName)]
-        public async Task<IActionResult> Register([FromBody] RegisterModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (await _userService.FindUserByEmailAsync(model.Email) != null)
-            {
-                return BadRequest(new { Message = UserExistsError });
-            }
-
-            var user = new User { UserName = model.Email, Email = model.Email };
-            var result = await _userService.CreateUserAsync(user, model.Password);
-
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
-            }
-
-            return Ok();
-        }
-
-        [HttpPost(LoginHttpAttributeName)]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var user = await _userService.FindUserByEmailAsync(model.Email);
-
-            if (user == null || !await _userService.CheckUserAndPasswordMatchAsync(user, model.Password))
-            {
-                return Unauthorized();
-            }
-
-            var tokenString = await CreateJWT(user);
-            SetJwtCookie(tokenString);
-
-            return Ok();
-        }
 
         [HttpPost(LogoutHttpAttributeName)]
         public IActionResult Logout()

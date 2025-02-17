@@ -4,7 +4,6 @@
     using Microsoft.EntityFrameworkCore;
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Data.Models.Consumables;
-    using System.Reflection.Emit;
 
     public class ApplicationDbContext : IdentityDbContext<User>
     {
@@ -19,6 +18,8 @@
         public DbSet<ActivityCategory> ActivityCategories { get; set; }
         public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Activity> Activities { get; set; }
+
+        public DbSet<ActivityLevel> ActivityLevels { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -41,6 +42,11 @@
                 .WithMany(at => at.Activities)
                 .HasForeignKey(a => a.ActivityTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<User>()
+                   .HasOne(u => u.ActivityLevel)
+                   .WithMany(al => al.Users)
+                   .HasForeignKey(u => u.ActivityLevelId);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

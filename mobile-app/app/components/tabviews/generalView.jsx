@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Dimensions, Platform } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -11,6 +11,37 @@ const formatNumber = (num) => {
 };
 
 const GeneralView = () => {
+  const [error, setError] = useState("");
+  const [dailyCaloriesTarget, setDailyCaloriesTarget] = useState(0);
+
+  const getDailyCalories = async () => {
+    try {
+      const response = await fetch("http://172.16.1.147:7009/api/user/goals", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        setError("An error occurred");
+        return;
+      }
+
+      const data = await response.json();
+      if (data && data.dailyCalories) {
+        setDailyCaloriesTarget(data.dailyCalories);
+      }
+    } catch (err) {
+      setError("Network error occurred");
+      console.error("Retrieving error:", err);
+    }
+  };
+
+  useEffect(() => {
+    getDailyCalories();
+  }, []);
+
   const totalHorizontalPadding = 48; // Container padding (24 * 2)
   const cardPadding = 40; // Card padding (20 * 2)
   const screenWidth =
@@ -104,7 +135,7 @@ const GeneralView = () => {
                 Target
               </Text>
             </View>
-            <Text style={styles.statValue}>2,000</Text>
+            <Text style={styles.statValue}>{dailyCaloriesTarget}</Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
 

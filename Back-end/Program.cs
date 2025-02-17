@@ -61,11 +61,21 @@ namespace Fitness_Tracker
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                 };
 
+                // Modified to check both header and cookie
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
-                        context.Token = context.Request.Cookies["jwt"];
+                        // First check the Authorization header
+                        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+
+                        // If not found in header, check cookie
+                        if (string.IsNullOrEmpty(token))
+                        {
+                            token = context.Request.Cookies["jwt"];
+                        }
+
+                        context.Token = token;
                         return Task.CompletedTask;
                     }
                 };
@@ -83,23 +93,34 @@ namespace Fitness_Tracker
                 options.AddPolicy("AllowReactApp",
                     builder =>
                     {
-                        builder.WithOrigins("http://localhost:3000")
-                               .AllowAnyHeader()
-                               .AllowAnyMethod()
-                               .AllowCredentials();
+                        builder.WithOrigins(
+                                "http://localhost:19006",
+                                "http://localhost:8081"
+                            )
+                           .AllowAnyHeader()
+                           .AllowAnyMethod()
+                           .AllowCredentials();
                     });
             });
+
+            builder.WebHost.ConfigureKestrel(serverOptions =>
+            {
+                serverOptions.Listen(System.Net.IPAddress.Any, 7009);
+            });
+
+            builder.Logging.AddConsole();
 
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+                DataSeeder.SeedActivityLevels(services).Wait();
                 DataSeeder.SeedAdministratorAsync(services).Wait();
+
             }
 
-
-            app.UseHttpsRedirection();
+            /*app.UseHttpsRedirection();*/
 
             app.UseCors("AllowReactApp");
 
