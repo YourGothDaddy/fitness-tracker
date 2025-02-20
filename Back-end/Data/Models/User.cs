@@ -25,5 +25,7 @@
 
         public bool IsDailyCaloriesGoal { get; set; }
 
+        public ICollection<RefreshToken> RefreshTokens { get; set; }
+
     }
 }
