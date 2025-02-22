@@ -5,5 +5,6 @@
     public interface ITokenService
     {
         public string GenerateToken(User user);
+        RefreshToken GenerateRefreshToken(string ipAddress);
     }
 }
