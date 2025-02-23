@@ -1,6 +1,8 @@
 ﻿namespace Fitness_Tracker.Services.Tokens
 {
+    using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
+    using Microsoft.EntityFrameworkCore;
     using Microsoft.IdentityModel.Tokens;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
@@ -11,10 +13,12 @@
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
-        public TokenService(IConfiguration configuration)
+        private readonly ApplicationDbContext _context;
+        public TokenService(IConfiguration configuration, ApplicationDbContext context)
         {
 
             _configuration = configuration;
+            _context = context;
 
         }
         public string GenerateToken(User user)
@@ -47,6 +51,12 @@
                 Created = DateTime.UtcNow,
                 CreatedByIp = ipAddress
             };
+        }
+
+        public async Task SaveRefreshTokenAsync(RefreshToken refreshToken)
+        {
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
         }
     }
 }

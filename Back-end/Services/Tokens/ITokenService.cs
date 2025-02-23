@@ -6,5 +6,7 @@
     {
         public string GenerateToken(User user);
         RefreshToken GenerateRefreshToken(string ipAddress);
+
+        Task SaveRefreshTokenAsync(RefreshToken refreshToken);
     }
 }

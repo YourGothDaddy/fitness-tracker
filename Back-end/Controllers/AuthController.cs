@@ -76,8 +76,18 @@
             }
 
             var accessToken = _tokenService.GenerateToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken(model.IpAddress ?? HttpContext.Connection.RemoteIpAddress?.ToString());
+            refreshToken.UserId = user.Id;
 
-            return Ok(accessToken);
+            await _tokenService.SaveRefreshTokenAsync(refreshToken);
+
+            var response = new AuthResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token
+            };
+
+            return Ok(response);
         }
 
     }
