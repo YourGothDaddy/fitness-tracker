@@ -58,5 +58,19 @@
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> RevokeRefreshTokenAsync(string refreshToken, string ipAddress)
+        {
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+            if (token == null || !token.IsActive)
+            {
+                return false;
+            }
+
+            token.Revoked = DateTime.UtcNow;
+            token.RevokedByIp = ipAddress;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

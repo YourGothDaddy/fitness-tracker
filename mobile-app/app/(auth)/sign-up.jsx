@@ -453,27 +453,7 @@ const SignUp = () => {
   };
 
   const handleContinue = async () => {
-    // Validate current stage
-    const stageData = {
-      gender,
-      weight,
-      height,
-      age,
-      name,
-      email,
-      password,
-      confirmPassword,
-    };
-
-    const validationError = validateStage(currentStage, stageData);
-    if (validationError) {
-      Alert.alert("Validation Error", validationError);
-      return;
-    }
-
-    if (currentStage < 4) {
-      setCurrentStage(currentStage + 1);
-    } else {
+    if (currentStage === 4) {
       try {
         // Prepare registration data
         const registrationData = {
@@ -489,11 +469,23 @@ const SignUp = () => {
           dailyCalorieGoal: manualKcal ? parseInt(kcalGoal) : null,
         };
 
-        // Send registration request
+        console.log("Attempting to register with:", registrationData);
+        console.log("API URL:", "http://172.16.1.233:7009/api/auth/register");
+
+        // Add explicit headers
         const response = await axios.post(
-          "http://172.16.1.147:7009/api/user/register",
-          registrationData
+          "http://172.16.1.233:7009/api/auth/register",
+          registrationData,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            timeout: 5000, // 5 second timeout
+          }
         );
+
+        console.log("Response:", response);
 
         if (response.status === 200) {
           Alert.alert("Success", "Registration successful!", [
@@ -501,16 +493,20 @@ const SignUp = () => {
           ]);
         }
       } catch (error) {
+        console.log("Full error:", error);
+        console.log("Error response:", error.response);
+        console.log("Error message:", error.message);
+        console.log("Error status:", error.response?.status);
+
         Alert.alert(
           "Registration Failed",
-          error.response?.data?.message ||
-            "An error occurred during registration"
-        );
-        console.error(
-          "Registration failed:",
-          error.response?.data || error.message
+          `Error: ${
+            error.response?.data?.message || error.message || "Network error"
+          }`
         );
       }
+    } else {
+      setCurrentStage(currentStage + 1);
     }
   };
 

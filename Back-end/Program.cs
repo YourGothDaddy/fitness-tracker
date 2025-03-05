@@ -6,6 +6,7 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Services.Admins;
     using Fitness_Tracker.Services.Consumables;
     using Fitness_Tracker.Services.Meals;
+    using Fitness_Tracker.Services.Tokens;
     using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
@@ -31,6 +32,7 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<IMealService, MealService>();
             builder.Services.AddTransient<IAdminService, AdminService>();
             builder.Services.AddTransient<IConsumableService, ConsumableService>();
+            builder.Services.AddTransient<ITokenService, TokenService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -93,13 +95,9 @@ namespace Fitness_Tracker
                 options.AddPolicy("AllowReactApp",
                     builder =>
                     {
-                        builder.WithOrigins(
-                                "http://localhost:19006",
-                                "http://localhost:8081"
-                            )
-                           .AllowAnyHeader()
-                           .AllowAnyMethod()
-                           .AllowCredentials();
+                        builder.AllowAnyOrigin()
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
                     });
             });
 

@@ -18,6 +18,15 @@
             public const string EmailIsAlreadyInUse = "Email is already in use.";
         }
 
+        public static class AuthController
+        {
+            public const string RegisterHttpAttributeName = "register";
+            public const string LoginHttpAttributeName = "login";
+            public const string LogoutHttpAttributeName = "logout";
+            public const string UserExistsError = "User with this email already exists!";
+
+        }
+
         public static class MealController
         {
             public const string AddMealHttpAttributeName = "add-meal";

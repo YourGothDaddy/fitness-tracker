@@ -8,5 +8,7 @@
         RefreshToken GenerateRefreshToken(string ipAddress);
 
         Task SaveRefreshTokenAsync(RefreshToken refreshToken);
+
+        Task<bool> RevokeRefreshTokenAsync(string refreshToken, string ipAddress);
     }
 }

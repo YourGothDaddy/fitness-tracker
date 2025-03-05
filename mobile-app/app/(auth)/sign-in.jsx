@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ const SignIn = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("http://172.16.1.233:7009/api/user/login", {
+      const response = await fetch("http://172.25.128.1:7009/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -22,9 +22,16 @@ const SignIn = () => {
         credentials: "include",
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
         return;
       }
+      console.log(data.accessToken);
+      console.log(data.refreshToken);
+
+      await SecureStore.setItemAsync("accessToken", data.accessToken);
+      await SecureStore.setItemAsync("refreshToken", data.refreshToken);
 
       // Get token from response body for mobile
       router.push("/dashboard");

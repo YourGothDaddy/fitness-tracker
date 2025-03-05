@@ -8,20 +8,20 @@
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
 
-    using static Constants.UserController;
+    using static Constants.AuthController;
+
 
     public class AuthController : BaseApiController
     {
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-        private readonly ApplicationDbContext _context;
 
-        public AuthController(UserManager<User> userManager, ITokenService tokenService, IUserService userService, ApplicationDbContext context)
+        public AuthController(UserManager<User> userManager, ITokenService tokenService, IUserService userService)
         {
             _userManager = userManager;
             _tokenService = tokenService;
-            _context = context;
+            _userService = userService;
         }
 
         [HttpPost(RegisterHttpAttributeName)]
@@ -59,6 +59,8 @@
 
             return Ok();
         }
+
+        [HttpPost(LoginHttpAttributeName)]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             if (!ModelState.IsValid)
@@ -88,6 +90,27 @@
             };
 
             return Ok(response);
+        }
+
+        [HttpPost(LogoutHttpAttributeName)]
+
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            if (string.IsNullOrEmpty(request.RefreshToken))
+            {
+                return BadRequest("Refresh token is required.");
+            }
+
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+
+            var result = await _tokenService.RevokeRefreshTokenAsync(request.RefreshToken, ipAddress);
+
+            if (!result)
+            {
+                return BadRequest("Invalid or already revoked token.");
+            }
+
+            return Ok("Logged out successfully.");
         }
 
     }
