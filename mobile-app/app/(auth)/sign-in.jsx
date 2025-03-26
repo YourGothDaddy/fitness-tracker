@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 import * as SecureStore from "expo-secure-store";
+import axios from "axios";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -13,30 +14,35 @@ const SignIn = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch("http://172.25.128.1:7009/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        "http://172.16.1.233:7009/api/auth/login",
+        {
+          email: email,
+          password: password,
+          ipAddress: "127.0.0.1",
         },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return;
-      }
       console.log(data.accessToken);
       console.log(data.refreshToken);
 
       await SecureStore.setItemAsync("accessToken", data.accessToken);
       await SecureStore.setItemAsync("refreshToken", data.refreshToken);
 
-      // Get token from response body for mobile
       router.push("/dashboard");
     } catch (err) {
-      console.log(err);
+      console.log(err.response?.data || err.message);
+      setError(
+        err.response?.data?.message ||
+          "Failed to sign in. Please check your credentials."
+      );
     }
   };
 
