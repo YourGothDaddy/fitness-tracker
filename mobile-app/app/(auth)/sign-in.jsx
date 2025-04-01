@@ -1,6 +1,6 @@
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import React, { useState } from "react";
-import { router } from "expo-router";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { router, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
@@ -11,14 +11,39 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const accessToken = await SecureStore.getItemAsync("accessToken");
+      if (accessToken) {
+        router.replace("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+    }
+  };
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
     try {
       const response = await axios.post(
-        "http://172.16.1.233:7009/api/auth/login",
+        "http://172.16.1.147:7009/api/auth/login",
         {
-          email: email,
-          password: password,
+          email,
+          password,
           ipAddress: "127.0.0.1",
         },
         {
@@ -28,21 +53,27 @@ const SignIn = () => {
           },
         }
       );
-      const data = response.data;
 
-      console.log(data.accessToken);
-      console.log(data.refreshToken);
+      const { accessToken, refreshToken } = response.data;
 
-      await SecureStore.setItemAsync("accessToken", data.accessToken);
-      await SecureStore.setItemAsync("refreshToken", data.refreshToken);
+      if (!accessToken || !refreshToken) {
+        throw new Error("Invalid response format from server");
+      }
 
-      router.push("/dashboard");
+      await Promise.all([
+        SecureStore.setItemAsync("accessToken", accessToken),
+        SecureStore.setItemAsync("refreshToken", refreshToken),
+      ]);
+
+      router.replace("/dashboard");
     } catch (err) {
-      console.log(err.response?.data || err.message);
       setError(
         err.response?.data?.message ||
+          err.message ||
           "Failed to sign in. Please check your credentials."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,8 +133,17 @@ const SignIn = () => {
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity
+            style={[
+              styles.signInButton,
+              loading && styles.signInButtonDisabled,
+            ]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.signInButtonText}>
+              {loading ? "Signing in..." : "Sign In"}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.signUpContainer}>
@@ -190,6 +230,9 @@ const styles = {
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+  },
+  signInButtonDisabled: {
+    opacity: 0.7,
   },
   signInButtonText: {
     color: "#FFF",

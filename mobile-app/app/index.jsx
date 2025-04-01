@@ -2,10 +2,29 @@ import { Text, View, ScrollView, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import CustomButton from "./components/CustomButton";
+import { useEffect } from "react";
+import * as SecureStore from "expo-secure-store";
 
 export default function Index() {
+  const router = useRouter();
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const accessToken = await SecureStore.getItemAsync("accessToken");
+      if (accessToken) {
+        router.replace("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+    }
+  };
+
   return (
     <>
       <SafeAreaView className="bg-white h-full w-full">
