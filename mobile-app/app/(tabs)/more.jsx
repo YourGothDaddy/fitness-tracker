@@ -5,44 +5,85 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
-import React from "react";
+import React, { useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import axios from "axios";
+import { API_URL } from "../../constants/Config";
 
-const MenuCard = ({ icon, title, description, href, onPress }) => {
-  return (
-    <TouchableOpacity
-      style={styles.menuCard}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={styles.menuIconContainer}>
-        <MaterialIcons name={icon} size={32} color={Colors.darkGreen.color} />
-      </View>
-      <View style={styles.menuTextContainer}>
-        <Text style={styles.menuTitle}>{title}</Text>
-        <Text style={styles.menuDescription}>{description}</Text>
-      </View>
-      <MaterialIcons
-        name="chevron-right"
-        size={24}
-        color={Colors.darkGreen.color}
-      />
-    </TouchableOpacity>
-  );
-};
+const MenuCard = ({ icon, title, description, href, onPress }) => (
+  <TouchableOpacity
+    style={styles.menuCard}
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.menuIconContainer}>
+      <MaterialIcons name={icon} size={32} color={Colors.darkGreen.color} />
+    </View>
+    <View style={styles.menuTextContainer}>
+      <Text style={styles.menuTitle}>{title}</Text>
+      <Text style={styles.menuDescription}>{description}</Text>
+    </View>
+    <MaterialIcons
+      name="chevron-right"
+      size={24}
+      color={Colors.darkGreen.color}
+    />
+  </TouchableOpacity>
+);
 
 const More = () => {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleCardPress = (href) => {
     router.push({
       pathname: href,
       params: { hideHeader: "true" },
     });
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    try {
+      setIsLoggingOut(true);
+
+      const refreshToken = await SecureStore.getItemAsync("refreshToken");
+
+      if (refreshToken) {
+        await axios.post(
+          `${API_URL}/api/auth/logout`,
+          { refreshToken },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          }
+        );
+      }
+
+      await Promise.all([
+        SecureStore.deleteItemAsync("accessToken"),
+        SecureStore.deleteItemAsync("refreshToken"),
+      ]);
+
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert(
+        "Logout Failed",
+        "There was an issue logging out. Please try again."
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -94,9 +135,16 @@ const More = () => {
           />
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity
+          style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
+          onPress={handleLogout}
+          disabled={isLoggingOut}
+          activeOpacity={0.8}
+        >
           <MaterialIcons name="logout" size={24} color={Colors.white.color} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Text style={styles.logoutText}>
+            {isLoggingOut ? "Logging Out..." : "Log Out"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -199,6 +247,9 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 20,
     gap: 10,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   logoutText: {
     color: Colors.white.color,
