@@ -6,6 +6,7 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Services.Admins;
     using Fitness_Tracker.Services.Consumables;
     using Fitness_Tracker.Services.Meals;
+    using Fitness_Tracker.Services.Nutrition;
     using Fitness_Tracker.Services.Tokens;
     using Fitness_Tracker.Services.Users;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -33,6 +34,7 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<IAdminService, AdminService>();
             builder.Services.AddTransient<IConsumableService, ConsumableService>();
             builder.Services.AddTransient<ITokenService, TokenService>();
+            builder.Services.AddTransient<INutritionService, NutritionService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -63,21 +65,41 @@ namespace Fitness_Tracker
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                 };
 
-                // Modified to check both header and cookie
+                // Modified to check both header and cookie with logging
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
                         // First check the Authorization header
-                        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+                        Console.WriteLine($"Auth Header: {authHeader ?? "null"}");
+                        
+                        var token = authHeader?.Split(" ").Last();
+                        Console.WriteLine($"Token from header: {(token != null ? "present" : "null")}");
 
                         // If not found in header, check cookie
                         if (string.IsNullOrEmpty(token))
                         {
                             token = context.Request.Cookies["jwt"];
+                            Console.WriteLine($"Token from cookie: {(token != null ? "present" : "null")}");
                         }
 
                         context.Token = token;
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        Console.WriteLine("Token was successfully validated");
+                        return Task.CompletedTask;
+                    },
+                    OnChallenge = context =>
+                    {
+                        Console.WriteLine($"Authentication challenge issued: {context.Error}, {context.ErrorDescription}");
                         return Task.CompletedTask;
                     }
                 };
@@ -115,7 +137,7 @@ namespace Fitness_Tracker
                 var services = scope.ServiceProvider;
                 DataSeeder.SeedActivityLevels(services).Wait();
                 DataSeeder.SeedAdministratorAsync(services).Wait();
-
+                DataSeeder.SeedTestMealData(services).Wait();
             }
 
             /*app.UseHttpsRedirection();*/

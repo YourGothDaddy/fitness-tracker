@@ -4,54 +4,64 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
+import { nutritionService } from "../../services/nutritionService";
 
 // Helper function to format numbers with commas
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+// Helper function to get start and end dates for a week
+const getWeekDates = () => {
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 6); // Last 7 days including today
+  return { startDate, endDate: today };
+};
+
+// Helper function to format date to day name
+const getDayName = (date) => {
+  return new Date(date).toLocaleDateString("en-US", { weekday: "short" });
+};
+
 const GeneralView = () => {
   const [error, setError] = useState("");
-  const [dailyCaloriesTarget, setDailyCaloriesTarget] = useState(0);
+  const [calorieOverview, setCalorieOverview] = useState({
+    dailyAverage: 0,
+    target: 0,
+    deficit: 0,
+    dailyCalories: [],
+  });
 
-  const getDailyCalories = async () => {
+  const fetchCalorieOverview = async () => {
     try {
-      const response = await fetch("http://172.16.1.147:7009/api/user/goals", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        setError("An error occurred");
-        return;
-      }
-
-      const data = await response.json();
-      if (data && data.dailyCalories) {
-        setDailyCaloriesTarget(data.dailyCalories);
-      }
+      const { startDate, endDate } = getWeekDates();
+      const data = await nutritionService.getCalorieOverview(
+        startDate,
+        endDate
+      );
+      setCalorieOverview(data);
+      setError("");
     } catch (err) {
-      setError("Network error occurred");
-      console.error("Retrieving error:", err);
+      setError("Failed to fetch calorie data");
+      console.error("Error fetching calorie overview:", err);
     }
   };
 
   useEffect(() => {
-    getDailyCalories();
+    fetchCalorieOverview();
   }, []);
 
-  const totalHorizontalPadding = 48; // Container padding (24 * 2)
-  const cardPadding = 40; // Card padding (20 * 2)
+  const totalHorizontalPadding = 48;
+  const cardPadding = 40;
   const screenWidth =
     Dimensions.get("window").width - totalHorizontalPadding - cardPadding;
 
   const calorieData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    labels: calorieOverview.dailyCalories.map((day) => getDayName(day.date)),
     datasets: [
       {
-        data: [1800, 1950, 2100, 1750, 1850, 2200, 1900],
+        data: calorieOverview.dailyCalories.map((day) => day.totalCalories),
       },
     ],
   };
@@ -121,7 +131,9 @@ const GeneralView = () => {
             <View style={styles.labelContainer}>
               <Text style={styles.statLabel}>Daily{"\n"}Average</Text>
             </View>
-            <Text style={styles.statValue}>1,935</Text>
+            <Text style={styles.statValue}>
+              {formatNumber(calorieOverview.dailyAverage)}
+            </Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
 
@@ -135,7 +147,9 @@ const GeneralView = () => {
                 Target
               </Text>
             </View>
-            <Text style={styles.statValue}>{dailyCaloriesTarget}</Text>
+            <Text style={styles.statValue}>
+              {formatNumber(calorieOverview.target)}
+            </Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
 
@@ -149,7 +163,15 @@ const GeneralView = () => {
                 Deficit
               </Text>
             </View>
-            <Text style={[styles.statValue, { color: "#27ae60" }]}>-65</Text>
+            <Text
+              style={[
+                styles.statValue,
+                { color: calorieOverview.deficit > 0 ? "#27ae60" : "#e74c3c" },
+              ]}
+            >
+              {calorieOverview.deficit > 0 ? "-" : "+"}
+              {formatNumber(Math.abs(calorieOverview.deficit))}
+            </Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
         </View>

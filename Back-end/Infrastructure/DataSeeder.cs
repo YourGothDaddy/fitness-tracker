@@ -2,12 +2,12 @@
 {
     using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
+    using Fitness_Tracker.Data.Models.Enums;
     using Microsoft.AspNetCore.Identity;
+    using Microsoft.EntityFrameworkCore;
 
     public static class DataSeeder
     {
-
-
         public static async Task SeedAdministratorAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
@@ -65,6 +65,71 @@
             }
         }
 
-    }
+        public static async Task SeedTestMealData(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
 
+            var testUser = await userManager.FindByEmailAsync("test@test.test");
+            if (testUser == null)
+            {
+                return;
+            }
+
+            var existingMeals = await context.Meals
+                .Where(m => m.UserId == testUser.Id)
+                .AnyAsync();
+
+            if (!existingMeals)
+            {
+                var today = DateTime.UtcNow.Date;
+                var meals = new List<Meal>();
+
+                for (int i = 6; i >= 0; i--)
+                {
+                    var date = today.AddDays(-i);
+                    
+                    meals.Add(new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Breakfast",
+                        Calories = 400,
+                        Date = date,
+                        MealOfTheDay = MealOfTheDay.Breakfast
+                    });
+
+                    meals.Add(new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Lunch",
+                        Calories = 600,
+                        Date = date,
+                        MealOfTheDay = MealOfTheDay.Lunch
+                    });
+
+                    meals.Add(new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Dinner",
+                        Calories = 500,
+                        Date = date,
+                        MealOfTheDay = MealOfTheDay.Dinner
+                    });
+
+                    meals.Add(new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Snack",
+                        Calories = 200,
+                        Date = date,
+                        MealOfTheDay = MealOfTheDay.Snack
+                    });
+                }
+
+                await context.Meals.AddRangeAsync(meals);
+                await context.SaveChangesAsync();
+            }
+        }
+    }
 }

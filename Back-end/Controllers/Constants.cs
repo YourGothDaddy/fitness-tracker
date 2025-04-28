@@ -65,5 +65,11 @@
         {
             public const string UserIsNotAuthenticatedError = "User is not authenticated.";
         }
+
+        public static class NutritionController
+        {
+            public const string CalorieOverviewHttpAttributeName = "calorie-overview";
+            public const string DailyCaloriesHttpAttributeName = "daily-calories";
+        }
     }
 }
