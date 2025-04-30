@@ -23,8 +23,13 @@
             public const string RegisterHttpAttributeName = "register";
             public const string LoginHttpAttributeName = "login";
             public const string LogoutHttpAttributeName = "logout";
-            public const string UserExistsError = "User with this email already exists!";
+            public const string RefreshTokenHttpAttributeName = "refresh-token";
 
+            public const string UserExistsError = "User with this email already exists!";
+            public const string RefreshTokenRequiredError = "Refresh token is required.";
+            public const string InvalidRefreshTokenError = "Invalid or expired refresh token.";
+            public const string UserNotFoundError = "User not found.";
+            public const string LogoutSuccessful = "Logged out successfully.";
         }
 
         public static class MealController

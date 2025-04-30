@@ -16,11 +16,10 @@
         private readonly ApplicationDbContext _context;
         public TokenService(IConfiguration configuration, ApplicationDbContext context)
         {
-
             _configuration = configuration;
             _context = context;
-
         }
+
         public string GenerateToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -32,7 +31,7 @@
                          new Claim(ClaimTypes.NameIdentifier, user.Id),
                          new Claim(ClaimTypes.Email, user.Email)
                  }),
-                Expires = DateTime.UtcNow.AddHours(12),
+                Expires = DateTime.UtcNow.AddMinutes(1),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -71,6 +70,19 @@
             token.RevokedByIp = ipAddress;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<RefreshToken> GetRefreshTokenAsync(string token)
+        {
+            return await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == token);
+        }
+
+        public async Task UpdateRefreshTokenAsync(RefreshToken refreshToken)
+        {
+            _context.RefreshTokens.Update(refreshToken);
+            await _context.SaveChangesAsync();
         }
     }
 }

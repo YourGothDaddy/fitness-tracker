@@ -10,5 +10,9 @@
         Task SaveRefreshTokenAsync(RefreshToken refreshToken);
 
         Task<bool> RevokeRefreshTokenAsync(string refreshToken, string ipAddress);
+
+        Task<RefreshToken> GetRefreshTokenAsync(string token);
+
+        Task UpdateRefreshTokenAsync(RefreshToken refreshToken);
     }
 }
