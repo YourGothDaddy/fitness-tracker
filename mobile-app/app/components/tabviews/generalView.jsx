@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 import { nutritionService } from "../../services/nutritionService";
+import { useRouter } from "expo-router";
 
 // Helper function to format numbers with commas
 const formatNumber = (num) => {
@@ -32,6 +33,7 @@ const GeneralView = () => {
     deficit: 0,
     dailyCalories: [],
   });
+  const router = useRouter();
 
   const fetchCalorieOverview = async () => {
     try {
@@ -45,6 +47,12 @@ const GeneralView = () => {
     } catch (err) {
       setError("Failed to fetch calorie data");
       console.error("Error fetching calorie overview:", err);
+
+      // Check if this is an auth error that couldn't be automatically handled
+      if (err.logout) {
+        // Redirect to login page if needed
+        router.replace("/");
+      }
     }
   };
 

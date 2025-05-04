@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 import * as SecureStore from "expo-secure-store";
-import axios from "axios";
+import { authService } from "@/app/services/authService";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -20,8 +20,8 @@ const SignIn = () => {
 
   const checkAuthStatus = async () => {
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
-      if (accessToken) {
+      const isAuthenticated = await authService.isAuthenticated();
+      if (isAuthenticated) {
         router.replace("/dashboard");
       }
     } catch (error) {
@@ -39,39 +39,11 @@ const SignIn = () => {
     setError("");
 
     try {
-      const response = await axios.post(
-        "http://172.16.1.233:7009/api/auth/login",
-        {
-          email,
-          password,
-          ipAddress: "127.0.0.1",
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-
-      const { accessToken, refreshToken } = response.data;
-
-      if (!accessToken || !refreshToken) {
-        throw new Error("Invalid response format from server");
-      }
-
-      await Promise.all([
-        SecureStore.setItemAsync("accessToken", accessToken),
-        SecureStore.setItemAsync("refreshToken", refreshToken),
-      ]);
-
+      await authService.login(email, password);
       router.replace("/dashboard");
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to sign in. Please check your credentials."
-      );
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }

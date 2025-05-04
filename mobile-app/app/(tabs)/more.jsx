@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_URL } from "../../constants/Config";
+import { authService } from "@/app/services/authService";
 
 const MenuCard = ({ icon, title, description, href, onPress }) => (
   <TouchableOpacity
@@ -53,27 +54,7 @@ const More = () => {
 
     try {
       setIsLoggingOut(true);
-
-      const refreshToken = await SecureStore.getItemAsync("refreshToken");
-
-      if (refreshToken) {
-        await axios.post(
-          `${API_URL}/api/auth/logout`,
-          { refreshToken },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-          }
-        );
-      }
-
-      await Promise.all([
-        SecureStore.deleteItemAsync("accessToken"),
-        SecureStore.deleteItemAsync("refreshToken"),
-      ]);
-
+      await authService.logout();
       router.replace("/");
     } catch (error) {
       console.error("Logout error:", error);
