@@ -19,6 +19,7 @@
         public DbSet<ActivityCategory> ActivityCategories { get; set; }
         public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<WeightRecord> WeightRecords { get; set; }
 
         public DbSet<ActivityLevel> ActivityLevels { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -54,6 +55,12 @@
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            builder.Entity<WeightRecord>()
+                .HasOne(wr => wr.User)
+                .WithMany()
+                .HasForeignKey(wr => wr.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
 

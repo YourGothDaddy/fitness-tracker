@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 import { nutritionService } from "../../services/nutritionService";
+import { weightService } from "../../services/weightService";
 import { useRouter } from "expo-router";
 
 // Helper function to format numbers with commas
@@ -33,6 +34,15 @@ const GeneralView = () => {
     deficit: 0,
     dailyCalories: [],
   });
+  const [weightProgress, setWeightProgress] = useState({
+    startingWeight: 0,
+    currentWeight: 0,
+    change: 0,
+    goalWeight: 0,
+    progressPercentage: 0,
+    dailyWeights: [],
+  });
+  const [isWeightLoading, setIsWeightLoading] = useState(true);
   const router = useRouter();
 
   const fetchCalorieOverview = async () => {
@@ -56,8 +66,30 @@ const GeneralView = () => {
     }
   };
 
+  const fetchWeightProgress = async () => {
+    try {
+      setIsWeightLoading(true);
+      const { startDate, endDate } = getWeekDates();
+      const data = await weightService.getWeightProgress(startDate, endDate);
+      setWeightProgress(data);
+      setError("");
+    } catch (err) {
+      setError("Failed to fetch weight data");
+      console.error("Error fetching weight progress:", err);
+
+      // Check if this is an auth error that couldn't be automatically handled
+      if (err.logout) {
+        // Redirect to login page if needed
+        router.replace("/");
+      }
+    } finally {
+      setIsWeightLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCalorieOverview();
+    fetchWeightProgress();
   }, []);
 
   const totalHorizontalPadding = 48;
@@ -75,10 +107,10 @@ const GeneralView = () => {
   };
 
   const weightData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    labels: weightProgress.dailyWeights.map((day) => day.dayName),
     datasets: [
       {
-        data: [70.5, 70.3, 70.4, 70.1, 70.0, 69.8, 69.7],
+        data: weightProgress.dailyWeights.map((day) => day.weight),
         color: () => Colors.green.color,
         strokeWidth: 2,
       },
@@ -224,21 +256,35 @@ const GeneralView = () => {
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Starting</Text>
             <View style={styles.statValueContainer}>
-              <Text style={styles.statValue}>70.5</Text>
+              <Text style={styles.statValue}>
+                {weightProgress.startingWeight.toFixed(1)}
+              </Text>
               <Text style={styles.statUnit}>kg</Text>
             </View>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Current</Text>
             <View style={styles.statValueContainer}>
-              <Text style={styles.statValue}>69.7</Text>
+              <Text style={styles.statValue}>
+                {weightProgress.currentWeight.toFixed(1)}
+              </Text>
               <Text style={styles.statUnit}>kg</Text>
             </View>
           </View>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Change</Text>
             <View style={styles.statValueContainer}>
-              <Text style={[styles.statValue, { color: "#27ae60" }]}>-0.8</Text>
+              <Text
+                style={[
+                  styles.statValue,
+                  {
+                    color: weightProgress.change <= 0 ? "#27ae60" : "#e74c3c",
+                  },
+                ]}
+              >
+                {weightProgress.change <= 0 ? "-" : "+"}
+                {Math.abs(weightProgress.change).toFixed(1)}
+              </Text>
               <Text style={styles.statUnit}>kg</Text>
             </View>
           </View>
@@ -246,19 +292,21 @@ const GeneralView = () => {
 
         <View style={styles.chartContainer}>
           <View style={styles.chartWrapper}>
-            <LineChart
-              data={weightData}
-              width={screenWidth}
-              height={180}
-              chartConfig={chartConfig}
-              style={styles.chart}
-              bezier
-              withDots={true}
-              withInnerLines={true}
-              segments={4}
-              yAxisLabel=""
-              yAxisSuffix=""
-            />
+            {weightProgress.dailyWeights.length > 0 && (
+              <LineChart
+                data={weightData}
+                width={screenWidth}
+                height={180}
+                chartConfig={chartConfig}
+                style={styles.chart}
+                bezier
+                withDots={true}
+                withInnerLines={true}
+                segments={4}
+                yAxisLabel=""
+                yAxisSuffix=""
+              />
+            )}
           </View>
         </View>
       </LinearGradient>

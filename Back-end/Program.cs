@@ -9,6 +9,7 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Services.Nutrition;
     using Fitness_Tracker.Services.Tokens;
     using Fitness_Tracker.Services.Users;
+    using Fitness_Tracker.Services.Weight;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,7 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<IConsumableService, ConsumableService>();
             builder.Services.AddTransient<ITokenService, TokenService>();
             builder.Services.AddTransient<INutritionService, NutritionService>();
+            builder.Services.AddTransient<IWeightService, WeightService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
