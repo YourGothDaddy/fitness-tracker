@@ -131,5 +131,195 @@
                 await context.SaveChangesAsync();
             }
         }
+
+        public static async Task SeedTestUserAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+            var testUser = await userManager.FindByEmailAsync("test@test.test");
+            if (testUser == null)
+            {
+                testUser = new User
+                {
+                    UserName = "test@test.test",
+                    Email = "test@test.test",
+                    FullName = "Test User",
+                    ActivityLevelId = 1
+                };
+
+                var result = await userManager.CreateAsync(testUser, "testtest");
+                if (!result.Succeeded)
+                {
+                    throw new Exception("Failed to create test user: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+                }
+            }
+        }
+
+        public static async Task SeedTestActivities(IServiceProvider serviceProvider)
+        {
+            // First ensure test user exists
+            await SeedTestUserAsync(serviceProvider);
+
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+            var testUser = await userManager.FindByEmailAsync("test@test.test");
+            if (testUser == null)
+            {
+                throw new Exception("Test user not found after creation attempt");
+            }
+
+            var today = DateTime.UtcNow.Date;
+
+            // Check and update existing meals
+            var existingMeals = await context.Meals
+                .Where(m => m.UserId == testUser.Id)
+                .ToListAsync();
+
+            if (existingMeals.Any())
+            {
+                // Update existing meals to today's date
+                foreach (var meal in existingMeals)
+                {
+                    meal.Date = today;
+                }
+            }
+            else
+            {
+                // Create new meals for today
+                var meals = new List<Meal>
+                {
+                    new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Breakfast",
+                        Calories = 400,
+                        Date = today.AddHours(8), // 8:00 AM
+                        MealOfTheDay = MealOfTheDay.Breakfast
+                    },
+                    new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Lunch",
+                        Calories = 600,
+                        Date = today.AddHours(12).AddMinutes(30), // 12:30 PM
+                        MealOfTheDay = MealOfTheDay.Lunch
+                    },
+                    new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Dinner",
+                        Calories = 500,
+                        Date = today.AddHours(19), // 7:00 PM
+                        MealOfTheDay = MealOfTheDay.Dinner
+                    },
+                    new Meal
+                    {
+                        UserId = testUser.Id,
+                        Name = "Snack",
+                        Calories = 200,
+                        Date = today.AddHours(15).AddMinutes(30), // 3:30 PM
+                        MealOfTheDay = MealOfTheDay.Snack
+                    }
+                };
+
+                await context.Meals.AddRangeAsync(meals);
+            }
+
+            // Check and update existing activities
+            var existingActivities = await context.Activities
+                .Where(a => a.UserId == testUser.Id)
+                .ToListAsync();
+
+            if (existingActivities.Any())
+            {
+                // Update existing activities to today's date
+                foreach (var activity in existingActivities)
+                {
+                    activity.Date = today;
+                }
+            }
+            else
+            {
+                // Get or create activity categories
+                var cardioCategory = await context.ActivityCategories
+                    .FirstOrDefaultAsync(ac => ac.Name == "Cardio");
+                
+                var strengthCategory = await context.ActivityCategories
+                    .FirstOrDefaultAsync(ac => ac.Name == "Strength Training");
+
+                if (cardioCategory == null)
+                {
+                    cardioCategory = new ActivityCategory { Name = "Cardio" };
+                    context.ActivityCategories.Add(cardioCategory);
+                    await context.SaveChangesAsync();
+                }
+
+                if (strengthCategory == null)
+                {
+                    strengthCategory = new ActivityCategory { Name = "Strength Training" };
+                    context.ActivityCategories.Add(strengthCategory);
+                    await context.SaveChangesAsync();
+                }
+
+                // Get or create activity types
+                var runningType = await context.ActivityTypes
+                    .FirstOrDefaultAsync(at => at.Name == "Running");
+                
+                var weightTrainingType = await context.ActivityTypes
+                    .FirstOrDefaultAsync(at => at.Name == "Weight Training");
+
+                if (runningType == null)
+                {
+                    runningType = new ActivityType 
+                    { 
+                        Name = "Running",
+                        ActivityCategoryId = cardioCategory.Id
+                    };
+                    context.ActivityTypes.Add(runningType);
+                    await context.SaveChangesAsync();
+                }
+
+                if (weightTrainingType == null)
+                {
+                    weightTrainingType = new ActivityType 
+                    { 
+                        Name = "Weight Training",
+                        ActivityCategoryId = strengthCategory.Id
+                    };
+                    context.ActivityTypes.Add(weightTrainingType);
+                    await context.SaveChangesAsync();
+                }
+
+                // Create new activities for today
+                var activities = new List<Activity>
+                {
+                    new Activity
+                    {
+                        UserId = testUser.Id,
+                        ActivityTypeId = runningType.Id,
+                        CaloriesBurned = 300,
+                        Date = today.AddHours(7), // 7:00 AM
+                        DurationInMinutes = 30,
+                        TimeOfTheDay = TimeOfTheDay.Morning
+                    },
+                    new Activity
+                    {
+                        UserId = testUser.Id,
+                        ActivityTypeId = weightTrainingType.Id,
+                        CaloriesBurned = 250,
+                        Date = today.AddHours(17), // 5:00 PM
+                        DurationInMinutes = 45,
+                        TimeOfTheDay = TimeOfTheDay.Evening
+                    }
+                };
+
+                await context.Activities.AddRangeAsync(activities);
+            }
+
+            await context.SaveChangesAsync();
+        }
     }
 }

@@ -76,5 +76,11 @@
             public const string CalorieOverviewHttpAttributeName = "calorie-overview";
             public const string DailyCaloriesHttpAttributeName = "daily-calories";
         }
+        
+        public static class ActivityController
+        {
+            public const string ActivityOverviewHttpAttributeName = "activity-overview";
+            public const string ActivityOverviewForPeriodHttpAttributeName = "activity-overview-period";
+        }
     }
 }

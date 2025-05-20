@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Platform,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 import { nutritionService } from "../../services/nutritionService";
 import { weightService } from "../../services/weightService";
+import { activityService } from "../../services/activityService";
 import { useRouter } from "expo-router";
 
 // Helper function to format numbers with commas
@@ -42,7 +51,12 @@ const GeneralView = () => {
     progressPercentage: 0,
     dailyWeights: [],
   });
+  const [activityOverview, setActivityOverview] = useState({
+    meals: [],
+    exercises: [],
+  });
   const [isWeightLoading, setIsWeightLoading] = useState(true);
+  const [isActivityLoading, setIsActivityLoading] = useState(true);
   const router = useRouter();
 
   const fetchCalorieOverview = async () => {
@@ -87,9 +101,31 @@ const GeneralView = () => {
     }
   };
 
+  const fetchActivityOverview = async () => {
+    try {
+      setIsActivityLoading(true);
+      const today = activityService.getTodayDate();
+      const data = await activityService.getActivityOverview(today);
+      setActivityOverview(data);
+      setError("");
+    } catch (err) {
+      setError("Failed to fetch activity data");
+      console.error("Error fetching activity overview:", err);
+
+      // Check if this is an auth error that couldn't be automatically handled
+      if (err.logout) {
+        // Redirect to login page if needed
+        router.replace("/");
+      }
+    } finally {
+      setIsActivityLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCalorieOverview();
     fetchWeightProgress();
+    fetchActivityOverview();
   }, []);
 
   const totalHorizontalPadding = 48;
@@ -147,8 +183,24 @@ const GeneralView = () => {
     },
   };
 
+  // Helper function to get meal type icon
+  const getMealTypeIcon = (mealType) => {
+    switch (mealType) {
+      case 0: // Breakfast
+        return "free-breakfast";
+      case 1: // Lunch
+        return "lunch-dining";
+      case 2: // Dinner
+        return "dinner-dining";
+      case 3: // Snack
+        return "icecream";
+      default:
+        return "restaurant";
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Calorie Overview Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
@@ -328,103 +380,160 @@ const GeneralView = () => {
           </View>
         </View>
 
-        {/* Meals Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Meals</Text>
-          <View style={styles.tableContainer}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Meal & Calories</Text>
-              <Text style={styles.tableHeaderText}>Time</Text>
+        {isActivityLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#619819" />
+          </View>
+        ) : (
+          <>
+            {/* Meals Section */}
+            <View style={styles.sectionContainer}>
+              <Text style={styles.sectionTitle}>Meals</Text>
+              <View style={styles.tableContainer}>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableHeaderText}>Meal & Calories</Text>
+                  <Text style={styles.tableHeaderText}>Time</Text>
+                </View>
+
+                {activityOverview.meals && activityOverview.meals.length > 0 ? (
+                  activityOverview.meals.map((meal, index) => (
+                    <View key={`meal-${index}`} style={styles.tableRow}>
+                      <View style={styles.mainContent}>
+                        <View style={styles.titleContainer}>
+                          <MaterialIcons
+                            name={getMealTypeIcon(meal.mealType)}
+                            size={20}
+                            color="#619819"
+                          />
+                          <Text style={styles.tableCellTitle} numberOfLines={1}>
+                            {meal.name}
+                          </Text>
+                        </View>
+                        <View style={styles.detailsContainer}>
+                          {meal.weight > 0 && (
+                            <View style={styles.detailRow}>
+                              <MaterialIcons
+                                name="scale"
+                                size={16}
+                                color="#636e72"
+                              />
+                              <Text style={styles.detailText}>
+                                {meal.weight}g
+                              </Text>
+                            </View>
+                          )}
+                          <View style={styles.detailRow}>
+                            <MaterialIcons
+                              name="local-fire-department"
+                              size={16}
+                              color="#636e72"
+                            />
+                            <Text style={styles.detailText}>
+                              {meal.calories} kcal
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.timeContainer}>
+                        <MaterialIcons
+                          name="schedule"
+                          size={14}
+                          color="#619819"
+                          style={styles.timeIcon}
+                        />
+                        <Text style={styles.timeText}>
+                          {activityService.formatTime(meal.time)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Text style={styles.emptyStateText}>
+                      No meals recorded today
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
 
-            {/* Sample Meal Row */}
-            <View style={styles.tableRow}>
-              <View style={styles.mainContent}>
-                <View style={styles.titleContainer}>
-                  <MaterialIcons name="restaurant" size={20} color="#619819" />
-                  <Text style={styles.tableCellTitle} numberOfLines={1}>
-                    Oatmeal with Berries and Honey
+            {/* Exercises Section */}
+            <View style={[styles.sectionContainer, { marginTop: 20 }]}>
+              <Text style={styles.sectionTitle}>Exercises</Text>
+              <View style={styles.tableContainer}>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableHeaderText}>
+                    Exercise & Calories
                   </Text>
+                  <Text style={styles.tableHeaderText}>Time</Text>
                 </View>
-                <View style={styles.detailsContainer}>
-                  <View style={styles.detailRow}>
-                    <MaterialIcons name="scale" size={16} color="#636e72" />
-                    <Text style={styles.detailText}>300g</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <MaterialIcons
-                      name="local-fire-department"
-                      size={16}
-                      color="#636e72"
-                    />
-                    <Text style={styles.detailText}>285 kcal</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.timeContainer}>
-                <MaterialIcons
-                  name="schedule"
-                  size={14}
-                  color="#619819"
-                  style={styles.timeIcon}
-                />
-                <Text style={styles.timeText}>08:30</Text>
-              </View>
-            </View>
-          </View>
-        </View>
 
-        {/* Exercises Section */}
-        <View style={[styles.sectionContainer, { marginTop: 20 }]}>
-          <Text style={styles.sectionTitle}>Exercises</Text>
-          <View style={styles.tableContainer}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Exercise & Calories</Text>
-              <Text style={styles.tableHeaderText}>Time</Text>
-            </View>
-
-            {/* Sample Exercise Row */}
-            <View style={styles.tableRow}>
-              <View style={styles.mainContent}>
-                <View style={styles.titleContainer}>
-                  <MaterialIcons
-                    name="fitness-center"
-                    size={20}
-                    color="#619819"
-                  />
-                  <Text style={styles.tableCellTitle}>Running</Text>
-                </View>
-                <View style={styles.detailsContainer}>
-                  <View style={styles.detailRow}>
-                    <MaterialIcons name="timer" size={16} color="#636e72" />
-                    <Text style={styles.detailText}>30 min</Text>
+                {activityOverview.exercises &&
+                activityOverview.exercises.length > 0 ? (
+                  activityOverview.exercises.map((exercise, index) => (
+                    <View key={`exercise-${index}`} style={styles.tableRow}>
+                      <View style={styles.mainContent}>
+                        <View style={styles.titleContainer}>
+                          <MaterialIcons
+                            name="fitness-center"
+                            size={20}
+                            color="#619819"
+                          />
+                          <Text style={styles.tableCellTitle}>
+                            {exercise.name}
+                          </Text>
+                        </View>
+                        <View style={styles.detailsContainer}>
+                          <View style={styles.detailRow}>
+                            <MaterialIcons
+                              name="timer"
+                              size={16}
+                              color="#636e72"
+                            />
+                            <Text style={styles.detailText}>
+                              {exercise.durationInMinutes} min
+                            </Text>
+                          </View>
+                          <View style={styles.detailRow}>
+                            <MaterialIcons
+                              name="local-fire-department"
+                              size={16}
+                              color="#636e72"
+                            />
+                            <Text style={styles.detailText}>
+                              {exercise.caloriesBurned} kcal
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.timeContainer}>
+                        <MaterialIcons
+                          name="schedule"
+                          size={14}
+                          color="#619819"
+                          style={styles.timeIcon}
+                        />
+                        <Text style={styles.timeText}>
+                          {activityService.formatTime(exercise.time)}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Text style={styles.emptyStateText}>
+                      No exercises recorded today
+                    </Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <MaterialIcons
-                      name="local-fire-department"
-                      size={16}
-                      color="#636e72"
-                    />
-                    <Text style={styles.detailText}>320 kcal</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.timeContainer}>
-                <MaterialIcons
-                  name="schedule"
-                  size={14}
-                  color="#619819"
-                  style={styles.timeIcon}
-                />
-                <Text style={styles.timeText}>07:00</Text>
+                )}
               </View>
             </View>
-          </View>
-        </View>
+          </>
+        )}
       </LinearGradient>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -432,13 +541,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    gap: 24,
   },
   card: {
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
     overflow: "hidden",
+    marginBottom: 24,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -602,6 +711,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: "#619819",
+  },
+  tableHeaderText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2d3436",
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStateContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#636e72",
+    fontStyle: "italic",
   },
 });
 

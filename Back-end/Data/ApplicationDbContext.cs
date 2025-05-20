@@ -62,6 +62,12 @@
                 .WithMany()
                 .HasForeignKey(wr => wr.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+                
+            builder.Entity<User>()
+                .HasMany(u => u.Activities)
+                .WithOne(a => a.User)
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

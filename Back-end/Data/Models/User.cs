@@ -14,6 +14,7 @@
         public ActivityLevel ActivityLevel { get; set; }
         public float WeeklyWeightChangeGoal { get; set; }
         public virtual ICollection<Meal> Meals { get; set; } = new List<Meal>();
+        public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
 
         public int DailyCaloriesGoal { get; set; }
 

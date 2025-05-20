@@ -3,6 +3,7 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Infrastructure;
+    using Fitness_Tracker.Services.Activity;
     using Fitness_Tracker.Services.Admins;
     using Fitness_Tracker.Services.Consumables;
     using Fitness_Tracker.Services.Meals;
@@ -37,6 +38,7 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<ITokenService, TokenService>();
             builder.Services.AddTransient<INutritionService, NutritionService>();
             builder.Services.AddTransient<IWeightService, WeightService>();
+            builder.Services.AddTransient<IActivityService, ActivityService>();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -139,7 +141,8 @@ namespace Fitness_Tracker
                 var services = scope.ServiceProvider;
                 DataSeeder.SeedActivityLevels(services).Wait();
                 DataSeeder.SeedAdministratorAsync(services).Wait();
-                DataSeeder.SeedTestMealData(services).Wait();
+                DataSeeder.SeedTestUserAsync(services).Wait();
+                DataSeeder.SeedTestActivities(services).Wait();
             }
 
             /*app.UseHttpsRedirection();*/
