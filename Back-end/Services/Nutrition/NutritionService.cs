@@ -60,5 +60,28 @@ namespace Fitness_Tracker.Services.Nutrition
                 TotalCalories = totalCalories
             };
         }
+
+        public async Task<MacronutrientsModel> GetMacronutrientsAsync(string userId, DateTime date)
+        {
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            var totalProtein = meals.Sum(m => m.Protein);
+            var totalCarbs = meals.Sum(m => m.Carbs);
+            var totalFat = meals.Sum(m => m.Fat);
+            var totalMacros = totalProtein + totalCarbs + totalFat;
+
+            return new MacronutrientsModel
+            {
+                Protein = totalProtein,
+                Carbs = totalCarbs,
+                Fat = totalFat,
+                TotalMacros = totalMacros,
+                ProteinPercentage = totalMacros > 0 ? (totalProtein / totalMacros) * 100 : 0,
+                CarbsPercentage = totalMacros > 0 ? (totalCarbs / totalMacros) * 100 : 0,
+                FatPercentage = totalMacros > 0 ? (totalFat / totalMacros) * 100 : 0
+            };
+        }
     }
 } 

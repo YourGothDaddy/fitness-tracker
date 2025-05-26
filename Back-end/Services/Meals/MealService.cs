@@ -26,6 +26,9 @@
                     Name = meal.Name,
                     MealOfTheDay = meal.MealOfTheDay,
                     Calories = meal.Calories,
+                    Protein = meal.Protein,
+                    Carbs = meal.Carbs,
+                    Fat = meal.Fat,
                     UserId = userId,
                     Date = (meal.Date != DateTime.MinValue) ? meal.Date : DateTime.UtcNow.Date
                 });

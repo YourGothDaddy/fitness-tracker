@@ -25,7 +25,8 @@ class ActivityService {
   // Helper function to get today's date at midnight
   getTodayDate() {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Set to midnight UTC to ensure consistent date comparison
+    today.setUTCHours(0, 0, 0, 0);
     return today;
   }
 

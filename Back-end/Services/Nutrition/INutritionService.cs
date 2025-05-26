@@ -6,5 +6,6 @@ namespace Fitness_Tracker.Services.Nutrition
     {
         Task<CalorieOverviewModel> GetCalorieOverviewAsync(string userId, DateTime startDate, DateTime endDate);
         Task<DailyCaloriesModel> GetDailyCaloriesAsync(string userId, DateTime date);
+        Task<MacronutrientsModel> GetMacronutrientsAsync(string userId, DateTime date);
     }
 } 

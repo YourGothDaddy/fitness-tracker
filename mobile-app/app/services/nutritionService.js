@@ -21,6 +21,16 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getMacronutrients(date) {
+    try {
+      const url = `/api/nutrition/macronutrients?date=${date.toISOString()}`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

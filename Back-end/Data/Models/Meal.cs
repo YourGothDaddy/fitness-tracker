@@ -17,6 +17,15 @@
         public int Calories { get; set; }
 
         [Required]
+        public double Protein { get; set; }
+
+        [Required]
+        public double Carbs { get; set; }
+
+        [Required]
+        public double Fat { get; set; }
+
+        [Required]
         public string UserId { get; set; }
 
         public virtual User User { get; set; }

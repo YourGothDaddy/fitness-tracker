@@ -9,38 +9,45 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
 import { PieChart } from "react-native-chart-kit";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
+import nutritionService from "@/app/services/nutritionService";
 
 const ChartsView = () => {
+  const [macronutrients, setMacronutrients] = useState({
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    totalMacros: 0,
+    proteinPercentage: 0,
+    carbsPercentage: 0,
+    fatPercentage: 0,
+  });
+
+  useEffect(() => {
+    const fetchMacronutrients = async () => {
+      try {
+        const today = new Date();
+        const data = await nutritionService.getMacronutrients(today);
+        setMacronutrients({
+          protein: data.protein,
+          carbs: data.carbs,
+          fat: data.fat,
+          totalMacros: data.totalMacros,
+          proteinPercentage: data.proteinPercentage,
+          carbsPercentage: data.carbsPercentage,
+          fatPercentage: data.fatPercentage,
+        });
+      } catch (error) {
+        console.error("Error fetching macronutrients:", error);
+      }
+    };
+
+    fetchMacronutrients();
+  }, []);
+
   const caloriesConsumed = 1500;
-  const proteinConsumed = 30;
-  const carbsConsumed = 5;
-  const fatConsumed = 2;
-  const totalMacros = proteinConsumed + carbsConsumed + fatConsumed;
-  const proteinPercentage = ((proteinConsumed / totalMacros) * 100).toFixed(1);
-  const carbsPercentage = ((carbsConsumed / totalMacros) * 100).toFixed(1);
-  const fatPercentage = ((fatConsumed / totalMacros) * 100).toFixed(1);
-
-  const consumptionData = [
-    {
-      key: 1,
-      value: proteinConsumed,
-      svg: { fill: Colors.green.color },
-    },
-    {
-      key: 2,
-      value: carbsConsumed,
-      svg: { fill: Colors.blue.color },
-    },
-    {
-      key: 3,
-      value: fatConsumed,
-      svg: { fill: Colors.brightRed.color },
-    },
-  ];
-
   const bmr = 1949;
   const exercise = 0;
   const baselineActivity = 390;
@@ -106,19 +113,19 @@ const ChartsView = () => {
   const macroData = [
     {
       name: "Protein",
-      population: proteinConsumed,
+      population: macronutrients.protein,
       color: Colors.green.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "Carbs",
-      population: carbsConsumed,
+      population: macronutrients.carbs,
       color: Colors.blue.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "Fat",
-      population: fatConsumed,
+      population: macronutrients.fat,
       color: Colors.brightRed.color,
       legendFontColor: "#7F7F7F",
     },
@@ -192,22 +199,22 @@ const ChartsView = () => {
           {[
             {
               title: "Protein",
-              value: proteinConsumed,
-              percentage: proteinPercentage,
+              value: macronutrients.protein,
+              percentage: macronutrients.proteinPercentage.toFixed(1),
               color: Colors.green.color,
               icon: "fitness-center",
             },
             {
               title: "Carbs",
-              value: carbsConsumed,
-              percentage: carbsPercentage,
+              value: macronutrients.carbs,
+              percentage: macronutrients.carbsPercentage.toFixed(1),
               color: Colors.blue.color,
               icon: "grain",
             },
             {
               title: "Fat",
-              value: fatConsumed,
-              percentage: fatPercentage,
+              value: macronutrients.fat,
+              percentage: macronutrients.fatPercentage.toFixed(1),
               color: Colors.brightRed.color,
               icon: "opacity",
             },

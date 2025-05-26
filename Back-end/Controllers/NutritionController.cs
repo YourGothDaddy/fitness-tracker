@@ -43,6 +43,19 @@ namespace Fitness_Tracker.Controllers
             return Ok(result);
         }
 
+        [HttpGet("macronutrients")]
+        public async Task<IActionResult> GetMacronutrients([FromQuery] DateTime date)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var result = await _nutritionService.GetMacronutrientsAsync(userId, date);
+            return Ok(result);
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()
