@@ -25,74 +25,87 @@ const ChartsView = () => {
     fatPercentage: 0,
   });
 
+  const [energyExpenditure, setEnergyExpenditure] = useState({
+    bmr: 0,
+    exerciseCalories: 0,
+    baselineActivityCalories: 0,
+    tefCalories: 0,
+    totalEnergyBurned: 0,
+    bmrPercentage: 0,
+    exercisePercentage: 0,
+    baselineActivityPercentage: 0,
+    tefPercentage: 0,
+  });
+
   useEffect(() => {
-    const fetchMacronutrients = async () => {
+    const fetchData = async () => {
       try {
         const today = new Date();
-        const data = await nutritionService.getMacronutrients(today);
+        const [macrosData, energyData] = await Promise.all([
+          nutritionService.getMacronutrients(today),
+          nutritionService.getEnergyExpenditure(today),
+        ]);
+
         setMacronutrients({
-          protein: data.protein,
-          carbs: data.carbs,
-          fat: data.fat,
-          totalMacros: data.totalMacros,
-          proteinPercentage: data.proteinPercentage,
-          carbsPercentage: data.carbsPercentage,
-          fatPercentage: data.fatPercentage,
+          protein: macrosData.protein,
+          carbs: macrosData.carbs,
+          fat: macrosData.fat,
+          totalMacros: macrosData.totalMacros,
+          proteinPercentage: macrosData.proteinPercentage,
+          carbsPercentage: macrosData.carbsPercentage,
+          fatPercentage: macrosData.fatPercentage,
+        });
+
+        setEnergyExpenditure({
+          bmr: energyData.bmr,
+          exerciseCalories: energyData.exerciseCalories,
+          baselineActivityCalories: energyData.baselineActivityCalories,
+          tefCalories: energyData.tefCalories,
+          totalEnergyBurned: energyData.totalEnergyBurned,
+          bmrPercentage: energyData.bmrPercentage,
+          exercisePercentage: energyData.exercisePercentage,
+          baselineActivityPercentage: energyData.baselineActivityPercentage,
+          tefPercentage: energyData.tefPercentage,
         });
       } catch (error) {
-        console.error("Error fetching macronutrients:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
-    fetchMacronutrients();
+    fetchData();
   }, []);
 
-  const caloriesConsumed = 1500;
-  const bmr = 1949;
-  const exercise = 0;
-  const baselineActivity = 390;
-  const tef = 1;
-  const totalEnergyBurned = bmr + exercise + baselineActivity + tef;
-  const bmrPercentage = ((bmr / totalEnergyBurned) * 100).toFixed(1);
-  const exercisePercentage = ((exercise / totalEnergyBurned) * 100).toFixed(1);
-  const baselineActivityPercentage = (
-    (baselineActivity / totalEnergyBurned) *
-    100
-  ).toFixed(1);
-  const tefPercentage = ((tef / totalEnergyBurned) * 100).toFixed(1);
+  const caloriesConsumed = 1500; // This should also come from the API
+  const target = 2000; // This should also come from the API
+  const remaining = target - caloriesConsumed;
 
   const burnedData = [
     {
       key: 1,
-      value: bmr,
+      value: energyExpenditure.bmr,
       svg: { fill: Colors.green.color },
     },
     {
       key: 2,
-      value: exercise,
+      value: energyExpenditure.exerciseCalories,
       svg: { fill: Colors.blue.color },
     },
     {
       key: 3,
-      value: baselineActivity,
+      value: energyExpenditure.baselineActivityCalories,
       svg: { fill: Colors.brightRed.color },
     },
     {
       key: 4,
-      value: tef,
+      value: energyExpenditure.tefCalories,
       svg: { fill: Colors.red.color },
     },
   ];
 
-  const target = 2000;
-  const exerciseAboveBaseline = exercise;
-  const consumed = caloriesConsumed;
-  const remaining = target - consumed;
-
   const energyBudgetData = [
     {
       key: 1,
-      value: consumed,
+      value: caloriesConsumed,
       svg: { fill: Colors.green.color },
     },
     {
@@ -134,25 +147,25 @@ const ChartsView = () => {
   const burnedChartData = [
     {
       name: "BMR",
-      population: bmr,
+      population: energyExpenditure.bmr,
       color: Colors.green.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "Exercise",
-      population: exercise,
+      population: energyExpenditure.exerciseCalories,
       color: Colors.blue.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "Baseline",
-      population: baselineActivity,
+      population: energyExpenditure.baselineActivityCalories,
       color: Colors.brightRed.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "TEF",
-      population: tef,
+      population: energyExpenditure.tefCalories,
       color: Colors.red.color,
       legendFontColor: "#7F7F7F",
     },
@@ -161,7 +174,7 @@ const ChartsView = () => {
   const budgetData = [
     {
       name: "Consumed",
-      population: consumed,
+      population: caloriesConsumed,
       color: Colors.green.color,
       legendFontColor: "#7F7F7F",
     },
@@ -268,29 +281,30 @@ const ChartsView = () => {
           {[
             {
               title: "BMR",
-              value: bmr,
-              percentage: bmrPercentage,
+              value: energyExpenditure.bmr,
+              percentage: energyExpenditure.bmrPercentage.toFixed(1),
               color: Colors.green.color,
               icon: "battery-charging-full",
             },
             {
               title: "Exercise",
-              value: exercise,
-              percentage: exercisePercentage,
+              value: energyExpenditure.exerciseCalories,
+              percentage: energyExpenditure.exercisePercentage.toFixed(1),
               color: Colors.blue.color,
               icon: "directions-run",
             },
             {
               title: "Activity",
-              value: baselineActivity,
-              percentage: baselineActivityPercentage,
+              value: energyExpenditure.baselineActivityCalories,
+              percentage:
+                energyExpenditure.baselineActivityPercentage.toFixed(1),
               color: Colors.brightRed.color,
               icon: "directions-walk",
             },
             {
               title: "TEF",
-              value: tef,
-              percentage: tefPercentage,
+              value: energyExpenditure.tefCalories,
+              percentage: energyExpenditure.tefPercentage.toFixed(1),
               color: Colors.red.color,
               icon: "whatshot",
             },
@@ -346,7 +360,7 @@ const ChartsView = () => {
             },
             {
               title: "Consumed",
-              value: consumed,
+              value: caloriesConsumed,
               icon: "restaurant",
               color: Colors.green.color,
             },
