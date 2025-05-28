@@ -80,6 +80,30 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("energy-budget")]
+        public async Task<IActionResult> GetEnergyBudget([FromQuery] DateTime date)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                var result = await _nutritionService.GetEnergyBudgetAsync(userId, date);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving energy budget: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

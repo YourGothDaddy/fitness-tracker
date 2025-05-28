@@ -41,6 +41,16 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getEnergyBudget(date) {
+    try {
+      const url = `/api/nutrition/energy-budget?date=${date.toISOString()}`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

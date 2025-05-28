@@ -155,5 +155,30 @@ namespace Fitness_Tracker.Services.Nutrition
                 TEFPercentage = Math.Round((tefCalories / totalEnergyBurned) * 100, 1)
             };
         }
+
+        public async Task<EnergyBudgetModel> GetEnergyBudgetAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            var consumedCalories = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .SumAsync(m => m.Calories);
+
+            var target = user.DailyCaloriesGoal;
+            var remaining = target - consumedCalories;
+
+            return new EnergyBudgetModel
+            {
+                Target = target,
+                Consumed = consumedCalories,
+                Remaining = remaining
+            };
+        }
     }
 } 

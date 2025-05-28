@@ -37,13 +37,20 @@ const ChartsView = () => {
     tefPercentage: 0,
   });
 
+  const [energyBudget, setEnergyBudget] = useState({
+    target: 0,
+    consumed: 0,
+    remaining: 0,
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const today = new Date();
-        const [macrosData, energyData] = await Promise.all([
+        const [macrosData, energyData, budgetData] = await Promise.all([
           nutritionService.getMacronutrients(today),
           nutritionService.getEnergyExpenditure(today),
+          nutritionService.getEnergyBudget(today),
         ]);
 
         setMacronutrients({
@@ -67,6 +74,12 @@ const ChartsView = () => {
           baselineActivityPercentage: energyData.baselineActivityPercentage,
           tefPercentage: energyData.tefPercentage,
         });
+
+        setEnergyBudget({
+          target: budgetData.target,
+          consumed: budgetData.consumed,
+          remaining: budgetData.remaining,
+        });
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -74,10 +87,6 @@ const ChartsView = () => {
 
     fetchData();
   }, []);
-
-  const caloriesConsumed = 1500; // This should also come from the API
-  const target = 2000; // This should also come from the API
-  const remaining = target - caloriesConsumed;
 
   const burnedData = [
     {
@@ -105,12 +114,12 @@ const ChartsView = () => {
   const energyBudgetData = [
     {
       key: 1,
-      value: caloriesConsumed,
+      value: energyBudget.consumed,
       svg: { fill: Colors.green.color },
     },
     {
       key: 2,
-      value: remaining,
+      value: energyBudget.remaining,
       svg: { fill: Colors.blue.color },
     },
   ];
@@ -174,13 +183,13 @@ const ChartsView = () => {
   const budgetData = [
     {
       name: "Consumed",
-      population: caloriesConsumed,
+      population: energyBudget.consumed,
       color: Colors.green.color,
       legendFontColor: "#7F7F7F",
     },
     {
       name: "Remaining",
-      population: remaining,
+      population: energyBudget.remaining,
       color: Colors.blue.color,
       legendFontColor: "#7F7F7F",
     },
@@ -354,19 +363,19 @@ const ChartsView = () => {
           {[
             {
               title: "Target",
-              value: target,
+              value: energyBudget.target,
               icon: "flag",
               color: Colors.darkGreen.color,
             },
             {
               title: "Consumed",
-              value: caloriesConsumed,
+              value: energyBudget.consumed,
               icon: "restaurant",
               color: Colors.green.color,
             },
             {
               title: "Remaining",
-              value: remaining,
+              value: energyBudget.remaining,
               icon: "hourglass-empty",
               color: Colors.blue.color,
             },
