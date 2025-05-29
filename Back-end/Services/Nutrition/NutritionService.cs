@@ -180,5 +180,64 @@ namespace Fitness_Tracker.Services.Nutrition
                 Remaining = remaining
             };
         }
+
+        public async Task<MainTargetsModel> GetMainTargetsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get consumed values for the day
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            var consumedCalories = meals.Sum(m => m.Calories);
+            var consumedProtein = meals.Sum(m => m.Protein);
+            var consumedCarbs = meals.Sum(m => m.Carbs);
+            var consumedFat = meals.Sum(m => m.Fat);
+
+            // Calculate required values based on user's goals and settings
+            var targets = new List<TargetModel>
+            {
+                new TargetModel
+                {
+                    Label = "Energy",
+                    Consumed = consumedCalories,
+                    Required = user.DailyCaloriesGoal,
+                    Color = "#FFFFFF" // White
+                },
+                new TargetModel
+                {
+                    Label = "Protein",
+                    Consumed = consumedProtein,
+                    Required = user.DailyCaloriesGoal * 0.3 / 4, // 30% of calories from protein (4 calories per gram)
+                    Color = "#8CC63F" // Green
+                },
+                new TargetModel
+                {
+                    Label = "Net Carbs",
+                    Consumed = consumedCarbs,
+                    Required = user.DailyCaloriesGoal * 0.4 / 4, // 40% of calories from carbs (4 calories per gram)
+                    Color = "#4A90E2" // Blue
+                },
+                new TargetModel
+                {
+                    Label = "Fat",
+                    Consumed = consumedFat,
+                    Required = user.DailyCaloriesGoal * 0.3 / 9, // 30% of calories from fat (9 calories per gram)
+                    Color = "#E24A4A" // Red
+                }
+            };
+
+            return new MainTargetsModel
+            {
+                Targets = targets
+            };
+        }
     }
 } 

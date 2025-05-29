@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from "../../../constants/Colors";
+import { nutritionService } from "@/app/services/nutritionService";
 
 const TargetsView = () => {
   const categories = {
@@ -196,6 +197,29 @@ const TargetsView = () => {
 
   console.log("Colors object:", Colors);
 
+  // State for main targets
+  const [mainTargets, setMainTargets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchMainTargets = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const today = new Date();
+        const data = await nutritionService.getMainTargets(today);
+        console.log("Fetched main targets:", data);
+        setMainTargets(data.targets);
+      } catch (err) {
+        setError("Failed to load main targets");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMainTargets();
+  }, []);
+
   const renderProgressBar = (consumed, required) => {
     const percentage = Math.min((consumed / required) * 100, 100);
     return (
@@ -224,38 +248,44 @@ const TargetsView = () => {
           <Text style={styles.cardTitle}>Main Targets</Text>
         </View>
 
-        {data.map((item, index) => (
-          <View key={index} style={styles.mainTargetRow}>
-            <View style={styles.targetIconContainer}>
-              <LinearGradient
-                colors={[item.color, shadeColor(item.color, 20)]}
-                style={styles.targetIconGradient}
-              >
-                <MaterialIcons
-                  name={
-                    item.label === "Energy"
-                      ? "local-fire-department"
-                      : item.label === "Protein"
-                      ? "fitness-center"
-                      : item.label === "Net Carbs"
-                      ? "grain"
-                      : "opacity"
-                  }
-                  size={20}
-                  color="white"
-                />
-              </LinearGradient>
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : error ? (
+          <Text style={{ color: "red" }}>{error}</Text>
+        ) : (
+          (Array.isArray(mainTargets) ? mainTargets : []).map((item, index) => (
+            <View key={index} style={styles.mainTargetRow}>
+              <View style={styles.targetIconContainer}>
+                <LinearGradient
+                  colors={[item.color, shadeColor(item.color, 20)]}
+                  style={styles.targetIconGradient}
+                >
+                  <MaterialIcons
+                    name={
+                      item.label === "Energy"
+                        ? "local-fire-department"
+                        : item.label === "Protein"
+                        ? "fitness-center"
+                        : item.label === "Net Carbs"
+                        ? "grain"
+                        : "opacity"
+                    }
+                    size={20}
+                    color="white"
+                  />
+                </LinearGradient>
+              </View>
+              <View style={styles.targetInfo}>
+                <Text style={styles.targetLabel}>{item.label}</Text>
+                <Text style={styles.targetValues}>
+                  {item.consumed}/{item.required}{" "}
+                  {item.label === "Energy" ? "kcal" : "g"}
+                </Text>
+              </View>
+              {renderProgressBar(item.consumed, item.required)}
             </View>
-            <View style={styles.targetInfo}>
-              <Text style={styles.targetLabel}>{item.label}</Text>
-              <Text style={styles.targetValues}>
-                {item.consumed}/{item.required}{" "}
-                {item.label === "Energy" ? "kcal" : "g"}
-              </Text>
-            </View>
-            {renderProgressBar(item.consumed, item.required)}
-          </View>
-        ))}
+          ))
+        )}
       </LinearGradient>
 
       {/* Category Cards */}

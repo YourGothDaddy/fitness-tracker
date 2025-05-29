@@ -51,6 +51,16 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getMainTargets(date) {
+    try {
+      const url = `/api/nutrition/main-targets?date=${date.toISOString()}`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();
