@@ -7,6 +7,7 @@ namespace Fitness_Tracker.Services.Nutrition
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using System.Collections.Generic;
 
     public class NutritionService : INutritionService
     {
@@ -238,6 +239,71 @@ namespace Fitness_Tracker.Services.Nutrition
             {
                 Targets = targets
             };
+        }
+
+        public async Task<CarbohydratesModel> GetCarbohydratesAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the carbohydrate nutrients we want to track
+            var carbohydrateNutrients = new Dictionary<string, double>
+            {
+                { "Fiber", 0 },      
+                { "Starch", 0 },     
+                { "Sugars", 0 },     
+                { "Galactose", 0 },  
+                { "Glucose", 0 },    
+                { "Sucrose", 0 },    
+                { "Lactose", 0 },    
+                { "Maltose", 0 },    
+                { "Fructose", 0 }    
+            };
+
+            var result = new CarbohydratesModel();
+
+            // Calculate consumed amounts for each nutrient
+            foreach (var nutrient in carbohydrateNutrients)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Carbohydrates" && n.Name == nutrient.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new CarbohydrateNutrientModel
+                {
+                    Label = nutrient.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = nutrient.Value
+                });
+            }
+
+            return result;
         }
     }
 } 

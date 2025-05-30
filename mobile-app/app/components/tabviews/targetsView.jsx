@@ -201,23 +201,44 @@ const TargetsView = () => {
   const [mainTargets, setMainTargets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [carbohydratesData, setCarbohydratesData] = useState(null);
 
   useEffect(() => {
-    const fetchMainTargets = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
         const today = new Date();
-        const data = await nutritionService.getMainTargets(today);
-        console.log("Fetched main targets:", data);
-        setMainTargets(data.targets);
+        console.log("Fetching data for date:", today.toISOString());
+
+        // Fetch main targets first
+        try {
+          const mainTargetsData = await nutritionService.getMainTargets(today);
+          console.log("Main targets data received:", mainTargetsData);
+          setMainTargets(mainTargetsData.targets);
+        } catch (mainTargetsError) {
+          console.error("Error fetching main targets:", mainTargetsError);
+          setError("Failed to load main targets");
+          return;
+        }
+
+        // Then fetch carbohydrates
+        try {
+          const carbsData = await nutritionService.getCarbohydrates(today);
+          console.log("Carbohydrates data received:", carbsData);
+          setCarbohydratesData(carbsData);
+        } catch (carbsError) {
+          console.error("Error fetching carbohydrates:", carbsError);
+          // Don't set error here as we still want to show main targets
+        }
       } catch (err) {
-        setError("Failed to load main targets");
+        console.error("General error in fetchData:", err);
+        setError("Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-    fetchMainTargets();
+    fetchData();
   }, []);
 
   const renderProgressBar = (consumed, required) => {
@@ -320,19 +341,37 @@ const TargetsView = () => {
 
           <View style={styles.nutrientsGrid}>
             {nutrients.map((nutrient, index) => {
-              const item = sampleData.find((d) => d.label === nutrient) || {
-                label: nutrient,
-                consumed: 0,
-                required: 100,
-              };
+              let item;
+              if (category === "Carbohydrates" && carbohydratesData) {
+                const nutrientData = carbohydratesData.nutrients.find(
+                  (n) => n.label === nutrient
+                );
+                if (nutrientData) {
+                  item = {
+                    label: nutrient,
+                    consumed: nutrientData.consumed,
+                    required: nutrientData.required,
+                  };
+                }
+              }
+
+              if (!item) {
+                item = {
+                  label: nutrient,
+                  consumed: 0,
+                  required: 100,
+                };
+              }
 
               return (
                 <View key={index} style={styles.nutrientItem}>
                   <Text style={styles.nutrientLabel}>{nutrient}</Text>
                   <Text style={styles.nutrientValues}>
-                    {item.consumed}/{item.required}g
+                    {item.consumed === null ? "Unknown" : item.consumed}/
+                    {item.required}g
                   </Text>
-                  {renderProgressBar(item.consumed, item.required)}
+                  {item.consumed !== null &&
+                    renderProgressBar(item.consumed, item.required)}
                 </View>
               );
             })}
