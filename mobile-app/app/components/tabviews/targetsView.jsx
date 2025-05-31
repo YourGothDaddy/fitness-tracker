@@ -199,9 +199,10 @@ const TargetsView = () => {
 
   // State for main targets
   const [mainTargets, setMainTargets] = useState([]);
+  const [carbohydratesData, setCarbohydratesData] = useState(null);
+  const [aminoAcidsData, setAminoAcidsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [carbohydratesData, setCarbohydratesData] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -229,6 +230,16 @@ const TargetsView = () => {
           setCarbohydratesData(carbsData);
         } catch (carbsError) {
           console.error("Error fetching carbohydrates:", carbsError);
+          // Don't set error here as we still want to show main targets
+        }
+
+        // Then fetch amino acids
+        try {
+          const aminoAcidsData = await nutritionService.getAminoAcids(today);
+          console.log("Amino acids data received:", aminoAcidsData);
+          setAminoAcidsData(aminoAcidsData);
+        } catch (aminoAcidsError) {
+          console.error("Error fetching amino acids:", aminoAcidsError);
           // Don't set error here as we still want to show main targets
         }
       } catch (err) {
@@ -344,6 +355,17 @@ const TargetsView = () => {
               let item;
               if (category === "Carbohydrates" && carbohydratesData) {
                 const nutrientData = carbohydratesData.nutrients.find(
+                  (n) => n.label === nutrient
+                );
+                if (nutrientData) {
+                  item = {
+                    label: nutrient,
+                    consumed: nutrientData.consumed,
+                    required: nutrientData.required,
+                  };
+                }
+              } else if (category === "AminoAcids" && aminoAcidsData) {
+                const nutrientData = aminoAcidsData.nutrients.find(
                   (n) => n.label === nutrient
                 );
                 if (nutrientData) {

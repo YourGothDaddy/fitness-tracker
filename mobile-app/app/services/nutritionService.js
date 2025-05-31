@@ -83,6 +83,26 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getAminoAcids(date) {
+    try {
+      const formattedDate = date.toISOString();
+      const url = `/api/nutrition/amino-acids?date=${formattedDate}`;
+      console.log("Fetching amino acids from:", url);
+      console.log("Date being sent:", formattedDate);
+
+      const response = await axiosInstance.get(url);
+      console.log("Amino acids response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getAminoAcids:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

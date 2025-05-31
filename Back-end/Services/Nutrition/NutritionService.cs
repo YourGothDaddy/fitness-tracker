@@ -305,5 +305,80 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<AminoAcidsModel> GetAminoAcidsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the amino acids we want to track
+            var aminoAcids = new Dictionary<string, double>
+            {
+                { "Alanine", 0 },
+                { "Arginine", 0 },
+                { "AsparticAcid", 0 },
+                { "Valine", 0 },
+                { "Glycine", 0 },
+                { "Glutamine", 0 },
+                { "Isoleucine", 0 },
+                { "Leucine", 0 },
+                { "Lysine", 0 },
+                { "Methionine", 0 },
+                { "Proline", 0 },
+                { "Serine", 0 },
+                { "Tyrosine", 0 },
+                { "Threonine", 0 },
+                { "Tryptophan", 0 },
+                { "Phenylalanine", 0 },
+                { "Hydroxyproline", 0 },
+                { "Histidine", 0 },
+                { "Cystine", 0 }
+            };
+
+            var result = new AminoAcidsModel();
+
+            // Calculate consumed amounts for each amino acid
+            foreach (var aminoAcid in aminoAcids)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "AminoAcids" && n.Name == aminoAcid.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new AminoAcidNutrientModel
+                {
+                    Label = aminoAcid.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = aminoAcid.Value
+                });
+            }
+
+            return result;
+        }
     }
 } 
