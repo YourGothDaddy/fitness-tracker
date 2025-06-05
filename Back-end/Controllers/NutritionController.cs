@@ -198,6 +198,28 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("fats")]
+        public async Task<ActionResult<FatsModel>> GetFats([FromQuery] DateTime date)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _nutritionService.GetFatsAsync(userId, date);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetAminoAcids: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, "An error occurred while retrieving fats data");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

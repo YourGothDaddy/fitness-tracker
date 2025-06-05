@@ -380,5 +380,66 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<FatsModel> GetFatsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the fat nutrients we want to track
+            var fatNutrients = new Dictionary<string, double>
+            {
+                { "TotalFats", 0 },
+                { "MonounsaturatedFats", 0 },
+                { "PolyunsaturatedFats", 0 },
+                { "SaturatedFats", 0 },
+                { "TransFats", 0 }
+            };
+
+            var result = new FatsModel();
+
+            // Calculate consumed amounts for each nutrient
+            foreach (var nutrient in fatNutrients)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Fats" && n.Name == nutrient.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new FatNutrientModel
+                {
+                    Label = nutrient.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = nutrient.Value
+                });
+            }
+
+            return result;
+        }
     }
 } 

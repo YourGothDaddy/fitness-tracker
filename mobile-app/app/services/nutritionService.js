@@ -103,6 +103,26 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getFats(date) {
+    try {
+      const formattedDate = date.toISOString();
+      const url = `/api/nutrition/fats?date=${formattedDate}`;
+      console.log("Fetching fats from:", url);
+      console.log("Date being sent:", formattedDate);
+
+      const response = await axiosInstance.get(url);
+      console.log("Fats response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getFats:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

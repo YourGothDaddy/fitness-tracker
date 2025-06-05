@@ -14,5 +14,6 @@ namespace Fitness_Tracker.Services.Nutrition
         Task<MainTargetsModel> GetMainTargetsAsync(string userId, DateTime date);
         Task<CarbohydratesModel> GetCarbohydratesAsync(string userId, DateTime date);
         Task<AminoAcidsModel> GetAminoAcidsAsync(string userId, DateTime date);
+        Task<FatsModel> GetFatsAsync(string userId, DateTime date);
     }
 } 
