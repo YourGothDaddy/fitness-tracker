@@ -220,6 +220,41 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("minerals")]
+        public async Task<IActionResult> GetMinerals([FromQuery] DateTime date)
+        {
+            try
+            {
+                var validationResult = ValidateUserAuthentication(out var userId);
+                if (validationResult != null)
+                {
+                    return validationResult;
+                }
+
+                // Log the received date
+                Console.WriteLine($"Received date for minerals: {date}");
+
+                if (date == default(DateTime))
+                {
+                    return BadRequest("Invalid date parameter");
+                }
+
+                var result = await _nutritionService.GetMineralsAsync(userId, date);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"InvalidOperationException in GetMinerals: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetMinerals: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, $"An error occurred while retrieving minerals data: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

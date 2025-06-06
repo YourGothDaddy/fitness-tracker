@@ -202,6 +202,7 @@ const TargetsView = () => {
   const [carbohydratesData, setCarbohydratesData] = useState(null);
   const [aminoAcidsData, setAminoAcidsData] = useState(null);
   const [fatsData, setFatsData] = useState(null);
+  const [mineralsData, setMineralsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -251,6 +252,16 @@ const TargetsView = () => {
           setFatsData(fatsData);
         } catch (fatsError) {
           console.error("Error fetching fats:", fatsError);
+          // Don't set error here as we still want to show main targets
+        }
+
+        // Then fetch minerals
+        try {
+          const mineralsData = await nutritionService.getMinerals(today);
+          console.log("Minerals data received:", mineralsData);
+          setMineralsData(mineralsData);
+        } catch (mineralsError) {
+          console.error("Error fetching minerals:", mineralsError);
           // Don't set error here as we still want to show main targets
         }
       } catch (err) {
@@ -388,6 +399,17 @@ const TargetsView = () => {
                 }
               } else if (category === "Fats" && fatsData) {
                 const nutrientData = fatsData.nutrients.find(
+                  (n) => n.label === nutrient
+                );
+                if (nutrientData) {
+                  item = {
+                    label: nutrient,
+                    consumed: nutrientData.consumed,
+                    required: nutrientData.required,
+                  };
+                }
+              } else if (category === "Minerals" && mineralsData) {
+                const nutrientData = mineralsData.nutrients.find(
                   (n) => n.label === nutrient
                 );
                 if (nutrientData) {

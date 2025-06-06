@@ -123,6 +123,26 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getMinerals(date) {
+    try {
+      const formattedDate = date.toISOString();
+      const url = `/api/nutrition/minerals?date=${formattedDate}`;
+      console.log("Fetching minerals from:", url);
+      console.log("Date being sent:", formattedDate);
+
+      const response = await axiosInstance.get(url);
+      console.log("Minerals response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getMinerals:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

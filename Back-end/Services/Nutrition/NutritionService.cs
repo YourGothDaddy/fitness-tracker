@@ -441,5 +441,72 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<MineralsModel> GetMineralsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the minerals we want to track
+            var minerals = new Dictionary<string, double>
+            {
+                { "Iron", 0 },
+                { "Potassium", 0 },
+                { "Calcium", 0 },
+                { "Magnesium", 0 },
+                { "Manganese", 0 },
+                { "Copper", 0 },
+                { "Sodium", 0 },
+                { "Selenium", 0 },
+                { "Fluoride", 0 },
+                { "Phosphorus", 0 },
+                { "Zinc", 0 }
+            };
+
+            var result = new MineralsModel();
+
+            // Calculate consumed amounts for each mineral
+            foreach (var mineral in minerals)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Minerals" && n.Name == mineral.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new MineralNutrientModel
+                {
+                    Label = mineral.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = mineral.Value
+                });
+            }
+
+            return result;
+        }
     }
 } 
