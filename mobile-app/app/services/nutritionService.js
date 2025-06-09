@@ -143,6 +143,26 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getOtherNutrients(date) {
+    try {
+      const formattedDate = date.toISOString();
+      const url = `/api/nutrition/other?date=${formattedDate}`;
+      console.log("Fetching other nutrients from:", url);
+      console.log("Date being sent:", formattedDate);
+
+      const response = await axiosInstance.get(url);
+      console.log("Other nutrients response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getOtherNutrients:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

@@ -1,5 +1,6 @@
 namespace Fitness_Tracker.Services.Nutrition
 {
+    using Back_end.Models.Nutrition;
     using Fitness_Tracker.Models.Nutrition;
     using System;
     using System.Threading.Tasks;
@@ -16,5 +17,6 @@ namespace Fitness_Tracker.Services.Nutrition
         Task<AminoAcidsModel> GetAminoAcidsAsync(string userId, DateTime date);
         Task<FatsModel> GetFatsAsync(string userId, DateTime date);
         Task<MineralsModel> GetMineralsAsync(string userId, DateTime date);
+        Task<OtherNutrientsModel> GetOtherNutrients(DateTime date);
     }
 } 

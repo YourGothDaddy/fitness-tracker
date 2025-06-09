@@ -203,6 +203,7 @@ const TargetsView = () => {
   const [aminoAcidsData, setAminoAcidsData] = useState(null);
   const [fatsData, setFatsData] = useState(null);
   const [mineralsData, setMineralsData] = useState(null);
+  const [otherData, setOtherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -262,6 +263,16 @@ const TargetsView = () => {
           setMineralsData(mineralsData);
         } catch (mineralsError) {
           console.error("Error fetching minerals:", mineralsError);
+          // Don't set error here as we still want to show main targets
+        }
+
+        // Then fetch other nutrients
+        try {
+          const otherData = await nutritionService.getOtherNutrients(today);
+          console.log("Other nutrients data received:", otherData);
+          setOtherData(otherData);
+        } catch (otherError) {
+          console.error("Error fetching other nutrients:", otherError);
           // Don't set error here as we still want to show main targets
         }
       } catch (err) {
@@ -410,6 +421,17 @@ const TargetsView = () => {
                 }
               } else if (category === "Minerals" && mineralsData) {
                 const nutrientData = mineralsData.nutrients.find(
+                  (n) => n.label === nutrient
+                );
+                if (nutrientData) {
+                  item = {
+                    label: nutrient,
+                    consumed: nutrientData.consumed,
+                    required: nutrientData.required,
+                  };
+                }
+              } else if (category === "Other" && otherData) {
+                const nutrientData = otherData.nutrients.find(
                   (n) => n.label === nutrient
                 );
                 if (nutrientData) {

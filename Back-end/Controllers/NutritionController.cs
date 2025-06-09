@@ -7,6 +7,7 @@ namespace Fitness_Tracker.Controllers
 
     using static Constants.NutritionController;
     using static Constants.General;
+    using Back_end.Models.Nutrition;
 
     public class NutritionController : BaseApiController
     {
@@ -252,6 +253,23 @@ namespace Fitness_Tracker.Controllers
                 Console.WriteLine($"Exception in GetMinerals: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving minerals data: {ex.Message}");
+            }
+        }
+
+        [HttpGet("other")]
+        public async Task<ActionResult<OtherNutrientsModel>> GetOtherNutrients([FromQuery] DateTime? date)
+        {
+            try
+            {
+                var targetDate = date ?? DateTime.Today;
+                var result = await _nutritionService.GetOtherNutrients(targetDate);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetOtherNutrients: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, "An error occurred while retrieving other nutrients data");
             }
         }
 

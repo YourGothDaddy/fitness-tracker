@@ -8,6 +8,7 @@ namespace Fitness_Tracker.Services.Nutrition
     using System.Linq;
     using System.Threading.Tasks;
     using System.Collections.Generic;
+    using Back_end.Models.Nutrition;
 
     public class NutritionService : INutritionService
     {
@@ -503,6 +504,63 @@ namespace Fitness_Tracker.Services.Nutrition
                     Label = mineral.Key,
                     Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
                     Required = mineral.Value
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<OtherNutrientsModel> GetOtherNutrients(DateTime date)
+        {
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the other nutrients we want to track
+            var otherNutrients = new Dictionary<string, double>
+            {
+                { "Alcohol", 10 },
+                { "Water", 3000 },
+                { "Caffeine", 400 },
+                { "Theobromine", 100 },
+                { "Ash", 10 }
+            };
+
+            var result = new OtherNutrientsModel
+            {
+                Date = date,
+                Nutrients = new List<OtherNutrient>()
+            };
+
+            // Calculate consumed amounts for each nutrient
+            foreach (var nutrient in otherNutrients)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Other" && n.Name == nutrient.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new OtherNutrient
+                {
+                    Label = nutrient.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = nutrient.Value
                 });
             }
 
