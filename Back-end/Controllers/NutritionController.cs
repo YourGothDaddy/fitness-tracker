@@ -273,6 +273,41 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("sterols")]
+        public async Task<IActionResult> GetSterols([FromQuery] DateTime date)
+        {
+            try
+            {
+                var validationResult = ValidateUserAuthentication(out var userId);
+                if (validationResult != null)
+                {
+                    return validationResult;
+                }
+
+                // Log the received date
+                Console.WriteLine($"Received date for sterols: {date}");
+
+                if (date == default(DateTime))
+                {
+                    return BadRequest("Invalid date parameter");
+                }
+
+                var result = await _nutritionService.GetSterolsAsync(userId, date);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"InvalidOperationException in GetSterols: {ex.Message}");
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in GetSterols: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, $"An error occurred while retrieving sterols data: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

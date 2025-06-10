@@ -204,6 +204,7 @@ const TargetsView = () => {
   const [fatsData, setFatsData] = useState(null);
   const [mineralsData, setMineralsData] = useState(null);
   const [otherData, setOtherData] = useState(null);
+  const [sterolsData, setSterolsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -273,6 +274,16 @@ const TargetsView = () => {
           setOtherData(otherData);
         } catch (otherError) {
           console.error("Error fetching other nutrients:", otherError);
+          // Don't set error here as we still want to show main targets
+        }
+
+        // Then fetch sterols
+        try {
+          const sterolsData = await nutritionService.getSterols(today);
+          console.log("Sterols data received:", sterolsData);
+          setSterolsData(sterolsData);
+        } catch (sterolsError) {
+          console.error("Error fetching sterols:", sterolsError);
           // Don't set error here as we still want to show main targets
         }
       } catch (err) {
@@ -432,6 +443,17 @@ const TargetsView = () => {
                 }
               } else if (category === "Other" && otherData) {
                 const nutrientData = otherData.nutrients.find(
+                  (n) => n.label === nutrient
+                );
+                if (nutrientData) {
+                  item = {
+                    label: nutrient,
+                    consumed: nutrientData.consumed,
+                    required: nutrientData.required,
+                  };
+                }
+              } else if (category === "Sterols" && sterolsData) {
+                const nutrientData = sterolsData.nutrients.find(
                   (n) => n.label === nutrient
                 );
                 if (nutrientData) {

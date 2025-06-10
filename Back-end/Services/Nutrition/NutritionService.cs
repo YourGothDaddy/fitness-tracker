@@ -566,5 +566,66 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<SterolsModel> GetSterolsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the sterols we want to track
+            var sterols = new Dictionary<string, double>
+            {
+                { "Cholesterol", 0 },
+                { "Phytosterols", 0 },
+                { "Stigmasterols", 0 },
+                { "Campesterol", 0 },
+                { "BetaSitosterols", 0 }
+            };
+
+            var result = new SterolsModel();
+
+            // Calculate consumed amounts for each sterol
+            foreach (var sterol in sterols)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Sterols" && n.Name == sterol.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new SterolNutrientModel
+                {
+                    Label = sterol.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = sterol.Value
+                });
+            }
+
+            return result;
+        }
     }
 } 
