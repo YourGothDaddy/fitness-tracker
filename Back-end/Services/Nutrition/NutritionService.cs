@@ -627,5 +627,76 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<VitaminsModel> GetVitaminsAsync(string userId, DateTime date)
+        {
+            var user = await _databaseContext.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Get all meals for the specified date
+            var meals = await _databaseContext.Meals
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .ToListAsync();
+
+            // Get all consumable items
+            var consumableItems = await _databaseContext.ConsumableItems
+                .Include(ci => ci.NutritionalInformation)
+                .ToListAsync();
+
+            // Create a dictionary of meal names to consumable items for faster lookup
+            var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
+
+            // Define the vitamins we want to track
+            var vitamins = new Dictionary<string, double>
+            {
+                { "Betaine", 0 },
+                { "VitaminA", 0 },
+                { "VitaminB1", 0 },
+                { "VitaminB2", 0 },
+                { "VitaminB3", 0 },
+                { "VitaminB4", 0 },
+                { "VitaminB5", 0 },
+                { "VitaminB6", 0 },
+                { "VitaminB9", 0 },
+                { "VitaminB12", 0 },
+                { "VitaminC", 0 },
+                { "VitaminD", 0 },
+                { "VitaminE", 0 },
+                { "VitaminK1", 0 },
+                { "VitaminK2", 0 }
+            };
+
+            var result = new VitaminsModel();
+
+            // Calculate consumed amounts for each vitamin
+            foreach (var vitamin in vitamins)
+            {
+                var consumed = 0.0;
+                foreach (var meal in meals)
+                {
+                    if (consumableItemsDict.TryGetValue(meal.Name, out var consumableItem))
+                    {
+                        var nutrientAmount = consumableItem.NutritionalInformation
+                            .Where(n => n.Category == "Vitamins" && n.Name == vitamin.Key)
+                            .Sum(n => n.Amount);
+                        consumed += nutrientAmount;
+                    }
+                }
+
+                result.Nutrients.Add(new VitaminNutrientModel
+                {
+                    Label = vitamin.Key,
+                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Required = vitamin.Value
+                });
+            }
+
+            return result;
+        }
     }
 } 

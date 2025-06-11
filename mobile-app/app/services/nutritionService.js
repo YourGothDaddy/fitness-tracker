@@ -183,6 +183,26 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getVitamins(date) {
+    try {
+      const formattedDate = date.toISOString();
+      const url = `/api/nutrition/vitamins?date=${formattedDate}`;
+      console.log("Fetching vitamins from:", url);
+      console.log("Date being sent:", formattedDate);
+
+      const response = await axiosInstance.get(url);
+      console.log("Vitamins response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error in getVitamins:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

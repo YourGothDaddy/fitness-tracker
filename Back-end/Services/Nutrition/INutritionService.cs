@@ -19,5 +19,6 @@ namespace Fitness_Tracker.Services.Nutrition
         Task<MineralsModel> GetMineralsAsync(string userId, DateTime date);
         Task<OtherNutrientsModel> GetOtherNutrients(DateTime date);
         Task<SterolsModel> GetSterolsAsync(string userId, DateTime date);
+        Task<VitaminsModel> GetVitaminsAsync(string userId, DateTime date);
     }
 } 
