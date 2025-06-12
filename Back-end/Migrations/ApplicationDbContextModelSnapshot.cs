@@ -178,6 +178,33 @@ namespace Fitness_Tracker.Migrations
                     b.ToTable("Nutrients");
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.FavoriteMeal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateAdded")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MealId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MealId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("FavoriteMeals");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Meal", b =>
                 {
                     b.Property<int>("Id")
@@ -560,6 +587,25 @@ namespace Fitness_Tracker.Migrations
                         .HasForeignKey("ConsumableItemId");
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.FavoriteMeal", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.Meal", "Meal")
+                        .WithMany("FavoriteMeals")
+                        .HasForeignKey("MealId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Fitness_Tracker.Data.Models.User", "User")
+                        .WithMany("FavoriteMeals")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Meal");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Meal", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.User", "User")
@@ -674,9 +720,16 @@ namespace Fitness_Tracker.Migrations
                     b.Navigation("NutritionalInformation");
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.Meal", b =>
+                {
+                    b.Navigation("FavoriteMeals");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.User", b =>
                 {
                     b.Navigation("Activities");
+
+                    b.Navigation("FavoriteMeals");
 
                     b.Navigation("Meals");
 

@@ -64,6 +64,19 @@
             return Ok(totalCalories);
         }
 
+        [HttpGet(GetAllMealsHttpAttributeName)]
+        public async Task<IActionResult> GetAllMeals()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var meals = await _mealService.GetAllMealsAsync();
+            return Ok(meals);
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()
@@ -82,6 +95,5 @@
 
             return null;
         }
-
     }
 }

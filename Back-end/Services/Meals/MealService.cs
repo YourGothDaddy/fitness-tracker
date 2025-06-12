@@ -54,5 +54,22 @@
                 .Where(m => m.UserId == userId && m.Date == date.Date)
                 .SumAsync(m => m.Calories);
         }
+
+        public async Task<List<MealListModel>> GetAllMealsAsync()
+        {
+            return await _databaseContext
+                .Meals
+                .Select(m => new MealListModel
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Calories = m.Calories,
+                    Protein = m.Protein,
+                    Carbs = m.Carbs,
+                    Fat = m.Fat
+                })
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }

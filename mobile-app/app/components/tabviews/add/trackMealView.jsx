@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,17 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
+import { mealService } from "@/app/services/mealService";
 
-const FoodItem = ({ name, calories, protein, carbs, fat }) => {
+const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
   return (
     <Animated.View style={styles.foodItemContainer}>
       <View style={styles.foodItemLeft}>
@@ -27,7 +30,7 @@ const FoodItem = ({ name, calories, protein, carbs, fat }) => {
           <Text style={styles.macroText}>🥑 {fat}g</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.addFoodButton}>
+      <TouchableOpacity style={styles.addFoodButton} onPress={onAdd}>
         <Ionicons name="add-circle" size={28} color={Colors.darkGreen.color} />
       </TouchableOpacity>
     </Animated.View>
@@ -38,14 +41,58 @@ const TrackMealView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [meals, setMeals] = useState([]);
+  const [filteredMeals, setFilteredMeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const foodItems = [
-    { name: "Chicken Breast", calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-    { name: "Brown Rice", calories: 111, protein: 2.6, carbs: 23, fat: 0.9 },
-    { name: "Avocado", calories: 160, protein: 2, carbs: 8.5, fat: 14.7 },
-    { name: "Salmon", calories: 208, protein: 22, carbs: 0, fat: 13 },
-    { name: "Sweet Potato", calories: 86, protein: 1.6, carbs: 20, fat: 0.1 },
-  ];
+  const fetchMeals = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await mealService.getAllMeals();
+      setMeals(data);
+      setFilteredMeals(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching meals:", err);
+      setError("Failed to load meals. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMeals();
+  }, [fetchMeals]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredMeals(meals);
+    } else {
+      const filtered = meals.filter((meal) =>
+        meal.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredMeals(filtered);
+    }
+  }, [searchQuery, meals]);
+
+  const handleAddMeal = async (meal) => {
+    try {
+      await mealService.addMeal({
+        name: meal.name,
+        calories: meal.calories,
+        protein: meal.protein,
+        carbs: meal.carbs,
+        fat: meal.fat,
+        date: new Date(),
+        mealOfTheDay: 0, // Default to breakfast, can be changed later
+      });
+      Alert.alert("Success", "Meal added successfully!");
+    } catch (err) {
+      console.error("Error adding meal:", err);
+      Alert.alert("Error", "Failed to add meal. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -149,9 +196,30 @@ const TrackMealView = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.foodsListContent}
         >
-          {foodItems.map((item, index) => (
-            <FoodItem key={index} {...item} />
-          ))}
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchMeals}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : filteredMeals.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No meals found</Text>
+            </View>
+          ) : (
+            filteredMeals.map((meal) => (
+              <FoodItem
+                key={meal.id}
+                {...meal}
+                onAdd={() => handleAddMeal(meal)}
+              />
+            ))
+          )}
         </ScrollView>
       </SafeAreaView>
     </>
@@ -282,6 +350,45 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.white.color,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  errorText: {
+    color: "#666",
+    fontSize: 16,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: Colors.darkGreen.color,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: Colors.white.color,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  emptyText: {
+    color: "#666",
+    fontSize: 16,
   },
 });
 
