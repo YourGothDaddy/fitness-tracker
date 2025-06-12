@@ -78,13 +78,14 @@ const TrackMealView = () => {
 
   const handleAddMeal = async (meal) => {
     try {
+      const now = new Date();
       await mealService.addMeal({
         name: meal.name,
         calories: meal.calories,
         protein: meal.protein,
         carbs: meal.carbs,
         fat: meal.fat,
-        date: new Date(),
+        date: now,
         mealOfTheDay: 0, // Default to breakfast, can be changed later
       });
       Alert.alert("Success", "Meal added successfully!");

@@ -29,8 +29,11 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startDateTime = startDate.Date;
+            var endDateTime = endDate.Date.AddDays(1).AddTicks(-1); // This sets it to 23:59:59.9999999
+
             var dailyCalories = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date >= startDate.Date && m.Date <= endDate.Date)
+                .Where(m => m.UserId == userId && m.Date >= startDateTime && m.Date <= endDateTime)
                 .GroupBy(m => m.Date.Date)
                 .Select(g => new DailyCaloriesModel
                 {

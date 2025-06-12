@@ -27,6 +27,8 @@ const getWeekDates = () => {
   const today = new Date();
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - 6); // Last 7 days including today
+  startDate.setHours(0, 0, 0, 0); // Set start date to beginning of day
+  today.setHours(23, 59, 59, 999); // Set end date to end of day
   return { startDate, endDate: today };
 };
 

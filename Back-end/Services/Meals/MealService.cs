@@ -30,7 +30,7 @@
                     Carbs = meal.Carbs,
                     Fat = meal.Fat,
                     UserId = userId,
-                    Date = (meal.Date != DateTime.MinValue) ? meal.Date : DateTime.UtcNow.Date
+                    Date = meal.Date
                 });
 
             await _databaseContext.SaveChangesAsync();
@@ -38,12 +38,9 @@
 
         public async Task<List<Meal>> GetAllUserMealsAsync(string userId, DateTime date)
         {
-
             return await _databaseContext
                  .Meals
-                 .Where(m => m.UserId == userId && m.Date.Year == date.Date.Year
-                 && m.Date.Month == date.Date.Month
-                 && m.Date.Day == date.Date.Day)
+                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                  .ToListAsync();
         }
 
@@ -51,7 +48,7 @@
         {
             return await _databaseContext
                 .Meals
-                .Where(m => m.UserId == userId && m.Date == date.Date)
+                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .SumAsync(m => m.Calories);
         }
 

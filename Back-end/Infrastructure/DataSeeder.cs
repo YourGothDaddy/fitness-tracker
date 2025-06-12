@@ -67,6 +67,10 @@
 
         public static async Task SeedTestMealData(IServiceProvider serviceProvider)
         {
+            if (true)
+            {
+                return;
+            }
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
@@ -159,6 +163,10 @@
         public static async Task SeedTestActivities(IServiceProvider serviceProvider)
         {
             // First ensure test user exists
+            if (true)
+            {
+                return;
+            }
             await SeedTestUserAsync(serviceProvider);
 
             using var scope = serviceProvider.CreateScope();

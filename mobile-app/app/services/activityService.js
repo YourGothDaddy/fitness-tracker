@@ -32,10 +32,9 @@ class ActivityService {
 
   // Helper function to format time from TimeSpan
   formatTime(timeSpan) {
-    // TimeSpan comes as "hh:mm:ss" from backend
     if (!timeSpan) return "00:00";
 
-    // Extract hours and minutes from TimeSpan
+    // TimeSpan comes as "HH:mm:ss" from backend
     const timeParts = timeSpan.split(":");
     const hours = parseInt(timeParts[0], 10);
     const minutes = parseInt(timeParts[1], 10);
