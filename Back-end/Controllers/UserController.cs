@@ -3,6 +3,8 @@
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Users;
+    using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
     using System.IdentityModel.Tokens.Jwt;
@@ -10,15 +12,20 @@
     using System.Text;
     using static Constants.UserController;
 
-    public class UserController : BaseApiController
+    [Authorize]
+    [ApiController]
+    [Route("api/[controller]")]
+    public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly UserManager<User> _userManager;
 
-        public UserController(IConfiguration configuration, IUserService userService)
+        public UserController(IConfiguration configuration, IUserService userService, UserManager<User> userManager)
         {
             _configuration = configuration;
             _userService = userService;
+            _userManager = userManager;
         }
 
         // PUBLIC METHODS
@@ -43,19 +50,6 @@
             var roles = await _userService.GetUserRolesAsync(user);
 
             return Ok(new { user.Email, user.UserName, roles });
-        }
-
-        [HttpGet(ProfileHttpAttributeName)]
-        public async Task<IActionResult> Profile()
-        {
-            var user = await GetAuthenticatedUserAsync();
-
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            return Ok(new { user.Email });
         }
 
         [HttpPost(ChangeProfileInfoHttpAttributeName)]
@@ -137,13 +131,123 @@
             return Ok();
         }
 
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.GetUserProfileAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new
+            {
+                user.FullName,
+                user.Email,
+                user.PhoneNumber,
+                user.NotificationsEnabled
+            });
+        }
+
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userService.UpdateProfileAsync(user, model);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { Message = "Profile updated successfully" });
+        }
+
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userService.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { Message = "Password changed successfully" });
+        }
+
+        [HttpPut("notifications")]
+        public async Task<IActionResult> UpdateNotifications([FromBody] UpdateNotificationsModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userService.UpdateNotificationsAsync(user, model.NotificationsEnabled);
+            if (!result)
+            {
+                return BadRequest(new { Message = "Failed to update notification preferences" });
+            }
+
+            return Ok(new { Message = "Notification preferences updated successfully" });
+        }
+
         // PRIVATE METHODS
 
         private async Task<User> GetAuthenticatedUserAsync()
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            return userId == null ? null : await _userService.FindUserByIdAsync(userId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return userId != null ? await _userService.FindUserByIdAsync(userId) : null;
         }
 
         private void SetJwtCookie(string tokenString, DateTime? expireDate = null)
@@ -151,9 +255,9 @@
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Expires = expireDate ?? DateTime.UtcNow.AddDays(7),
                 Secure = true,
-                SameSite = SameSiteMode.None
+                SameSite = SameSiteMode.Strict,
+                Expires = expireDate ?? DateTime.UtcNow.AddDays(7)
             };
 
             Response.Cookies.Append("jwt", tokenString, cookieOptions);
@@ -161,35 +265,31 @@
 
         private async Task<string> CreateJWT(User user)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            var roles = await _userService.GetUserRolesAsync(user);
 
-            // Get user roles
-            var userRoles = await _userService.GetUserRolesAsync(user);
-
-            // Create the claims, including roles
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email)
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName)
             };
 
-            // Add roles as claims
-            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(7),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-                Issuer = _configuration["Jwt:Issuer"],
-                Audience = _configuration["Jwt:Audience"]
-            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.Now.AddDays(Convert.ToDouble(_configuration["JWT:ExpireDays"]));
 
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            var token = new JwtSecurityToken(
+                _configuration["JWT:ValidIssuer"],
+                _configuration["JWT:ValidAudience"],
+                claims,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
 
         private bool UpdateUserGoals(User user, GoalsInfoModel model)
         {

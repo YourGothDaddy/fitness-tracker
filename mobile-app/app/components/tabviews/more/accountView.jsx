@@ -8,11 +8,14 @@ import {
   Modal,
   TextInput,
   Switch,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import userService from "@/app/services/userService";
 
 const Field = React.memo(({ title, value, onPress, icon }) => (
   <TouchableOpacity
@@ -37,12 +40,19 @@ const Field = React.memo(({ title, value, onPress, icon }) => (
 ));
 
 const ModalContent = React.memo(
-  ({ activeField, fieldValues, onChangeText, onSave }) => {
+  ({ activeField, fieldValues, onChangeText, onSave, isLoading }) => {
     switch (activeField) {
       case "changePassword":
         return (
           <>
             <Text style={styles.modalTitle}>Change Password</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={fieldValues.currentPassword}
+              onChangeText={(text) => onChangeText("currentPassword", text)}
+              placeholder="Current Password"
+              secureTextEntry
+            />
             <TextInput
               style={styles.modalInput}
               value={fieldValues.newPassword}
@@ -58,15 +68,21 @@ const ModalContent = React.memo(
               secureTextEntry
             />
             <TouchableOpacity
-              style={styles.modalButton}
+              style={[styles.modalButton, isLoading && styles.disabledButton]}
               onPress={() =>
                 onSave({
+                  currentPassword: fieldValues.currentPassword,
                   newPassword: fieldValues.newPassword,
                   confirmNewPassword: fieldValues.confirmNewPassword,
                 })
               }
+              disabled={isLoading}
             >
-              <Text style={styles.modalButtonText}>Save</Text>
+              {isLoading ? (
+                <ActivityIndicator color={Colors.white.color} />
+              ) : (
+                <Text style={styles.modalButtonText}>Save</Text>
+              )}
             </TouchableOpacity>
           </>
         );
@@ -79,6 +95,7 @@ const ModalContent = React.memo(
               <Switch
                 value={fieldValues.notifications}
                 onValueChange={(value) => onSave(value)}
+                disabled={isLoading}
               />
             </View>
           </>
@@ -92,12 +109,18 @@ const ModalContent = React.memo(
               value={fieldValues[activeField]}
               onChangeText={(text) => onChangeText(activeField, text)}
               autoFocus
+              placeholder={`Enter your ${activeField}`}
             />
             <TouchableOpacity
-              style={styles.modalButton}
+              style={[styles.modalButton, isLoading && styles.disabledButton]}
               onPress={() => onSave(fieldValues[activeField])}
+              disabled={isLoading}
             >
-              <Text style={styles.modalButtonText}>Save</Text>
+              {isLoading ? (
+                <ActivityIndicator color={Colors.white.color} />
+              ) : (
+                <Text style={styles.modalButtonText}>Save</Text>
+              )}
             </TouchableOpacity>
           </>
         );
@@ -109,22 +132,62 @@ const AccountView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [activeField, setActiveField] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fieldValues, setFieldValues] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+    notifications: false,
+  });
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const profile = await userService.getProfile();
+      setFieldValues((prev) => ({
+        ...prev,
+        name: profile.fullName || "",
+        email: profile.email || "",
+        phone: profile.phoneNumber || "",
+        notifications: profile.notificationsEnabled,
+      }));
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+      if (error.message === "Please log in again") {
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please log in again.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.replace("/login");
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          "Failed to load profile information. Please try again later."
+        );
+      }
+    }
+  }, [router]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
   useEffect(() => {
     if (hideHeader === "true") {
       router.setParams({ hideHeader: "true" });
     }
   }, [hideHeader]);
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [activeField, setActiveField] = useState(null);
-  const [fieldValues, setFieldValues] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    newPassword: "",
-    confirmNewPassword: "",
-    notifications: false,
-  });
 
   const handleFieldPress = useCallback((field) => {
     setActiveField(field);
@@ -132,25 +195,83 @@ const AccountView = () => {
   }, []);
 
   const handleModalClose = useCallback(
-    (newValue) => {
+    async (newValue) => {
       if (newValue !== undefined) {
-        setFieldValues((prevValues) => {
-          if (activeField === "changePassword") {
-            return {
-              ...prevValues,
-              newPassword: newValue.newPassword,
-              confirmNewPassword: newValue.confirmNewPassword,
-            };
-          } else if (activeField === "notifications") {
-            return { ...prevValues, notifications: newValue };
-          } else {
-            return { ...prevValues, [activeField]: newValue };
+        setIsLoading(true);
+        try {
+          switch (activeField) {
+            case "name":
+            case "email":
+            case "phone":
+              await userService.updateProfile({
+                fullName: activeField === "name" ? newValue : fieldValues.name,
+                email: activeField === "email" ? newValue : fieldValues.email,
+                phoneNumber:
+                  activeField === "phone" ? newValue : fieldValues.phone,
+              });
+              await fetchUserProfile();
+              Alert.alert("Success", "Profile updated successfully");
+              break;
+
+            case "changePassword":
+              if (newValue.newPassword !== newValue.confirmNewPassword) {
+                Alert.alert("Error", "New passwords do not match");
+                setIsLoading(false);
+                return;
+              }
+              if (newValue.newPassword.length < 6) {
+                Alert.alert(
+                  "Error",
+                  "Password must be at least 6 characters long"
+                );
+                setIsLoading(false);
+                return;
+              }
+              await userService.changePassword({
+                currentPassword: newValue.currentPassword,
+                newPassword: newValue.newPassword,
+                confirmNewPassword: newValue.confirmNewPassword,
+              });
+              Alert.alert("Success", "Password changed successfully");
+              break;
+
+            case "notifications":
+              await userService.updateNotifications(newValue);
+              await fetchUserProfile();
+              Alert.alert("Success", "Notification preferences updated");
+              break;
           }
-        });
+        } catch (error) {
+          console.error("Update error:", error);
+          if (error.message === "Please log in again") {
+            Alert.alert(
+              "Session Expired",
+              "Your session has expired. Please log in again.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    router.replace("/login");
+                  },
+                },
+              ]
+            );
+          } else {
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "An error occurred";
+            Alert.alert("Error", errorMessage);
+          }
+        } finally {
+          setIsLoading(false);
+          setModalVisible(false);
+        }
+      } else {
+        setModalVisible(false);
       }
-      setModalVisible(false);
     },
-    [activeField]
+    [activeField, fieldValues, fetchUserProfile, router]
   );
 
   const handleChangeText = useCallback((field, text) => {
@@ -207,13 +328,24 @@ const AccountView = () => {
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>JD</Text>
+              <Text style={styles.avatarText}>
+                {fieldValues.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </Text>
             </View>
           </View>
           <View style={styles.fieldsContainer}>
             {renderField("Name", fieldValues.name, "name", "person")}
             {renderField("Email", fieldValues.email, "email", "email")}
-            {renderField("Phone", fieldValues.phone, "phone", "phone")}
+            {renderField(
+              "Phone",
+              fieldValues.phone || "Not set",
+              "phone",
+              "phone"
+            )}
             {renderField(
               "Change Password",
               "********",
@@ -241,6 +373,7 @@ const AccountView = () => {
                 fieldValues={fieldValues}
                 onChangeText={handleChangeText}
                 onSave={handleModalClose}
+                isLoading={isLoading}
               />
             </View>
           </View>
@@ -328,7 +461,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "flex-end", // Changed to slide from bottom
+    justifyContent: "flex-end",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
@@ -362,6 +495,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   modalButtonText: {
     color: Colors.white.color,

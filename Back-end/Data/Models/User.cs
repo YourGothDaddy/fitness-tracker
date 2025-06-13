@@ -28,5 +28,6 @@
 
         public ICollection<RefreshToken> RefreshTokens { get; set; }
 
+        public bool NotificationsEnabled { get; set; } = true; // Default to true
     }
 }
