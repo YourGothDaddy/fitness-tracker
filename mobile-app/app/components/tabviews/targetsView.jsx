@@ -195,8 +195,6 @@ const TargetsView = () => {
     { label: "VitaminK2", consumed: 90, required: 120 },
   ];
 
-  console.log("Colors object:", Colors);
-
   // State for main targets
   const [mainTargets, setMainTargets] = useState([]);
   const [carbohydratesData, setCarbohydratesData] = useState(null);

@@ -15,6 +15,44 @@ class UserService {
     }
   }
 
+  async getProfileData() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_URL}/api/user/profile-data`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      throw error;
+    }
+  }
+
+  async updateProfileData(profileData) {
+    try {
+      console.log("Sending profile data update:", profileData);
+      console.log("API URL:", `${API_URL}/api/user/profile-data`);
+      const response = await axiosInstance.put(
+        `${API_URL}/api/user/profile-data`,
+        profileData
+      );
+      console.log("Update response:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating profile data:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      }
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      throw error;
+    }
+  }
+
   async updateProfile(profileData) {
     try {
       const response = await axiosInstance.put(

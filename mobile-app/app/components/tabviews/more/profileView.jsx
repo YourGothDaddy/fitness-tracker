@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import userService from "@/app/services/userService";
 
 const Field = React.memo(({ title, value, onPress, icon, unit }) => (
   <TouchableOpacity
@@ -134,6 +136,9 @@ const ProfileView = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [fieldValues, setFieldValues] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
     age: "",
     sex: "",
     weight: "",
@@ -142,23 +147,92 @@ const ProfileView = () => {
     bodyFat: "",
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    try {
+      setIsLoading(true);
+      const profileData = await userService.getProfileData();
+      setFieldValues({
+        fullName: profileData.fullName || "",
+        email: profileData.email || "",
+        phoneNumber: profileData.phoneNumber || "",
+        age: profileData.age?.toString() || "",
+        sex: profileData.sex || "",
+        weight: profileData.weight?.toString() || "",
+        height: profileData.height?.toString() || "",
+        bmi: profileData.bmi?.toString() || "",
+        bodyFat: profileData.bodyFat?.toString() || "",
+      });
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
+      Alert.alert(
+        "Error",
+        "Failed to load profile data. Please try again later."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFieldPress = useCallback((field) => {
     setActiveField(field);
     setModalVisible(true);
   }, []);
 
   const handleModalClose = useCallback(
-    (newValue) => {
+    async (newValue) => {
       if (newValue !== undefined) {
-        setFieldValues((prevValues) => ({
-          ...prevValues,
+        const updatedValues = {
+          ...fieldValues,
           [activeField]:
             typeof newValue === "object" ? newValue.nativeEvent.text : newValue,
-        }));
+        };
+        setFieldValues(updatedValues);
+
+        try {
+          console.log("Updating profile with values:", {
+            fullName: updatedValues.fullName || "",
+            email: updatedValues.email || "",
+            phoneNumber: updatedValues.phoneNumber || "",
+            age: parseInt(updatedValues.age) || 0,
+            sex: updatedValues.sex || "",
+            weight: parseFloat(updatedValues.weight) || 0,
+            height: parseFloat(updatedValues.height) || 0,
+          });
+
+          await userService.updateProfileData({
+            fullName: updatedValues.fullName || "",
+            email: updatedValues.email || "",
+            phoneNumber: updatedValues.phoneNumber || "",
+            age: parseInt(updatedValues.age) || 0,
+            sex: updatedValues.sex || "",
+            weight: parseFloat(updatedValues.weight) || 0,
+            height: parseFloat(updatedValues.height) || 0,
+          });
+          await loadProfileData(); // Reload data to get updated BMI and body fat
+        } catch (error) {
+          console.error("Detailed error:", error);
+          if (error.response) {
+            console.error("Error response:", error.response.data);
+          }
+          Alert.alert(
+            "Error",
+            "Failed to update profile data. Please try again."
+          );
+          await loadProfileData(); // Reload original data
+        }
       }
       setModalVisible(false);
     },
-    [activeField]
+    [activeField, fieldValues]
   );
 
   const handleChangeText = useCallback((field, text) => {
@@ -178,6 +252,14 @@ const ProfileView = () => {
     ),
     [handleFieldPress]
   );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading profile data...</Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -300,6 +382,12 @@ const ProfileView = () => {
 export default ProfileView;
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.white.color,
+  },
   header: {
     position: "relative",
   },

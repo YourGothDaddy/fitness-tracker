@@ -242,6 +242,47 @@
             return Ok(new { Message = "Notification preferences updated successfully" });
         }
 
+        [HttpGet("profile-data")]
+        public async Task<IActionResult> GetProfileData()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var profileData = await _userService.GetProfileDataAsync(userId);
+            if (profileData == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(profileData);
+        }
+
+        [HttpPut("profile-data")]
+        public async Task<IActionResult> UpdateProfileData([FromBody] ProfileModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _userService.UpdateProfileDataAsync(userId, model);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(new { Message = "Profile data updated successfully" });
+        }
+
         // PRIVATE METHODS
 
         private async Task<User> GetAuthenticatedUserAsync()

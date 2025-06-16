@@ -5,6 +5,8 @@
     using Fitness_Tracker.Models.Users;
     using Microsoft.AspNetCore.Identity;
     using System.Threading.Tasks;
+    using System;
+    using Fitness_Tracker.Data.Models.Enums;
 
     public class UserService : IUserService
     {
@@ -73,6 +75,84 @@
         public async Task<User> GetUserProfileAsync(string userId)
         {
             return await _userManager.FindByIdAsync(userId);
+        }
+
+        public async Task<ProfileModel> GetProfileDataAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            var bmi = await CalculateBMIAsync(user.Weight, user.Height);
+            var bodyFat = await CalculateBodyFatAsync(user.Weight, user.Height, user.Age, user.Gender.ToString());
+
+            return new ProfileModel
+            {
+                FullName = user.FullName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Age = user.Age,
+                Sex = user.Gender.ToString(),
+                Weight = user.Weight,
+                Height = user.Height,
+                BMI = bmi,
+                BodyFat = bodyFat
+            };
+        }
+
+        public async Task<IdentityResult> UpdateProfileDataAsync(string userId, ProfileModel model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = "User not found" });
+            }
+
+            user.FullName = model.FullName;
+            user.PhoneNumber = model.PhoneNumber;
+            user.Age = model.Age;
+            user.Gender = (Gender)Enum.Parse(typeof(Gender), model.Sex);
+            user.Weight = model.Weight;
+            user.Height = model.Height;
+
+            return await _userManager.UpdateAsync(user);
+        }
+
+        public async Task<float> CalculateBMIAsync(float weight, float height)
+        {
+            if (height <= 0 || weight <= 0)
+            {
+                return 0;
+            }
+
+            // Convert height from cm to m and calculate BMI
+            float heightInMeters = height / 100;
+            return weight / (heightInMeters * heightInMeters);
+        }
+
+        public async Task<float> CalculateBodyFatAsync(float weight, float height, int age, string sex)
+        {
+            if (height <= 0 || weight <= 0 || age <= 0)
+            {
+                return 0;
+            }
+
+            // Using the U.S. Navy Body Fat Formula
+            float bmi = await CalculateBMIAsync(weight, height);
+            float bodyFat;
+
+            if (sex.ToLower() == "male")
+            {
+                bodyFat = (1.20f * bmi) + (0.23f * age) - 16.2f;
+            }
+            else
+            {
+                bodyFat = (1.20f * bmi) + (0.23f * age) - 5.4f;
+            }
+
+            return Math.Max(0, Math.Min(100, bodyFat)); // Ensure result is between 0 and 100
         }
     }
 }

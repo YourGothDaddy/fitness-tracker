@@ -19,5 +19,11 @@
         public Task<IdentityResult> ChangePasswordAsync(User user, string currentPassword, string newPassword);
         public Task<bool> UpdateNotificationsAsync(User user, bool notificationsEnabled);
         public Task<User> GetUserProfileAsync(string userId);
+
+        // New methods for profile management
+        public Task<ProfileModel> GetProfileDataAsync(string userId);
+        public Task<IdentityResult> UpdateProfileDataAsync(string userId, ProfileModel model);
+        public Task<float> CalculateBMIAsync(float weight, float height);
+        public Task<float> CalculateBodyFatAsync(float weight, float height, int age, string sex);
     }
 }
