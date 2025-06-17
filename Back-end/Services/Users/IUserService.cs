@@ -25,5 +25,9 @@
         public Task<IdentityResult> UpdateProfileDataAsync(string userId, ProfileModel model);
         public Task<float> CalculateBMIAsync(float weight, float height);
         public Task<float> CalculateBodyFatAsync(float weight, float height, int age, string sex);
+
+        // Goals management
+        public Task<UpdateGoalsModel> GetUserGoalsAsync(string userId);
+        public Task<IdentityResult> UpdateUserGoalsAsync(string userId, UpdateGoalsModel model);
     }
 }

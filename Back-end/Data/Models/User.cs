@@ -20,9 +20,9 @@
 
         public int MonthlyCaloriesGoal { get; set; }
 
+        public int DailyProteinGoal { get; set; }
 
         public float GoalWeight { get; set; }
-
 
         public bool IsDailyCaloriesGoal { get; set; }
 

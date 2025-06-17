@@ -154,5 +154,34 @@
 
             return Math.Max(0, Math.Min(100, bodyFat)); // Ensure result is between 0 and 100
         }
+
+        public async Task<UpdateGoalsModel> GetUserGoalsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            return new UpdateGoalsModel
+            {
+                DailyCaloriesGoal = user.DailyCaloriesGoal,
+                DailyProteinGoal = user.DailyProteinGoal
+            };
+        }
+
+        public async Task<IdentityResult> UpdateUserGoalsAsync(string userId, UpdateGoalsModel model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            user.DailyCaloriesGoal = model.DailyCaloriesGoal;
+            user.DailyProteinGoal = model.DailyProteinGoal;
+
+            return await _userManager.UpdateAsync(user);
+        }
     }
 }

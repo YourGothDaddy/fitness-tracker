@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import goalsService from "@/app/services/goalsService";
 
 const TargetCard = ({ title, description, icon, onPress }) => {
   return (
@@ -35,9 +39,97 @@ const TargetCard = ({ title, description, icon, onPress }) => {
   );
 };
 
+const GoalBadge = ({ value, label, onPress }) => {
+  return (
+    <TouchableOpacity style={styles.statCard} onPress={onPress}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
+
+const EditGoalModal = ({ visible, onClose, title, value, onSave }) => {
+  const [inputValue, setInputValue] = useState(value.toString());
+
+  const handleSave = () => {
+    const numericValue = parseInt(inputValue);
+    if (isNaN(numericValue) || numericValue < 0) {
+      Alert.alert("Invalid Value", "Please enter a valid positive number");
+      return;
+    }
+    onSave(numericValue);
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <TextInput
+            style={styles.input}
+            value={inputValue}
+            onChangeText={setInputValue}
+            keyboardType="numeric"
+            placeholder="Enter value"
+            placeholderTextColor="#666"
+          />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.buttonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.saveButton]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.buttonText, styles.saveButtonText]}>
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const TargetsView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
+  const [goals, setGoals] = useState({
+    dailyCaloriesGoal: 0,
+    dailyProteinGoal: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [editModal, setEditModal] = useState({
+    visible: false,
+    type: null,
+    value: 0,
+  });
+
+  const fetchGoals = useCallback(async () => {
+    try {
+      const data = await goalsService.getUserGoals();
+      setGoals(data);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+      Alert.alert("Error", "Failed to load goals. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGoals();
+  }, [fetchGoals]);
 
   const handleTargetPress = useCallback(
     (href) => {
@@ -48,6 +140,31 @@ const TargetsView = () => {
     },
     [router]
   );
+
+  const handleGoalPress = (type) => {
+    setEditModal({
+      visible: true,
+      type,
+      value:
+        type === "calories" ? goals.dailyCaloriesGoal : goals.dailyProteinGoal,
+    });
+  };
+
+  const handleSaveGoal = async (value) => {
+    try {
+      const updatedGoals = {
+        dailyCaloriesGoal:
+          editModal.type === "calories" ? value : goals.dailyCaloriesGoal,
+        dailyProteinGoal:
+          editModal.type === "protein" ? value : goals.dailyProteinGoal,
+      };
+      await goalsService.updateUserGoals(updatedGoals);
+      setGoals(updatedGoals);
+    } catch (error) {
+      console.error("Error updating goals:", error);
+      Alert.alert("Error", "Failed to update goals. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -79,14 +196,16 @@ const TargetsView = () => {
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.profilePreview}>
             <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>2400</Text>
-                <Text style={styles.statLabel}>Daily Calories</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>150g</Text>
-                <Text style={styles.statLabel}>Protein Goal</Text>
-              </View>
+              <GoalBadge
+                value={goals.dailyCaloriesGoal}
+                label="Daily Calories"
+                onPress={() => handleGoalPress("calories")}
+              />
+              <GoalBadge
+                value={goals.dailyProteinGoal}
+                label="Protein Goal"
+                onPress={() => handleGoalPress("protein")}
+              />
             </View>
           </View>
 
@@ -132,6 +251,16 @@ const TargetsView = () => {
             />
           </View>
         </ScrollView>
+
+        <EditGoalModal
+          visible={editModal.visible}
+          onClose={() => setEditModal({ visible: false, type: null, value: 0 })}
+          title={`Edit ${
+            editModal.type === "calories" ? "Daily Calories" : "Protein"
+          } Goal`}
+          value={editModal.value}
+          onSave={handleSaveGoal}
+        />
       </SafeAreaView>
     </>
   );
@@ -235,5 +364,58 @@ const styles = StyleSheet.create({
   menuDescription: {
     fontSize: 14,
     color: "#666",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: Colors.white.color,
+    borderRadius: 15,
+    padding: 20,
+    width: "80%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.lightGreen.color,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#f0f0f0",
+  },
+  saveButton: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  saveButtonText: {
+    color: Colors.white.color,
   },
 });
