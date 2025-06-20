@@ -11,6 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import userService from "@/app/services/userService";
+import { useFocusEffect } from "@react-navigation/native";
 
 const OptionButton = React.memo(({ title, isSelected, onPress }) => (
   <TouchableOpacity
@@ -57,9 +59,61 @@ const MacroView = () => {
     netCarbs: 40,
     fat: 30,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+  // Load macro settings on mount/focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+      userService
+        .getMacroSettings()
+        .then((data) => {
+          if (!isActive) return;
+          // Defensive: handle missing fields
+          setSelectedOption(data.macroMode === 1 ? "Fixed" : "Ratios");
+          setTotalKcal(data.totalKcal || 2000);
+          setMacroValues(
+            data.macroMode === 1
+              ? {
+                  protein: data.proteinKcal || 0,
+                  netCarbs: data.carbsKcal || 0,
+                  fat: data.fatKcal || 0,
+                }
+              : {
+                  protein: data.proteinRatio || 30,
+                  netCarbs: data.carbsRatio || 40,
+                  fat: data.fatRatio || 30,
+                }
+          );
+        })
+        .catch((err) => {
+          if (!isActive) return;
+          setError(err.message || "Failed to load macro settings");
+        })
+        .finally(() => {
+          if (isActive) setLoading(false);
+        });
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   const handleOptionPress = useCallback((option) => {
     setSelectedOption(option);
+    setSuccess(false);
+    setError(null);
+    // Reset macro values to defaults when switching
+    setMacroValues(
+      option === "Ratios"
+        ? { protein: 30, netCarbs: 40, fat: 30 }
+        : { protein: 0, netCarbs: 0, fat: 0 }
+    );
   }, []);
 
   const handleMacroChange = useCallback((field, value) => {
@@ -68,7 +122,37 @@ const MacroView = () => {
       ...prev,
       [field]: numValue,
     }));
+    setSuccess(false);
+    setError(null);
   }, []);
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      const payload = {
+        macroMode: selectedOption === "Fixed" ? 1 : 0,
+        totalKcal,
+        proteinRatio:
+          selectedOption === "Ratios" ? macroValues.protein : undefined,
+        carbsRatio:
+          selectedOption === "Ratios" ? macroValues.netCarbs : undefined,
+        fatRatio: selectedOption === "Ratios" ? macroValues.fat : undefined,
+        proteinKcal:
+          selectedOption === "Fixed" ? macroValues.protein : undefined,
+        carbsKcal:
+          selectedOption === "Fixed" ? macroValues.netCarbs : undefined,
+        fatKcal: selectedOption === "Fixed" ? macroValues.fat : undefined,
+      };
+      await userService.updateMacroSettings(payload);
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message || "Failed to save macro settings");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const macroKcals = useMemo(() => {
     if (selectedOption === "Ratios") {
@@ -87,12 +171,37 @@ const MacroView = () => {
       (sum, val) => sum + val,
       0
     );
+    if (selectedOption === "Fixed") {
+      return {
+        protein:
+          totalMacroKcal > 0
+            ? ((macroKcals.protein / totalMacroKcal) * 100).toFixed(1)
+            : "0.0",
+        netCarbs:
+          totalMacroKcal > 0
+            ? ((macroKcals.netCarbs / totalMacroKcal) * 100).toFixed(1)
+            : "0.0",
+        fat:
+          totalMacroKcal > 0
+            ? ((macroKcals.fat / totalMacroKcal) * 100).toFixed(1)
+            : "0.0",
+      };
+    }
     return {
-      protein: Math.round((macroKcals.protein / totalMacroKcal) * 100),
-      netCarbs: Math.round((macroKcals.netCarbs / totalMacroKcal) * 100),
-      fat: Math.round((macroKcals.fat / totalMacroKcal) * 100),
+      protein:
+        totalMacroKcal > 0
+          ? Math.round((macroKcals.protein / totalMacroKcal) * 100)
+          : 0,
+      netCarbs:
+        totalMacroKcal > 0
+          ? Math.round((macroKcals.netCarbs / totalMacroKcal) * 100)
+          : 0,
+      fat:
+        totalMacroKcal > 0
+          ? Math.round((macroKcals.fat / totalMacroKcal) * 100)
+          : 0,
     };
-  }, [macroKcals]);
+  }, [macroKcals, selectedOption]);
 
   const totalPercentage = useMemo(() => {
     return Object.values(macroPercentages).reduce((sum, val) => sum + val, 0);
@@ -136,6 +245,21 @@ const MacroView = () => {
           </View>
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+          {loading && (
+            <Text style={{ textAlign: "center", margin: 10 }}>Loading...</Text>
+          )}
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          {success && (
+            <Text
+              style={{
+                color: Colors.green.color,
+                textAlign: "center",
+                margin: 10,
+              }}
+            >
+              Saved!
+            </Text>
+          )}
           <View style={styles.optionsContainer}>
             <OptionButton
               title="Ratios"
@@ -199,6 +323,15 @@ const MacroView = () => {
                 kcal goal.
               </Text>
             )}
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              <Text style={styles.saveButtonText}>
+                {loading ? "Saving..." : "Save"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -313,5 +446,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",
+  },
+  saveButton: {
+    backgroundColor: Colors.green.color,
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: Colors.white.color,
+    fontWeight: "bold",
   },
 });

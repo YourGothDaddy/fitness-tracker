@@ -29,5 +29,13 @@
         public ICollection<RefreshToken> RefreshTokens { get; set; }
 
         public bool NotificationsEnabled { get; set; } = true; // Default to true
+
+        public MacroMode MacroMode { get; set; } = MacroMode.Ratios; // Default to Ratios
+        public int ProteinRatio { get; set; } = 30; // Percent, for Ratios mode
+        public int CarbsRatio { get; set; } = 40; // Percent, for Ratios mode
+        public int FatRatio { get; set; } = 30; // Percent, for Ratios mode
+        public int ProteinKcal { get; set; } = 0; // For Fixed mode
+        public int CarbsKcal { get; set; } = 0; // For Fixed mode
+        public int FatKcal { get; set; } = 0; // For Fixed mode
     }
 }

@@ -283,6 +283,42 @@
             return Ok(new { Message = "Profile data updated successfully" });
         }
 
+        [HttpGet("macro-settings")]
+        public async Task<IActionResult> GetMacroSettings()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            try
+            {
+                var result = await _userService.GetMacroSettingsAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
+        [HttpPut("macro-settings")]
+        public async Task<IActionResult> UpdateMacroSettings([FromBody] MacroSettingsModel model)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            if (model == null)
+                return BadRequest(new { Message = "Invalid macro settings payload." });
+            try
+            {
+                await _userService.UpdateMacroSettingsAsync(userId, model);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
+
         // PRIVATE METHODS
 
         private async Task<User> GetAuthenticatedUserAsync()

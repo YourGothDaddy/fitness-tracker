@@ -183,5 +183,59 @@
 
             return await _userManager.UpdateAsync(user);
         }
+
+        public async Task<MacroSettingsModel> GetMacroSettingsAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException("User not found");
+
+            // Defensive: handle missing/legacy data
+            var macroMode = (int)user.MacroMode;
+            var totalKcal = user.DailyCaloriesGoal > 0 ? user.DailyCaloriesGoal : 2000;
+            return new MacroSettingsModel
+            {
+                MacroMode = macroMode,
+                TotalKcal = totalKcal,
+                ProteinRatio = user.ProteinRatio,
+                CarbsRatio = user.CarbsRatio,
+                FatRatio = user.FatRatio,
+                ProteinKcal = user.ProteinKcal,
+                CarbsKcal = user.CarbsKcal,
+                FatKcal = user.FatKcal
+            };
+        }
+
+        public async Task UpdateMacroSettingsAsync(string userId, MacroSettingsModel model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException("User not found");
+
+            user.MacroMode = (Fitness_Tracker.Data.Models.Enums.MacroMode)model.MacroMode;
+            // Save total kcal as DailyCaloriesGoal for consistency
+            if (model.TotalKcal > 0)
+                user.DailyCaloriesGoal = model.TotalKcal;
+
+            if (user.MacroMode == Fitness_Tracker.Data.Models.Enums.MacroMode.Ratios)
+            {
+                user.ProteinRatio = model.ProteinRatio ?? 30;
+                user.CarbsRatio = model.CarbsRatio ?? 40;
+                user.FatRatio = model.FatRatio ?? 30;
+                user.ProteinKcal = 0;
+                user.CarbsKcal = 0;
+                user.FatKcal = 0;
+            }
+            else
+            {
+                user.ProteinKcal = model.ProteinKcal ?? 0;
+                user.CarbsKcal = model.CarbsKcal ?? 0;
+                user.FatKcal = model.FatKcal ?? 0;
+                user.ProteinRatio = 0;
+                user.CarbsRatio = 0;
+                user.FatRatio = 0;
+            }
+            await _userManager.UpdateAsync(user);
+        }
     }
 }

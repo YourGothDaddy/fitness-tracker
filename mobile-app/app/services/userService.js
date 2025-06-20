@@ -102,6 +102,38 @@ class UserService {
       throw error;
     }
   }
+
+  // Macro settings
+  async getMacroSettings() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_URL}/api/user/macro-settings`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching macro settings:", error);
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      throw error;
+    }
+  }
+
+  async updateMacroSettings(macroSettings) {
+    try {
+      const response = await axiosInstance.put(
+        `${API_URL}/api/user/macro-settings`,
+        macroSettings
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating macro settings:", error);
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      throw error;
+    }
+  }
 }
 
 export default new UserService();

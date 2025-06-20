@@ -29,5 +29,9 @@
         // Goals management
         public Task<UpdateGoalsModel> GetUserGoalsAsync(string userId);
         public Task<IdentityResult> UpdateUserGoalsAsync(string userId, UpdateGoalsModel model);
+
+        // Macro settings management
+        public Task<MacroSettingsModel> GetMacroSettingsAsync(string userId);
+        public Task UpdateMacroSettingsAsync(string userId, MacroSettingsModel model);
     }
 }
