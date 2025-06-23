@@ -20,5 +20,6 @@ namespace Fitness_Tracker.Services.Nutrition
         Task<OtherNutrientsModel> GetOtherNutrients(DateTime date);
         Task<SterolsModel> GetSterolsAsync(string userId, DateTime date);
         Task<VitaminsModel> GetVitaminsAsync(string userId, DateTime date);
+        Task<EnergySettingsModel> GetEnergySettingsAsync(string userId, double? customBmr, int? activityLevelId, bool includeTef);
     }
 } 

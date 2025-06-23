@@ -44,6 +44,16 @@ class ActivityService {
       .toString()
       .padStart(2, "0")}`;
   }
+
+  async getActivityLevels() {
+    try {
+      const url = `${API_URL}/api/activity/activity-levels`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

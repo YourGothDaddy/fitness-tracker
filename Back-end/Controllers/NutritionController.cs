@@ -343,6 +343,30 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("energy-settings")]
+        public async Task<IActionResult> GetEnergySettings([FromQuery] double? customBmr, [FromQuery] int? activityLevelId, [FromQuery] bool includeTef = false)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                var result = await _nutritionService.GetEnergySettingsAsync(userId, customBmr, activityLevelId, includeTef);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving energy settings: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

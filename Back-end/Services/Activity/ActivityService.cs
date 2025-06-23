@@ -98,5 +98,18 @@ namespace Fitness_Tracker.Services.Activity
                 })
                 .ToListAsync();
         }
+
+        public async Task<List<ActivityLevelModel>> GetAllActivityLevelsAsync()
+        {
+            return await _databaseContext.ActivityLevels
+                .OrderBy(al => al.Id)
+                .Select(al => new ActivityLevelModel
+                {
+                    Id = al.Id,
+                    Name = al.Name,
+                    Multiplier = al.Multiplier
+                })
+                .ToListAsync();
+        }
     }
 } 

@@ -216,6 +216,23 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getEnergySettings({ customBmr, activityLevelId, includeTef }) {
+    try {
+      let url = `/api/nutrition/energy-settings?`;
+      if (customBmr !== undefined && customBmr !== null)
+        url += `customBmr=${customBmr}&`;
+      if (activityLevelId !== undefined && activityLevelId !== null)
+        url += `activityLevelId=${activityLevelId}&`;
+      if (includeTef !== undefined) url += `includeTef=${includeTef}`;
+      // Remove trailing & or ?
+      url = url.replace(/[&?]$/, "");
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

@@ -701,5 +701,76 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return result;
         }
+
+        public async Task<EnergySettingsModel> GetEnergySettingsAsync(string userId, double? customBmr, int? activityLevelId, bool includeTef)
+        {
+            var user = await _databaseContext.Users
+                .Include(u => u.ActivityLevel)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Determine BMR
+            double bmr;
+            if (customBmr.HasValue && customBmr.Value > 0)
+            {
+                bmr = customBmr.Value;
+            }
+            else if (user.Weight > 0 && user.Height > 0 && user.Age > 0)
+            {
+                if (user.Gender == Data.Models.Enums.Gender.Male)
+                {
+                    bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) + 5;
+                }
+                else
+                {
+                    bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) - 161;
+                }
+            }
+            else
+            {
+                bmr = 0; // Not enough data
+            }
+
+            // Determine activity level
+            ActivityLevel activityLevel = null;
+            if (activityLevelId.HasValue)
+            {
+                activityLevel = await _databaseContext.ActivityLevels.FirstOrDefaultAsync(al => al.Id == activityLevelId.Value);
+            }
+            if (activityLevel == null)
+            {
+                activityLevel = user.ActivityLevel;
+            }
+            if (activityLevel == null)
+            {
+                // fallback to first available
+                activityLevel = await _databaseContext.ActivityLevels.OrderBy(al => al.Id).FirstOrDefaultAsync();
+            }
+
+            double multiplier = activityLevel?.Multiplier ?? 1.2;
+            string activityLevelName = activityLevel?.Name ?? "Unknown";
+            int activityLevelIdResult = activityLevel?.Id ?? 0;
+
+            // Calculate maintenance calories
+            double maintenance = bmr * multiplier;
+            if (includeTef)
+            {
+                maintenance *= 1.1; // Add 10% for TEF
+            }
+
+            return new EnergySettingsModel
+            {
+                BMR = Math.Round(bmr, 1),
+                MaintenanceCalories = Math.Round(maintenance, 1),
+                ActivityLevelId = activityLevelIdResult,
+                ActivityLevelName = activityLevelName,
+                ActivityMultiplier = multiplier,
+                TEFIncluded = includeTef
+            };
+        }
     }
 } 

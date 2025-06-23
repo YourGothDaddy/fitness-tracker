@@ -68,6 +68,26 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("activity-levels")]
+        public async Task<IActionResult> GetActivityLevels()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                var result = await _activityService.GetAllActivityLevelsAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving activity levels: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

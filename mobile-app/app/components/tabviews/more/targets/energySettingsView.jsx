@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Dimensions,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -19,32 +21,155 @@ import Animated, {
   FadeOut,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
+import activityService from "@/app/services/activityService";
+import nutritionService from "@/app/services/nutritionService";
+import userService from "@/app/services/userService";
 
 const EnergySettingsView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [selectedValues, setSelectedValues] = useState({
-    bmr: "Default",
-    baseline: "Sedentary (BMR * 0.2)",
-  });
-  const [isTefEnabled, setIsTefEnabled] = useState(false);
+  const [activityLevels, setActivityLevels] = useState([]);
+  const [selectedBmrType, setSelectedBmrType] = useState("Default");
   const [customBMR, setCustomBMR] = useState("");
+  const [selectedActivityLevel, setSelectedActivityLevel] = useState(null);
+  const [isTefEnabled, setIsTefEnabled] = useState(false);
+  const [energySettings, setEnergySettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleOptionSelect = useCallback((section, option) => {
-    setSelectedValues((prev) => ({
-      ...prev,
-      [section]: option,
-    }));
-    setActiveDropdown(null);
+  // Fetch activity levels and user info on mount
+  useEffect(() => {
+    let isMounted = true;
+    const fetchInitialData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [levels, profile] = await Promise.all([
+          activityService.getActivityLevels(),
+          userService.getProfile(),
+        ]);
+        if (!isMounted) return;
+        setActivityLevels(levels);
+        // Find user's current activity level
+        const userLevel =
+          levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
+        setSelectedActivityLevel(userLevel);
+        // Fetch initial energy settings
+        const settings = await nutritionService.getEnergySettings({
+          customBmr: undefined,
+          activityLevelId: userLevel.id,
+          includeTef: false,
+        });
+        if (!isMounted) return;
+        console.log("Initial energy settings:", settings);
+        console.log(
+          "Initial MaintenanceCalories:",
+          settings.maintenanceCalories,
+          "type:",
+          typeof settings.maintenanceCalories
+        );
+        console.log("Initial BMR:", settings.bmr, "type:", typeof settings.bmr);
+
+        // Ensure we have a valid settings object with the expected properties
+        if (settings && typeof settings === "object") {
+          setEnergySettings({
+            BMR: settings.bmr || 0,
+            MaintenanceCalories: settings.maintenanceCalories || 0,
+            ActivityLevelId: settings.activityLevelId,
+            ActivityLevelName: settings.activityLevelName,
+            ActivityMultiplier: settings.activityMultiplier,
+            TEFIncluded: settings.tefIncluded,
+          });
+        } else {
+          console.error("Invalid initial settings response:", settings);
+          setError("Invalid response from server");
+        }
+      } catch (err) {
+        setError("Failed to load energy settings. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const toggleDropdown = useCallback(
-    (section) => {
-      setActiveDropdown(activeDropdown === section ? null : section);
-    },
-    [activeDropdown]
-  );
+  // Refetch energy settings when dependencies change
+  useEffect(() => {
+    if (!selectedActivityLevel) return;
+    let customBmrValue =
+      selectedBmrType === "Custom" ? parseFloat(customBMR) : undefined;
+    if (
+      selectedBmrType === "Custom" &&
+      (!customBmrValue || isNaN(customBmrValue))
+    ) {
+      setEnergySettings((prev) =>
+        prev ? { ...prev, BMR: 0, MaintenanceCalories: 0 } : null
+      );
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    nutritionService
+      .getEnergySettings({
+        customBmr: customBmrValue,
+        activityLevelId: selectedActivityLevel.id,
+        includeTef: isTefEnabled,
+      })
+      .then((settings) => {
+        console.log("Energy settings response:", settings);
+        console.log(
+          "MaintenanceCalories type:",
+          typeof settings.maintenanceCalories,
+          "value:",
+          settings.maintenanceCalories
+        );
+        console.log("BMR type:", typeof settings.bmr, "value:", settings.bmr);
+
+        // Ensure we have a valid settings object with the expected properties
+        if (settings && typeof settings === "object") {
+          setEnergySettings({
+            BMR: settings.bmr || 0,
+            MaintenanceCalories: settings.maintenanceCalories || 0,
+            ActivityLevelId: settings.activityLevelId,
+            ActivityLevelName: settings.activityLevelName,
+            ActivityMultiplier: settings.activityMultiplier,
+            TEFIncluded: settings.tefIncluded,
+          });
+        } else {
+          console.error("Invalid settings response:", settings);
+          setError("Invalid response from server");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching energy settings:", error);
+        setError("Failed to update energy settings.");
+      })
+      .finally(() => setLoading(false));
+  }, [selectedBmrType, customBMR, selectedActivityLevel, isTefEnabled]);
+
+  const handleBmrTypeSelect = (option) => {
+    setSelectedBmrType(option);
+    setActiveDropdown(null);
+    if (option === "Default") setCustomBMR("");
+  };
+
+  const handleActivityLevelSelect = (level) => {
+    setSelectedActivityLevel(level);
+    setActiveDropdown(null);
+  };
+
+  // Helper function to safely format numbers
+  const formatNumber = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return "-";
+    }
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    return isNaN(num) ? "-" : Math.round(num);
+  };
 
   return (
     <>
@@ -78,8 +203,30 @@ const EnergySettingsView = () => {
         >
           {/* Energy Display Card */}
           <View style={styles.energyCard}>
-            <Text style={styles.energyValue}>1,500</Text>
-            <Text style={styles.energyUnit}>kcal / day</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+            ) : error ? (
+              <Text style={{ color: "red" }}>{error}</Text>
+            ) : (
+              <>
+                <Text style={styles.energyValue}>
+                  {energySettings
+                    ? formatNumber(energySettings.MaintenanceCalories)
+                    : "-"}
+                </Text>
+                <Text style={styles.energyUnit}>kcal / day</Text>
+                <Text
+                  style={{
+                    color: Colors.darkGreen.color,
+                    fontSize: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  BMR: {energySettings ? formatNumber(energySettings.BMR) : "-"}{" "}
+                  kcal
+                </Text>
+              </>
+            )}
           </View>
 
           <View style={styles.settingsContainer}>
@@ -88,9 +235,11 @@ const EnergySettingsView = () => {
               <Text style={styles.sectionTitle}>Basal Metabolic Rate</Text>
               <TouchableOpacity
                 style={styles.selector}
-                onPress={() => toggleDropdown("bmr")}
+                onPress={() =>
+                  setActiveDropdown(activeDropdown === "bmr" ? null : "bmr")
+                }
               >
-                <Text style={styles.selectorText}>{selectedValues.bmr}</Text>
+                <Text style={styles.selectorText}>{selectedBmrType}</Text>
                 <MaterialIcons
                   name={
                     activeDropdown === "bmr" ? "expand-less" : "expand-more"
@@ -111,21 +260,21 @@ const EnergySettingsView = () => {
                       key={option}
                       style={[
                         styles.dropdownItem,
-                        selectedValues.bmr === option &&
+                        selectedBmrType === option &&
                           styles.dropdownItemSelected,
                       ]}
-                      onPress={() => handleOptionSelect("bmr", option)}
+                      onPress={() => handleBmrTypeSelect(option)}
                     >
                       <Text
                         style={[
                           styles.dropdownText,
-                          selectedValues.bmr === option &&
+                          selectedBmrType === option &&
                             styles.dropdownTextSelected,
                         ]}
                       >
                         {option}
                       </Text>
-                      {selectedValues.bmr === option && (
+                      {selectedBmrType === option && (
                         <MaterialIcons
                           name="check"
                           size={20}
@@ -138,7 +287,7 @@ const EnergySettingsView = () => {
               )}
 
               {/* Custom BMR Input Field */}
-              {selectedValues.bmr === "Custom" && (
+              {selectedBmrType === "Custom" && (
                 <Animated.View
                   entering={FadeIn.duration(200)}
                   style={styles.customInputContainer}
@@ -166,14 +315,20 @@ const EnergySettingsView = () => {
               <Text style={styles.sectionTitle}>Activity Level</Text>
               <TouchableOpacity
                 style={styles.selector}
-                onPress={() => toggleDropdown("baseline")}
+                onPress={() =>
+                  setActiveDropdown(
+                    activeDropdown === "activity" ? null : "activity"
+                  )
+                }
               >
                 <Text style={styles.selectorText}>
-                  {selectedValues.baseline}
+                  {selectedActivityLevel
+                    ? selectedActivityLevel.name
+                    : "Select Activity Level"}
                 </Text>
                 <MaterialIcons
                   name={
-                    activeDropdown === "baseline"
+                    activeDropdown === "activity"
                       ? "expand-less"
                       : "expand-more"
                   }
@@ -182,41 +337,41 @@ const EnergySettingsView = () => {
                 />
               </TouchableOpacity>
 
-              {activeDropdown === "baseline" && (
+              {activeDropdown === "activity" && (
                 <Animated.View
                   entering={FadeIn.duration(200)}
                   exiting={FadeOut.duration(200)}
                   style={styles.dropdown}
                 >
-                  {[
-                    "None",
-                    "Sedentary (BMR * 0.2)",
-                    "Lightly Active (BMR * 0.375)",
-                    "Moderately Active (BMR*0.5)",
-                    "Very Active (BMR * 0.9)",
-                    "Custom",
-                  ].map((option) => (
+                  {activityLevels.map((level) => (
                     <TouchableOpacity
-                      key={option}
+                      key={level.id}
                       style={[
                         styles.dropdownItem,
-                        selectedValues.baseline === option &&
+                        selectedActivityLevel &&
+                          selectedActivityLevel.id === level.id &&
                           styles.dropdownItemSelected,
                       ]}
-                      onPress={() => handleOptionSelect("baseline", option)}
+                      onPress={() => handleActivityLevelSelect(level)}
                     >
                       <Text
                         style={[
                           styles.dropdownText,
-                          selectedValues.baseline === option &&
+                          selectedActivityLevel &&
+                            selectedActivityLevel.id === level.id &&
                             styles.dropdownTextSelected,
                         ]}
                       >
-                        {option}
+                        {level.name}
                       </Text>
-                      {selectedValues.baseline === option && (
-                        <MaterialIcons name="check" size={20} color="#10b981" />
-                      )}
+                      {selectedActivityLevel &&
+                        selectedActivityLevel.id === level.id && (
+                          <MaterialIcons
+                            name="check"
+                            size={20}
+                            color="#10b981"
+                          />
+                        )}
                     </TouchableOpacity>
                   ))}
                 </Animated.View>
@@ -229,7 +384,7 @@ const EnergySettingsView = () => {
                 <Text style={styles.sectionTitle}>Thermic Effect of Food</Text>
                 <TouchableOpacity
                   style={styles.toggle}
-                  onPress={() => setIsTefEnabled(!isTefEnabled)}
+                  onPress={() => setIsTefEnabled((prev) => !prev)}
                 >
                   <Animated.View
                     style={[
