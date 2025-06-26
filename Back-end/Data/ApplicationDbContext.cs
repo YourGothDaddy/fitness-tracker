@@ -23,6 +23,7 @@
 
         public DbSet<ActivityLevel> ActivityLevels { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<UserNutrientTarget> UserNutrientTargets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -67,6 +68,12 @@
                 .HasMany(u => u.Activities)
                 .WithOne(a => a.User)
                 .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<User>()
+                .HasMany(u => u.UserNutrientTargets)
+                .WithOne(nt => nt.User)
+                .HasForeignKey(nt => nt.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
 

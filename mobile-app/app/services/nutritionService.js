@@ -233,6 +233,29 @@ class NutritionService {
       throw error;
     }
   }
+
+  async getUserNutrientTargets() {
+    try {
+      const response = await axiosInstance.get(
+        "/api/nutrition/user-nutrient-targets"
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserNutrientTarget(model) {
+    try {
+      const response = await axiosInstance.post(
+        "/api/nutrition/user-nutrient-targets",
+        model
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const nutritionService = new NutritionService();

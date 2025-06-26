@@ -772,5 +772,90 @@ namespace Fitness_Tracker.Services.Nutrition
                 TEFIncluded = includeTef
             };
         }
+
+        public async Task<List<UserNutrientTargetModel>> GetUserNutrientTargetsAsync(string userId)
+        {
+            // Get all master nutrients
+            var allNutrients = await _databaseContext.Nutrients
+                .Select(n => new { n.Name, n.Category })
+                .Distinct()
+                .ToListAsync();
+
+            // Get all user-specific targets
+            var userTargets = await _databaseContext.UserNutrientTargets
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+
+            var result = new List<UserNutrientTargetModel>();
+
+            foreach (var nutrient in allNutrients)
+            {
+                var userTarget = userTargets.FirstOrDefault(t => t.NutrientName == nutrient.Name && t.Category == nutrient.Category);
+                if (userTarget != null)
+                {
+                    result.Add(new UserNutrientTargetModel
+                    {
+                        Id = userTarget.Id,
+                        NutrientName = userTarget.NutrientName,
+                        Category = userTarget.Category,
+                        IsTracked = userTarget.IsTracked,
+                        DailyTarget = userTarget.DailyTarget,
+                        HasMaxThreshold = userTarget.HasMaxThreshold,
+                        MaxThreshold = userTarget.MaxThreshold
+                    });
+                }
+                else
+                {
+                    // Default: not tracked, no targets
+                    result.Add(new UserNutrientTargetModel
+                    {
+                        Id = 0,
+                        NutrientName = nutrient.Name,
+                        Category = nutrient.Category,
+                        IsTracked = false,
+                        DailyTarget = null,
+                        HasMaxThreshold = false,
+                        MaxThreshold = null
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<UserNutrientTargetModel> UpdateUserNutrientTargetAsync(string userId, UpdateUserNutrientTargetModel model)
+        {
+            var entity = await _databaseContext.UserNutrientTargets
+                .FirstOrDefaultAsync(t => t.UserId == userId && t.NutrientName == model.NutrientName && t.Category == model.Category);
+
+            if (entity == null)
+            {
+                entity = new UserNutrientTarget
+                {
+                    UserId = userId,
+                    NutrientName = model.NutrientName,
+                    Category = model.Category
+                };
+                _databaseContext.UserNutrientTargets.Add(entity);
+            }
+
+            entity.IsTracked = model.IsTracked;
+            entity.DailyTarget = model.DailyTarget;
+            entity.HasMaxThreshold = model.HasMaxThreshold;
+            entity.MaxThreshold = model.MaxThreshold;
+
+            await _databaseContext.SaveChangesAsync();
+
+            return new UserNutrientTargetModel
+            {
+                Id = entity.Id,
+                NutrientName = entity.NutrientName,
+                Category = entity.Category,
+                IsTracked = entity.IsTracked,
+                DailyTarget = entity.DailyTarget,
+                HasMaxThreshold = entity.HasMaxThreshold,
+                MaxThreshold = entity.MaxThreshold
+            };
+        }
     }
 } 

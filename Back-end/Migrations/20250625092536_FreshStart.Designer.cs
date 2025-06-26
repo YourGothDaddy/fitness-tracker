@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fitness_Tracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250617141727_AddDailyProteinGoal")]
-    partial class AddDailyProteinGoal
+    [Migration("20250625092536_FreshStart")]
+    partial class FreshStart
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -277,6 +277,12 @@ namespace Fitness_Tracker.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("int");
 
+                    b.Property<int>("CarbsKcal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CarbsRatio")
+                        .HasColumnType("int");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -293,6 +299,12 @@ namespace Fitness_Tracker.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<int>("FatKcal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FatRatio")
+                        .HasColumnType("int");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -316,6 +328,9 @@ namespace Fitness_Tracker.Migrations
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("MacroMode")
+                        .HasColumnType("int");
+
                     b.Property<int>("MonthlyCaloriesGoal")
                         .HasColumnType("int");
 
@@ -338,6 +353,12 @@ namespace Fitness_Tracker.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<int>("ProteinKcal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProteinRatio")
+                        .HasColumnType("int");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -368,6 +389,45 @@ namespace Fitness_Tracker.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.UserNutrientTarget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("DailyTarget")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("HasMaxThreshold")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTracked")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("MaxThreshold")
+                        .HasColumnType("float");
+
+                    b.Property<string>("NutrientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserNutrientTargets");
                 });
 
             modelBuilder.Entity("Fitness_Tracker.Data.Models.WeightRecord", b =>
@@ -601,6 +661,17 @@ namespace Fitness_Tracker.Migrations
                     b.Navigation("ActivityLevel");
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.UserNutrientTarget", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.User", "User")
+                        .WithMany("UserNutrientTargets")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.WeightRecord", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.User", "User")
@@ -690,6 +761,8 @@ namespace Fitness_Tracker.Migrations
                     b.Navigation("Meals");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserNutrientTargets");
                 });
 #pragma warning restore 612, 618
         }

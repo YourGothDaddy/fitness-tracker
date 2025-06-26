@@ -367,6 +367,51 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpGet("user-nutrient-targets")]
+        public async Task<IActionResult> GetUserNutrientTargets()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                var result = await _nutritionService.GetUserNutrientTargetsAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving user nutrient targets: {ex.Message}");
+            }
+        }
+
+        [HttpPost("user-nutrient-targets")]
+        public async Task<IActionResult> UpdateUserNutrientTarget([FromBody] UpdateUserNutrientTargetModel model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            if (model == null)
+            {
+                return BadRequest("Invalid request body");
+            }
+
+            try
+            {
+                var result = await _nutritionService.UpdateUserNutrientTargetAsync(userId, model);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while updating user nutrient target: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

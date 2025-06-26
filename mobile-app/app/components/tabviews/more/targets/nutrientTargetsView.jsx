@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   TextInput,
   Switch,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
+import nutritionService from "@/app/services/nutritionService";
 
 const categories = {
   Carbohydrates: [
@@ -94,7 +96,20 @@ const categories = {
   ],
 };
 
-const CategoryTab = ({ title, onPress }) => (
+const getCategoryIcon = (category) => {
+  const icons = {
+    Carbohydrates: "grain",
+    AminoAcids: "science",
+    Fats: "opacity",
+    Minerals: "diamond",
+    Other: "more-horiz",
+    Sterols: "architecture",
+    Vitamins: "medication",
+  };
+  return icons[category] || "circle";
+};
+
+const CategoryTab = ({ title, count, onPress }) => (
   <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
     <View style={styles.tabContent}>
       <View style={styles.categoryIconContainer}>
@@ -106,9 +121,7 @@ const CategoryTab = ({ title, onPress }) => (
       </View>
       <View style={styles.categoryTextContainer}>
         <Text style={styles.tabTitle}>{title}</Text>
-        <Text
-          style={styles.itemCount}
-        >{`${categories[title].length} items`}</Text>
+        <Text style={styles.itemCount}>{`${count} items`}</Text>
       </View>
       <MaterialIcons
         name="chevron-right"
@@ -119,15 +132,66 @@ const CategoryTab = ({ title, onPress }) => (
   </TouchableOpacity>
 );
 
-const NutrientRow = ({ nutrient }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isCustom, setIsCustom] = useState(false);
-  const [target, setTarget] = useState("");
-  const [threshold, setThreshold] = useState("");
+const NutrientRow = ({ nutrient, onUpdate }) => {
+  const [isVisible, setIsVisible] = useState(nutrient.IsTracked);
+  const [isCustom, setIsCustom] = useState(nutrient.HasMaxThreshold);
+  const [target, setTarget] = useState(
+    nutrient.DailyTarget !== null && nutrient.DailyTarget !== undefined
+      ? nutrient.DailyTarget.toString()
+      : ""
+  );
+  const [threshold, setThreshold] = useState(
+    nutrient.MaxThreshold !== null && nutrient.MaxThreshold !== undefined
+      ? nutrient.MaxThreshold.toString()
+      : ""
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Update backend when any value changes
+  const handleUpdate = async (changes) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await onUpdate({
+        ...nutrient,
+        IsTracked: changes?.IsTracked ?? isVisible,
+        DailyTarget:
+          changes?.DailyTarget !== undefined
+            ? changes.DailyTarget
+            : target === ""
+            ? null
+            : parseFloat(target),
+        HasMaxThreshold: changes?.HasMaxThreshold ?? isCustom,
+        MaxThreshold:
+          changes?.MaxThreshold !== undefined
+            ? changes.MaxThreshold
+            : threshold === ""
+            ? null
+            : parseFloat(threshold),
+      });
+      setIsVisible(updated.IsTracked);
+      setIsCustom(updated.HasMaxThreshold);
+      setTarget(
+        updated.DailyTarget !== null && updated.DailyTarget !== undefined
+          ? updated.DailyTarget.toString()
+          : ""
+      );
+      setThreshold(
+        updated.MaxThreshold !== null && updated.MaxThreshold !== undefined
+          ? updated.MaxThreshold.toString()
+          : ""
+      );
+    } catch (err) {
+      setError("Failed to update. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Animated.View style={styles.nutrientCard}>
-      <Text style={styles.nutrientTitle}>{nutrient}</Text>
+      <Text style={styles.nutrientTitle}>{nutrient.NutrientName}</Text>
       <View style={styles.targetContainer}>
         <View style={styles.inputWrapper}>
           <Text style={styles.inputLabel}>Daily Target</Text>
@@ -136,7 +200,13 @@ const NutrientRow = ({ nutrient }) => {
             placeholder="0"
             keyboardType="numeric"
             value={target}
-            onChangeText={setTarget}
+            onChangeText={(val) => setTarget(val)}
+            onBlur={() =>
+              handleUpdate({
+                DailyTarget: target === "" ? null : parseFloat(target),
+              })
+            }
+            editable={isVisible}
           />
           <Text style={styles.unit}>mg</Text>
         </View>
@@ -145,7 +215,12 @@ const NutrientRow = ({ nutrient }) => {
             styles.visibilityButton,
             isVisible && styles.visibilityButtonActive,
           ]}
-          onPress={() => setIsVisible(!isVisible)}
+          onPress={() => {
+            setIsVisible((prev) => {
+              handleUpdate({ IsTracked: !prev });
+              return !prev;
+            });
+          }}
         >
           <MaterialIcons
             name={isVisible ? "visibility" : "visibility-off"}
@@ -167,14 +242,24 @@ const NutrientRow = ({ nutrient }) => {
             placeholder="0"
             keyboardType="numeric"
             value={threshold}
-            onChangeText={setThreshold}
+            onChangeText={(val) => setThreshold(val)}
+            onBlur={() =>
+              handleUpdate({
+                MaxThreshold: threshold === "" ? null : parseFloat(threshold),
+              })
+            }
             editable={isCustom}
           />
           <Text style={styles.unit}>mg</Text>
         </View>
         <TouchableOpacity
           style={[styles.customButton, isCustom && styles.customButtonActive]}
-          onPress={() => setIsCustom(!isCustom)}
+          onPress={() => {
+            setIsCustom((prev) => {
+              handleUpdate({ HasMaxThreshold: !prev });
+              return !prev;
+            });
+          }}
         >
           <Text
             style={[
@@ -186,6 +271,10 @@ const NutrientRow = ({ nutrient }) => {
           </Text>
         </TouchableOpacity>
       </View>
+      {loading && (
+        <ActivityIndicator size="small" color={Colors.darkGreen.color} />
+      )}
+      {error && <Text style={{ color: "red" }}>{error}</Text>}
     </Animated.View>
   );
 };
@@ -193,6 +282,75 @@ const NutrientRow = ({ nutrient }) => {
 const NutrientTargetsView = () => {
   const router = useRouter();
   const { hideHeader, category } = useLocalSearchParams();
+  const [nutrientTargets, setNutrientTargets] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTargets = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await nutritionService.getUserNutrientTargets();
+        // Normalize property names for compatibility
+        const normalized = data.map((item) => ({
+          ...item,
+          NutrientName: item.NutrientName || item.Name || item.nutrientName,
+          Category: item.Category || item.category,
+          IsTracked: item.IsTracked ?? item.isTracked ?? false,
+          HasMaxThreshold:
+            item.HasMaxThreshold ?? item.hasMaxThreshold ?? false,
+          DailyTarget: item.DailyTarget ?? item.dailyTarget ?? null,
+          MaxThreshold: item.MaxThreshold ?? item.maxThreshold ?? null,
+        }));
+        // Group by category
+        const grouped = {};
+        normalized.forEach((item) => {
+          if (!item.Category) return;
+          if (!grouped[item.Category]) grouped[item.Category] = [];
+          grouped[item.Category].push(item);
+        });
+        setNutrientTargets(grouped);
+      } catch (err) {
+        setError("Failed to load nutrient targets.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTargets();
+  }, []);
+
+  const handleUpdate = async (updated) => {
+    const result = await nutritionService.updateUserNutrientTarget({
+      NutrientName: updated.NutrientName,
+      Category: updated.Category,
+      IsTracked: updated.IsTracked,
+      DailyTarget:
+        updated.DailyTarget === "" ? null : parseFloat(updated.DailyTarget),
+      HasMaxThreshold: updated.HasMaxThreshold,
+      MaxThreshold:
+        updated.MaxThreshold === "" ? null : parseFloat(updated.MaxThreshold),
+    });
+    // Normalize result to PascalCase
+    const normalizedResult = {
+      ...result,
+      NutrientName: result.NutrientName || result.Name || result.nutrientName,
+      Category: result.Category || result.category,
+      IsTracked: result.IsTracked ?? result.isTracked ?? false,
+      HasMaxThreshold:
+        result.HasMaxThreshold ?? result.hasMaxThreshold ?? false,
+      DailyTarget: result.DailyTarget ?? result.dailyTarget ?? null,
+      MaxThreshold: result.MaxThreshold ?? result.maxThreshold ?? null,
+    };
+    // Update local state optimistically
+    setNutrientTargets((prev) => {
+      const updatedList = prev[updated.Category].map((n) =>
+        n.NutrientName === updated.NutrientName ? normalizedResult : n
+      );
+      return { ...prev, [updated.Category]: updatedList };
+    });
+    return normalizedResult;
+  };
 
   const handleCategoryPress = useCallback(
     (selectedCategory) => {
@@ -203,6 +361,21 @@ const NutrientTargetsView = () => {
     },
     [router]
   );
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+      </View>
+    );
+  }
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: "red" }}>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -233,10 +406,11 @@ const NutrientTargetsView = () => {
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.tabsContainer}>
             {!category ? (
-              Object.keys(categories).map((cat) => (
+              Object.keys(nutrientTargets).map((cat) => (
                 <CategoryTab
                   key={cat}
                   title={cat}
+                  count={nutrientTargets[cat].length}
                   onPress={() => handleCategoryPress(cat)}
                 />
               ))
@@ -252,11 +426,15 @@ const NutrientTargetsView = () => {
                     <Text style={styles.categoryTitle}>{category}</Text>
                   </View>
                   <Text style={styles.categoryItemCount}>
-                    {categories[category].length} items
+                    {nutrientTargets[category]?.length || 0} items
                   </Text>
                 </View>
-                {categories[category].map((nutrient) => (
-                  <NutrientRow key={nutrient} nutrient={nutrient} />
+                {nutrientTargets[category]?.map((nutrient) => (
+                  <NutrientRow
+                    key={`${nutrient.Category}-${nutrient.NutrientName}`}
+                    nutrient={nutrient}
+                    onUpdate={handleUpdate}
+                  />
                 ))}
               </View>
             )}
@@ -443,16 +621,3 @@ const styles = StyleSheet.create({
     marginLeft: 40,
   },
 });
-
-const getCategoryIcon = (category) => {
-  const icons = {
-    Carbohydrates: "grain",
-    AminoAcids: "science",
-    Fats: "opacity",
-    Minerals: "diamond",
-    Other: "more-horiz",
-    Sterols: "architecture",
-    Vitamins: "medication",
-  };
-  return icons[category] || "circle";
-};

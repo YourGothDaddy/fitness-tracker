@@ -37,5 +37,7 @@
         public int ProteinKcal { get; set; } = 0; // For Fixed mode
         public int CarbsKcal { get; set; } = 0; // For Fixed mode
         public int FatKcal { get; set; } = 0; // For Fixed mode
+
+        public virtual ICollection<UserNutrientTarget> UserNutrientTargets { get; set; } = new List<UserNutrientTarget>();
     }
 }

@@ -329,5 +329,47 @@
 
             await context.SaveChangesAsync();
         }
+
+        public static async Task SeedNutrientsAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            if (context.Nutrients.Any())
+                return;
+
+            var nutrients = new List<Data.Models.Consumables.Nutrient>();
+
+            // Carbohydrates
+            var carbs = new[] { "Fiber", "Starch", "Sugars", "Galactose", "Glucose", "Sucrose", "Lactose", "Maltose", "Fructose" };
+            nutrients.AddRange(carbs.Select(n => new Data.Models.Consumables.Nutrient { Category = "Carbohydrates", Name = n, Amount = 0 }));
+
+            // Amino Acids
+            var aminoAcids = new[] { "Alanine", "Arginine", "AsparticAcid", "Valine", "Glycine", "Glutamine", "Isoleucine", "Leucine", "Lysine", "Methionine", "Proline", "Serine", "Tyrosine", "Threonine", "Tryptophan", "Phenylalanine", "Hydroxyproline", "Histidine", "Cystine" };
+            nutrients.AddRange(aminoAcids.Select(n => new Data.Models.Consumables.Nutrient { Category = "AminoAcids", Name = n, Amount = 0 }));
+
+            // Fats
+            var fats = new[] { "TotalFats", "MonounsaturatedFats", "PolyunsaturatedFats", "SaturatedFats", "TransFats" };
+            nutrients.AddRange(fats.Select(n => new Data.Models.Consumables.Nutrient { Category = "Fats", Name = n, Amount = 0 }));
+
+            // Minerals
+            var minerals = new[] { "Iron", "Potassium", "Calcium", "Magnesium", "Manganese", "Copper", "Sodium", "Selenium", "Fluoride", "Phosphorus", "Zinc" };
+            nutrients.AddRange(minerals.Select(n => new Data.Models.Consumables.Nutrient { Category = "Minerals", Name = n, Amount = 0 }));
+
+            // Other
+            var other = new[] { "Alcohol", "Water", "Caffeine", "Theobromine", "Ash" };
+            nutrients.AddRange(other.Select(n => new Data.Models.Consumables.Nutrient { Category = "Other", Name = n, Amount = 0 }));
+
+            // Sterols
+            var sterols = new[] { "Cholesterol", "Phytosterols", "Stigmasterols", "Campesterol", "BetaSitosterols" };
+            nutrients.AddRange(sterols.Select(n => new Data.Models.Consumables.Nutrient { Category = "Sterols", Name = n, Amount = 0 }));
+
+            // Vitamins
+            var vitamins = new[] { "Betaine", "VitaminA", "VitaminB1", "VitaminB2", "VitaminB3", "VitaminB4", "VitaminB5", "VitaminB6", "VitaminB9", "VitaminB12", "VitaminC", "VitaminD", "VitaminE", "VitaminK1", "VitaminK2" };
+            nutrients.AddRange(vitamins.Select(n => new Data.Models.Consumables.Nutrient { Category = "Vitamins", Name = n, Amount = 0 }));
+
+            context.Nutrients.AddRange(nutrients);
+            await context.SaveChangesAsync();
+        }
     }
 }

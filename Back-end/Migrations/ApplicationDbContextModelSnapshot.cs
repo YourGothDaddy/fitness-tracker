@@ -388,6 +388,45 @@ namespace Fitness_Tracker.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.UserNutrientTarget", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("DailyTarget")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("HasMaxThreshold")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTracked")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("MaxThreshold")
+                        .HasColumnType("float");
+
+                    b.Property<string>("NutrientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserNutrientTargets");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.WeightRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -619,6 +658,17 @@ namespace Fitness_Tracker.Migrations
                     b.Navigation("ActivityLevel");
                 });
 
+            modelBuilder.Entity("Fitness_Tracker.Data.Models.UserNutrientTarget", b =>
+                {
+                    b.HasOne("Fitness_Tracker.Data.Models.User", "User")
+                        .WithMany("UserNutrientTargets")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Fitness_Tracker.Data.Models.WeightRecord", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.User", "User")
@@ -708,6 +758,8 @@ namespace Fitness_Tracker.Migrations
                     b.Navigation("Meals");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserNutrientTargets");
                 });
 #pragma warning restore 612, 618
         }

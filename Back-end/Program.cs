@@ -143,6 +143,7 @@ namespace Fitness_Tracker
                 DataSeeder.SeedAdministratorAsync(services).Wait();
                 DataSeeder.SeedTestUserAsync(services).Wait();
                 DataSeeder.SeedTestActivities(services).Wait();
+                DataSeeder.SeedNutrientsAsync(services).Wait();
             }
 
             /*app.UseHttpsRedirection();*/
