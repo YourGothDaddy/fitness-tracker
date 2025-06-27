@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, Platform, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
@@ -334,7 +341,9 @@ const TargetsView = () => {
         </View>
 
         {loading ? (
-          <Text>Loading...</Text>
+          <View style={styles.loadingContentContainer}>
+            <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+          </View>
         ) : error ? (
           <Text style={{ color: "red" }}>{error}</Text>
         ) : (
@@ -637,6 +646,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#636e72",
     marginBottom: 8,
+  },
+  loadingContentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 100,
   },
 });
 

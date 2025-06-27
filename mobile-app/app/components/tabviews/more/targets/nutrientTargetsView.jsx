@@ -362,21 +362,6 @@ const NutrientTargetsView = () => {
     [router]
   );
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={Colors.darkGreen.color} />
-      </View>
-    );
-  }
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "red" }}>{error}</Text>
-      </View>
-    );
-  }
-
   return (
     <>
       <Stack.Screen
@@ -405,7 +390,18 @@ const NutrientTargetsView = () => {
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.tabsContainer}>
-            {!category ? (
+            {loading ? (
+              <View style={styles.loadingContentContainer}>
+                <ActivityIndicator
+                  size="large"
+                  color={Colors.darkGreen.color}
+                />
+              </View>
+            ) : error ? (
+              <View style={styles.loadingContentContainer}>
+                <Text style={{ color: "red" }}>{error}</Text>
+              </View>
+            ) : !category ? (
               Object.keys(nutrientTargets).map((cat) => (
                 <CategoryTab
                   key={cat}
@@ -619,5 +615,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#718096",
     marginLeft: 40,
+  },
+  loadingContentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 200,
   },
 });

@@ -135,6 +135,7 @@ const AccountView = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [fieldValues, setFieldValues] = useState({
     name: "",
     email: "",
@@ -147,6 +148,7 @@ const AccountView = () => {
 
   const fetchUserProfile = useCallback(async () => {
     try {
+      setIsProfileLoading(true);
       const profile = await userService.getProfile();
       setFieldValues((prev) => ({
         ...prev,
@@ -176,6 +178,8 @@ const AccountView = () => {
           "Failed to load profile information. Please try again later."
         );
       }
+    } finally {
+      setIsProfileLoading(false);
     }
   }, [router]);
 
@@ -337,28 +341,34 @@ const AccountView = () => {
               </Text>
             </View>
           </View>
-          <View style={styles.fieldsContainer}>
-            {renderField("Name", fieldValues.name, "name", "person")}
-            {renderField("Email", fieldValues.email, "email", "email")}
-            {renderField(
-              "Phone",
-              fieldValues.phone || "Not set",
-              "phone",
-              "phone"
-            )}
-            {renderField(
-              "Change Password",
-              "********",
-              "changePassword",
-              "lock"
-            )}
-            {renderField(
-              "Notifications",
-              fieldValues.notifications ? "On" : "Off",
-              "notifications",
-              "notifications"
-            )}
-          </View>
+          {isProfileLoading ? (
+            <View style={styles.loadingContentContainer}>
+              <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+            </View>
+          ) : (
+            <View style={styles.fieldsContainer}>
+              {renderField("Name", fieldValues.name, "name", "person")}
+              {renderField("Email", fieldValues.email, "email", "email")}
+              {renderField(
+                "Phone",
+                fieldValues.phone || "Not set",
+                "phone",
+                "phone"
+              )}
+              {renderField(
+                "Change Password",
+                "********",
+                "changePassword",
+                "lock"
+              )}
+              {renderField(
+                "Notifications",
+                fieldValues.notifications ? "On" : "Off",
+                "notifications",
+                "notifications"
+              )}
+            </View>
+          )}
         </ScrollView>
         <Modal
           animationType="slide"
@@ -511,5 +521,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGreen.color,
     padding: 15,
     borderRadius: 10,
+  },
+  loadingContentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 200,
   },
 });

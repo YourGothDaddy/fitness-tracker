@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -253,14 +254,6 @@ const ProfileView = () => {
     [handleFieldPress]
   );
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading profile data...</Text>
-      </View>
-    );
-  }
-
   return (
     <>
       <Stack.Screen
@@ -296,58 +289,66 @@ const ProfileView = () => {
           </View>
         )}
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{fieldValues.bmi || "–"}</Text>
-              <Text style={styles.statLabel}>BMI</Text>
+          {isLoading ? (
+            <View style={styles.loadingContentContainer}>
+              <ActivityIndicator size="large" color={Colors.darkGreen.color} />
             </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>
-                {fieldValues.bodyFat || "–"}%
-              </Text>
-              <Text style={styles.statLabel}>Body Fat</Text>
-            </View>
-          </View>
+          ) : (
+            <>
+              <View style={styles.statsContainer}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>{fieldValues.bmi || "–"}</Text>
+                  <Text style={styles.statLabel}>BMI</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>
+                    {fieldValues.bodyFat || "–"}%
+                  </Text>
+                  <Text style={styles.statLabel}>Body Fat</Text>
+                </View>
+              </View>
 
-          <View style={styles.sectionTitle}>
-            <MaterialIcons
-              name="person-outline"
-              size={24}
-              color={Colors.darkGreen.color}
-            />
-            <Text style={styles.sectionTitleText}>Basic Information</Text>
-          </View>
+              <View style={styles.sectionTitle}>
+                <MaterialIcons
+                  name="person-outline"
+                  size={24}
+                  color={Colors.darkGreen.color}
+                />
+                <Text style={styles.sectionTitleText}>Basic Information</Text>
+              </View>
 
-          <View style={styles.fieldsContainer}>
-            {renderField("Age", fieldValues.age, "age", "cake", "years")}
-            {renderField("Sex", fieldValues.sex, "sex", "wc")}
-          </View>
+              <View style={styles.fieldsContainer}>
+                {renderField("Age", fieldValues.age, "age", "cake", "years")}
+                {renderField("Sex", fieldValues.sex, "sex", "wc")}
+              </View>
 
-          <View style={styles.sectionTitle}>
-            <MaterialIcons
-              name="straighten"
-              size={24}
-              color={Colors.darkGreen.color}
-            />
-            <Text style={styles.sectionTitleText}>Body Measurements</Text>
-          </View>
+              <View style={styles.sectionTitle}>
+                <MaterialIcons
+                  name="straighten"
+                  size={24}
+                  color={Colors.darkGreen.color}
+                />
+                <Text style={styles.sectionTitleText}>Body Measurements</Text>
+              </View>
 
-          <View style={styles.fieldsContainer}>
-            {renderField(
-              "Weight",
-              fieldValues.weight,
-              "weight",
-              "monitor-weight",
-              "kg"
-            )}
-            {renderField(
-              "Height",
-              fieldValues.height,
-              "height",
-              "height",
-              "cm"
-            )}
-          </View>
+              <View style={styles.fieldsContainer}>
+                {renderField(
+                  "Weight",
+                  fieldValues.weight,
+                  "weight",
+                  "monitor-weight",
+                  "kg"
+                )}
+                {renderField(
+                  "Height",
+                  fieldValues.height,
+                  "height",
+                  "height",
+                  "cm"
+                )}
+              </View>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
       <Modal
@@ -554,5 +555,11 @@ const styles = StyleSheet.create({
   },
   sexButtonTextSelected: {
     color: Colors.white.color,
+  },
+  loadingContentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 200,
   },
 });
