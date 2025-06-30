@@ -136,6 +136,7 @@ const AccountView = () => {
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [profile, setProfile] = useState({ initials: "", fullName: "" });
   const [fieldValues, setFieldValues] = useState({
     name: "",
     email: "",
@@ -149,13 +150,19 @@ const AccountView = () => {
   const fetchUserProfile = useCallback(async () => {
     try {
       setIsProfileLoading(true);
-      const profile = await userService.getProfile();
+      const profileData = await userService.getProfile();
+      setProfile({
+        initials: profileData.initials || "",
+        fullName: profileData.fullName || "",
+      });
+      console.log("[AccountView] Profile fetched:", profileData);
+      console.log("[AccountView] Initials:", profileData?.initials);
       setFieldValues((prev) => ({
         ...prev,
-        name: profile.fullName || "",
-        email: profile.email || "",
-        phone: profile.phoneNumber || "",
-        notifications: profile.notificationsEnabled,
+        name: profileData.fullName || "",
+        email: profileData.email || "",
+        phone: profileData.phoneNumber || "",
+        notifications: profileData.notificationsEnabled,
       }));
     } catch (error) {
       console.error("Profile fetch error:", error);
@@ -332,13 +339,7 @@ const AccountView = () => {
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>
-                {fieldValues.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()}
-              </Text>
+              <Text style={styles.avatarText}>{profile.initials || "--"}</Text>
             </View>
           </View>
           {isProfileLoading ? (
@@ -347,7 +348,7 @@ const AccountView = () => {
             </View>
           ) : (
             <View style={styles.fieldsContainer}>
-              {renderField("Name", fieldValues.name, "name", "person")}
+              {renderField("Name", profile.fullName, "name", "person")}
               {renderField("Email", fieldValues.email, "email", "email")}
               {renderField(
                 "Phone",

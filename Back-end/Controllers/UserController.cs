@@ -146,12 +146,24 @@
                 return NotFound();
             }
 
+            // Compute initials safely
+            string initials = string.Empty;
+            if (!string.IsNullOrWhiteSpace(user.FullName))
+            {
+                var parts = user.FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 1)
+                    initials = parts[0][0].ToString().ToUpper();
+                else if (parts.Length > 1)
+                    initials = (parts[0][0].ToString() + parts[parts.Length - 1][0].ToString()).ToUpper();
+            }
+
             return Ok(new
             {
                 user.FullName,
                 user.Email,
                 user.PhoneNumber,
-                user.NotificationsEnabled
+                user.NotificationsEnabled,
+                initials = initials
             });
         }
 

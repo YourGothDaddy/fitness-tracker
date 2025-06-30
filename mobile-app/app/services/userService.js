@@ -5,6 +5,15 @@ class UserService {
   async getProfile() {
     try {
       const response = await axiosInstance.get(`${API_URL}/api/user/profile`);
+      console.log("[userService.getProfile] Raw response:", response.data);
+      if (response.data && response.data.initials !== undefined) {
+        console.log(
+          "[userService.getProfile] Initials:",
+          response.data.initials
+        );
+      } else {
+        console.log("[userService.getProfile] Initials missing in response");
+      }
       return response.data;
     } catch (error) {
       console.error("Error fetching user profile:", error);

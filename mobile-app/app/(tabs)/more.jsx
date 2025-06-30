@@ -9,13 +9,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_URL } from "../../constants/Config";
 import { authService } from "@/app/services/authService";
+import userService from "@/app/services/userService";
 
 const MenuCard = ({ icon, title, description, href, onPress }) => (
   <TouchableOpacity
@@ -41,6 +42,27 @@ const MenuCard = ({ icon, title, description, href, onPress }) => (
 const More = () => {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await userService.getProfile();
+        setProfile(data);
+        console.log("[More.jsx] Profile fetched:", data);
+        console.log("[More.jsx] Initials:", data?.initials);
+      } catch (err) {
+        setError("Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleCardPress = (href) => {
     router.push({
@@ -78,10 +100,24 @@ const More = () => {
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.profilePreview}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>JD</Text>
+            {loading ? (
+              <Text style={styles.avatarText}>--</Text>
+            ) : error ? (
+              <Text style={styles.avatarText}>?</Text>
+            ) : (
+              <Text style={styles.avatarText}>{profile?.initials || "--"}</Text>
+            )}
           </View>
           <Text style={styles.welcomeText}>Welcome back!</Text>
-          <Text style={styles.nameText}>John Doe</Text>
+          {loading ? (
+            <Text style={styles.nameText}>Loading...</Text>
+          ) : error ? (
+            <Text style={styles.nameText}>Error</Text>
+          ) : (
+            <Text style={styles.nameText}>
+              {profile?.fullName || "No Name"}
+            </Text>
+          )}
         </View>
 
         <View style={styles.menuContainer}>

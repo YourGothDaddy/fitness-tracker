@@ -18,6 +18,9 @@
         public Task<IdentityResult> UpdateProfileAsync(User user, UpdateProfileModel model);
         public Task<IdentityResult> ChangePasswordAsync(User user, string currentPassword, string newPassword);
         public Task<bool> UpdateNotificationsAsync(User user, bool notificationsEnabled);
+        /// <summary>
+        /// Returns the User entity for the given userId. Used for profile endpoints.
+        /// </summary>
         public Task<User> GetUserProfileAsync(string userId);
 
         // New methods for profile management

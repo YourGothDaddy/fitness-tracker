@@ -13,5 +13,16 @@ namespace Fitness_Tracker.Models.Users
         public float Height { get; set; }
         public float BMI { get; set; }
         public float BodyFat { get; set; }
+        public string Initials
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(FullName)) return "";
+                var parts = FullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0) return "";
+                if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
+                return (parts[0][0].ToString() + parts[parts.Length - 1][0].ToString()).ToUpper();
+            }
+        }
     }
 } 
