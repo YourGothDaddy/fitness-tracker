@@ -3,5 +3,6 @@
     public interface IConsumableService
     {
         public Task<List<string>> GetMatchingConsumableItemsAsync(string query);
+        public Task AddConsumableItemAsync(Models.Admins.AddConsumableItemModel model);
     }
 }

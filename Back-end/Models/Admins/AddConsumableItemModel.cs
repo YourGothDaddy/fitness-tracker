@@ -19,5 +19,9 @@
         [Required]
         public TypeOfConsumable Type { get; set; }
         public List<Nutrient> NutritionalInformation { get; set; } = new List<Nutrient>();
+        /// <summary>
+        /// Whether the food item is public. Defaults to true. (For future use)
+        /// </summary>
+        public bool IsPublic { get; set; } = true;
     }
 }

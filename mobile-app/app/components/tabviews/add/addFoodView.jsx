@@ -10,6 +10,7 @@ import {
   Pressable,
   Animated,
   Easing,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Stack } from "expo-router";
@@ -17,6 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import CustomField from "../../CustomField";
 import CustomButton from "../../CustomButton";
 import { Colors } from "../../../../constants/Colors";
+import { addFoodItem } from "@/app/services/foodService";
 
 // Nutrition categories and subcategories from targetsView.jsx
 const categories = {
@@ -123,6 +125,9 @@ const AddFoodView = () => {
   const [servingTypeModalVisible, setServingTypeModalVisible] = useState(false);
   const [nutritionDetailsVisible, setNutritionDetailsVisible] = useState(false);
   const nutritionAnim = React.useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   React.useEffect(() => {
     Animated.timing(nutritionAnim, {
@@ -141,10 +146,69 @@ const AddFoodView = () => {
     setNutrition((prev) => ({ ...prev, [sub]: value }));
   };
 
-  const handleSubmit = () => {
-    // Submission logic will be implemented later
-    // For now, just log the values
-    console.log({ foodName, servingType, servingQty, macros, nutrition });
+  const handleSubmit = async () => {
+    setError("");
+    setSuccess("");
+    if (
+      !foodName ||
+      !servingQty ||
+      !macros.Protein ||
+      !macros.Carbohydrates ||
+      !macros.Fat
+    ) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      // Prepare NutritionalInformation array
+      const nutritionalInformation = Object.entries(nutrition)
+        .filter(([name, value]) => value !== "" && !isNaN(Number(value)))
+        .map(([name, value]) => {
+          // Find category for this nutrient
+          let category = Object.keys(categories).find((cat) =>
+            categories[cat].includes(name)
+          );
+          return {
+            Category: category || "Other",
+            Name: name,
+            Amount: Number(value),
+          };
+        });
+      // Prepare payload
+      const payload = {
+        Name: foodName,
+        CaloriesPer100g: 0, // Not collected in UI, backend requires it, set to 0 or calculate if possible
+        ProteinPer100g: Number(macros.Protein),
+        CarbohydratePer100g: Number(macros.Carbohydrates),
+        FatPer100g: Number(macros.Fat),
+        Type: 0, // Default to Food (TypeOfConsumable.Food)
+        NutritionalInformation: nutritionalInformation,
+        IsPublic: true,
+      };
+      await addFoodItem(payload);
+      setSuccess("Food item added successfully!");
+      // Optionally reset form
+      setFoodName("");
+      setServingQty("");
+      setMacros({ Protein: "", Carbohydrates: "", Fat: "" });
+      setNutrition(() => {
+        const obj = {};
+        Object.entries(categories).forEach(([cat, subs]) => {
+          subs.forEach((sub) => {
+            obj[sub] = "";
+          });
+        });
+        return obj;
+      });
+      // Optionally show alert
+      Alert.alert("Success", "Food item added successfully!");
+    } catch (err) {
+      setError(err.message || "An error occurred.");
+      Alert.alert("Error", err.message || "An error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -349,11 +413,24 @@ const AddFoodView = () => {
             )}
           </Animated.View>
           <CustomButton
-            title="Save Food"
+            title={isLoading ? "Saving..." : "Save Food"}
             handleOnPress={handleSubmit}
             containerStyles={styles.saveButton}
             textStyles={styles.saveButtonText}
+            isLoading={isLoading}
           />
+          {error ? (
+            <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+              {error}
+            </Text>
+          ) : null}
+          {success ? (
+            <Text
+              style={{ color: "green", textAlign: "center", marginTop: 10 }}
+            >
+              {success}
+            </Text>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </>
