@@ -9,6 +9,7 @@ const CustomField = ({
   allowDecimal = false,
   value,
   onChangeText,
+  textInputStyle,
 }) => {
   const handleTextChange = (text) => {
     if (numeric) {
@@ -30,7 +31,6 @@ const CustomField = ({
   return (
     <View style={styles} className="space-y-2 justify-center">
       <TextInput
-        className="pl-5 font-psemibold"
         placeholder={placeholder}
         placeholderTextColor={placeHolderTextColor}
         keyboardType={
@@ -38,6 +38,7 @@ const CustomField = ({
         }
         value={value}
         onChangeText={handleTextChange}
+        style={textInputStyle}
       />
     </View>
   );

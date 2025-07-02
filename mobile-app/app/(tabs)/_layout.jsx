@@ -80,6 +80,11 @@ const TabsLayout = () => {
     router.push("/components/tabviews/add/trackExerciseView");
   };
 
+  const handleAddFood = () => {
+    hideMenu();
+    router.push("/components/tabviews/add/addFoodView");
+  };
+
   return (
     <View style={styles.container}>
       <Tabs
@@ -189,6 +194,36 @@ const TabsLayout = () => {
                 <Text style={styles.menuItemTitle}>Track Meal</Text>
                 <Text style={styles.menuItemSubtitle}>
                   Log your food intake and calories
+                </Text>
+              </View>
+              <Image
+                source={icons.chevronRight}
+                style={styles.menuItemArrow}
+                tintColor="#CCC"
+              />
+            </Pressable>
+
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleAddFood}
+              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  { backgroundColor: "#F0FFF0" },
+                ]}
+              >
+                <Image
+                  source={icons.food}
+                  style={styles.menuIcon}
+                  tintColor="#4CAF50"
+                />
+              </View>
+              <View style={styles.menuItemContent}>
+                <Text style={styles.menuItemTitle}>Add Food</Text>
+                <Text style={styles.menuItemSubtitle}>
+                  Add a new food with detailed nutrition
                 </Text>
               </View>
               <Image
