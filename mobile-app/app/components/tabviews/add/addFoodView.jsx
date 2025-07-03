@@ -128,6 +128,7 @@ const AddFoodView = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [calories, setCalories] = useState("");
 
   React.useEffect(() => {
     Animated.timing(nutritionAnim, {
@@ -154,7 +155,8 @@ const AddFoodView = () => {
       !servingQty ||
       !macros.Protein ||
       !macros.Carbohydrates ||
-      !macros.Fat
+      !macros.Fat ||
+      !calories
     ) {
       setError("Please fill in all required fields.");
       return;
@@ -178,7 +180,7 @@ const AddFoodView = () => {
       // Prepare payload
       const payload = {
         Name: foodName,
-        CaloriesPer100g: 0, // Not collected in UI, backend requires it, set to 0 or calculate if possible
+        CaloriesPer100g: Number(calories),
         ProteinPer100g: Number(macros.Protein),
         CarbohydratePer100g: Number(macros.Carbohydrates),
         FatPer100g: Number(macros.Fat),
@@ -191,6 +193,7 @@ const AddFoodView = () => {
       // Optionally reset form
       setFoodName("");
       setServingQty("");
+      setCalories("");
       setMacros({ Protein: "", Carbohydrates: "", Fat: "" });
       setNutrition(() => {
         const obj = {};
@@ -240,6 +243,14 @@ const AddFoodView = () => {
             placeholder="Food Name"
             value={foodName}
             onChangeText={setFoodName}
+          />
+          <CustomField
+            styles={styles.input}
+            placeholder="Calories per 100g"
+            value={calories}
+            onChangeText={setCalories}
+            numeric
+            allowDecimal={false}
           />
           <View style={styles.row}>
             <CustomField
