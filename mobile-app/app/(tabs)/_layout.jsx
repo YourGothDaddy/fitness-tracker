@@ -23,7 +23,10 @@ const TabIcon = ({ icon, color, name, focused, size }) => {
         style={size ? { width: size * 4, height: size * 4 } : styles.tabIcon}
       />
       {name && (
-        <Text style={[styles.tabText, focused && styles.tabTextFocused]}>
+        <Text
+          style={[styles.tabText, focused && styles.tabTextFocused]}
+          numberOfLines={1}
+        >
           {name}
         </Text>
       )}
@@ -94,6 +97,16 @@ const TabsLayout = () => {
           tabBarInactiveTintColor: Colors.green.color,
           tabBarStyle: styles.tabBar,
           tabBarBackground: () => <View style={styles.tabBarBackground} />,
+          tabBarButton: (props) => {
+            // Disable the default tab press behavior
+            const { onPress, ...rest } = props;
+            return (
+              <View
+                {...rest}
+                style={[rest.style, { flex: 1, alignItems: "center" }]}
+              />
+            );
+          },
         }}
       >
         <Tabs.Screen
@@ -102,12 +115,18 @@ const TabsLayout = () => {
             title: "Dashboard",
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                icon={icons.home}
-                color={color}
-                name="Dashboard"
-                focused={focused}
-              />
+              <Pressable
+                onPress={() => router.push("/dashboard")}
+                style={styles.tabIconContainer}
+                android_ripple={{ color: "rgba(0,0,0,0.1)", borderless: true }}
+              >
+                <TabIcon
+                  icon={icons.home}
+                  color={color}
+                  name="Dashboard"
+                  focused={focused}
+                />
+              </Pressable>
             ),
           }}
         />
@@ -136,12 +155,18 @@ const TabsLayout = () => {
             title: "More",
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                icon={icons.menu}
-                color={color}
-                name="More"
-                focused={focused}
-              />
+              <Pressable
+                onPress={() => router.push("/more")}
+                style={styles.tabIconContainer}
+                android_ripple={{ color: "rgba(0,0,0,0.1)", borderless: true }}
+              >
+                <TabIcon
+                  icon={icons.menu}
+                  color={color}
+                  name="More"
+                  focused={focused}
+                />
+              </Pressable>
             ),
           }}
         />
@@ -282,14 +307,19 @@ const styles = StyleSheet.create({
   tabIconContainer: {
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 70,
   },
   tabIcon: {
     width: 24,
     height: 24,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "400",
+    textAlign: "center",
+    color: "#333",
   },
   tabTextFocused: {
     fontWeight: "700",
@@ -302,6 +332,7 @@ const styles = StyleSheet.create({
     elevation: 0,
     shadowOpacity: 0,
     backgroundColor: "white",
+    pointerEvents: "box-none",
   },
   tabBarBackground: {
     position: "absolute",
@@ -318,6 +349,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+    pointerEvents: "none",
   },
   addButtonContainer: {
     alignItems: "center",
