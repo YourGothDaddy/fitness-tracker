@@ -45,5 +45,12 @@
                 return StatusCode(500, new { Message = "An error occurred while adding the food item.", Details = ex.Message });
             }
         }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllPublicConsumableItems()
+        {
+            var items = await _consumableService.GetAllPublicConsumableItemsAsync();
+            return Ok(items);
+        }
     }
 }

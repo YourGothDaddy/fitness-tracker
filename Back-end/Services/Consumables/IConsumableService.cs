@@ -4,5 +4,6 @@
     {
         public Task<List<string>> GetMatchingConsumableItemsAsync(string query);
         public Task AddConsumableItemAsync(Models.Admins.AddConsumableItemModel model);
+        public Task<List<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetAllPublicConsumableItemsAsync();
     }
 }

@@ -17,6 +17,7 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
+import { getAllPublicConsumableItems } from "@/app/services/foodService";
 
 const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
   return (
@@ -41,50 +42,50 @@ const TrackMealView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [meals, setMeals] = useState([]);
-  const [filteredMeals, setFilteredMeals] = useState([]);
+  const [foods, setFoods] = useState([]);
+  const [filteredFoods, setFilteredFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchMeals = useCallback(async () => {
+  const fetchFoods = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await mealService.getAllMeals();
-      setMeals(data);
-      setFilteredMeals(data);
+      const data = await getAllPublicConsumableItems();
+      setFoods(data);
+      setFilteredFoods(data);
       setError(null);
     } catch (err) {
-      console.error("Error fetching meals:", err);
-      setError("Failed to load meals. Please try again.");
+      console.error("Error fetching foods:", err);
+      setError("Failed to load foods. Please try again.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMeals();
-  }, [fetchMeals]);
+    fetchFoods();
+  }, [fetchFoods]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredMeals(meals);
+      setFilteredFoods(foods);
     } else {
-      const filtered = meals.filter((meal) =>
-        meal.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const filtered = foods.filter((food) =>
+        food.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setFilteredMeals(filtered);
+      setFilteredFoods(filtered);
     }
-  }, [searchQuery, meals]);
+  }, [searchQuery, foods]);
 
-  const handleAddMeal = async (meal) => {
+  const handleAddMeal = async (food) => {
     try {
       const now = new Date();
       await mealService.addMeal({
-        name: meal.name,
-        calories: meal.calories,
-        protein: meal.protein,
-        carbs: meal.carbs,
-        fat: meal.fat,
+        name: food.name,
+        calories: food.caloriesPer100g,
+        protein: food.proteinPer100g,
+        carbs: food.carbohydratePer100g,
+        fat: food.fatPer100g,
         date: now,
         mealOfTheDay: 0, // Default to breakfast, can be changed later
       });
@@ -204,20 +205,24 @@ const TrackMealView = () => {
           ) : error ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={fetchMeals}>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchFoods}>
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : filteredMeals.length === 0 ? (
+          ) : filteredFoods.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No meals found</Text>
+              <Text style={styles.emptyText}>No foods found</Text>
             </View>
           ) : (
-            filteredMeals.map((meal) => (
+            filteredFoods.map((food) => (
               <FoodItem
-                key={meal.id}
-                {...meal}
-                onAdd={() => handleAddMeal(meal)}
+                key={food.id}
+                name={food.name}
+                calories={food.caloriesPer100g}
+                protein={food.proteinPer100g}
+                carbs={food.carbohydratePer100g}
+                fat={food.fatPer100g}
+                onAdd={() => handleAddMeal(food)}
               />
             ))
           )}

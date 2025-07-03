@@ -26,6 +26,13 @@
             return result;
         }
 
+        public async Task<List<ConsumableItem>> GetAllPublicConsumableItemsAsync()
+        {
+            return await this._databaseContext.ConsumableItems
+                .Where(ci => ci.IsPublic)
+                .ToListAsync();
+        }
+
         public async Task AddConsumableItemAsync(AddConsumableItemModel model)
         {
             var newConsumableItem = new ConsumableItem

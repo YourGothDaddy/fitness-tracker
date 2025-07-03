@@ -17,3 +17,12 @@ export async function addFoodItem(foodData) {
     throw new Error("An error occurred while adding the food item.");
   }
 }
+
+export async function getAllPublicConsumableItems() {
+  try {
+    const response = await axiosInstance.get(`/api/consumable/all`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch foods.");
+  }
+}
