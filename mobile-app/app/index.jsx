@@ -17,11 +17,16 @@ export default function Index() {
   const checkAuthStatus = async () => {
     try {
       const accessToken = await SecureStore.getItemAsync("accessToken");
+      console.log("[Auth Debug] accessToken:", accessToken);
       if (accessToken) {
         router.replace("/dashboard");
       }
     } catch (error) {
-      console.error("Error checking auth status:", error);
+      console.error(
+        "[Auth Debug] Error checking auth status:",
+        error,
+        error?.stack
+      );
     }
   };
 

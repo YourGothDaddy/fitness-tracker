@@ -17,7 +17,8 @@ export const AuthProvider = ({ children }) => {
 
         if (!isAuth) {
           // Not authenticated, make sure we're not showing protected screens
-          const path = router.state.key;
+          // Use optional chaining to avoid errors if router.state is undefined
+          const path = router.state?.key;
           if (path && !path.startsWith("/(auth)") && path !== "/") {
             router.replace("/");
           }
