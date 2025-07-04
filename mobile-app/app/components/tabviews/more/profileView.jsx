@@ -15,6 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
+import weightService from "@/app/services/weightService";
 
 const Field = React.memo(({ title, value, onPress, icon, unit }) => (
   <TouchableOpacity
@@ -42,7 +43,15 @@ const Field = React.memo(({ title, value, onPress, icon, unit }) => (
 ));
 
 const ModalContent = React.memo(
-  ({ activeField, fieldValues, onChangeText, onSave }) => {
+  ({
+    activeField,
+    fieldValues,
+    onChangeText,
+    onSave,
+    weightDate,
+    setWeightDate,
+    weightDateError,
+  }) => {
     if (activeField === "sex") {
       return (
         <>
@@ -102,6 +111,44 @@ const ModalContent = React.memo(
         </>
       );
     }
+    if (activeField === "weight") {
+      return (
+        <>
+          <Text style={styles.modalTitle}>Enter Weight</Text>
+          <TextInput
+            style={styles.modalInput}
+            value={fieldValues.weight.toString()}
+            onChangeText={(text) => onChangeText("weight", text)}
+            keyboardType="numeric"
+            autoFocus
+          />
+          <Text style={{ marginBottom: 5, color: Colors.darkGreen.color }}>
+            Date (YYYY-MM-DD):
+          </Text>
+          <TextInput
+            style={[
+              styles.modalInput,
+              weightDateError && { borderColor: "red" },
+            ]}
+            value={weightDate}
+            onChangeText={setWeightDate}
+            placeholder="YYYY-MM-DD"
+            keyboardType="default"
+          />
+          {weightDateError ? (
+            <Text style={{ color: "red", marginBottom: 10 }}>
+              {weightDateError}
+            </Text>
+          ) : null}
+          <TouchableOpacity
+            style={styles.modalButton}
+            onPress={() => onSave(fieldValues.weight, weightDate)}
+          >
+            <Text style={styles.modalButtonText}>Save</Text>
+          </TouchableOpacity>
+        </>
+      );
+    }
 
     return (
       <>
@@ -149,6 +196,11 @@ const ProfileView = () => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [weightDate, setWeightDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10);
+  });
+  const [weightDateError, setWeightDateError] = useState("");
 
   useEffect(() => {
     loadProfileData();
@@ -185,55 +237,68 @@ const ProfileView = () => {
 
   const handleFieldPress = useCallback((field) => {
     setActiveField(field);
+    if (field === "weight") {
+      const today = new Date();
+      setWeightDate(today.toISOString().slice(0, 10));
+      setWeightDateError("");
+    }
     setModalVisible(true);
   }, []);
 
   const handleModalClose = useCallback(
-    async (newValue) => {
+    async (newValue, newDate) => {
       if (newValue !== undefined) {
-        const updatedValues = {
-          ...fieldValues,
-          [activeField]:
-            typeof newValue === "object" ? newValue.nativeEvent.text : newValue,
-        };
-        setFieldValues(updatedValues);
-
-        try {
-          console.log("Updating profile with values:", {
-            fullName: updatedValues.fullName || "",
-            email: updatedValues.email || "",
-            phoneNumber: updatedValues.phoneNumber || "",
-            age: parseInt(updatedValues.age) || 0,
-            sex: updatedValues.sex || "",
-            weight: parseFloat(updatedValues.weight) || 0,
-            height: parseFloat(updatedValues.height) || 0,
-          });
-
-          await userService.updateProfileData({
-            fullName: updatedValues.fullName || "",
-            email: updatedValues.email || "",
-            phoneNumber: updatedValues.phoneNumber || "",
-            age: parseInt(updatedValues.age) || 0,
-            sex: updatedValues.sex || "",
-            weight: parseFloat(updatedValues.weight) || 0,
-            height: parseFloat(updatedValues.height) || 0,
-          });
-          await loadProfileData(); // Reload data to get updated BMI and body fat
-        } catch (error) {
-          console.error("Detailed error:", error);
-          if (error.response) {
-            console.error("Error response:", error.response.data);
+        if (activeField === "weight") {
+          // Validate date (YYYY-MM-DD)
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (!dateRegex.test(newDate)) {
+            setWeightDateError("Invalid date format. Use YYYY-MM-DD.");
+            return;
           }
-          Alert.alert(
-            "Error",
-            "Failed to update profile data. Please try again."
-          );
-          await loadProfileData(); // Reload original data
+          const dateObj = new Date(newDate);
+          if (isNaN(dateObj.getTime())) {
+            setWeightDateError("Invalid date.");
+            return;
+          }
+          setWeightDateError("");
+          try {
+            await weightService.addWeightRecord(dateObj, parseFloat(newValue));
+            await loadProfileData();
+          } catch (error) {
+            Alert.alert("Error", "Failed to update weight. Please try again.");
+          }
+        } else {
+          const updatedValues = {
+            ...fieldValues,
+            [activeField]:
+              typeof newValue === "object"
+                ? newValue.nativeEvent.text
+                : newValue,
+          };
+          setFieldValues(updatedValues);
+          try {
+            await userService.updateProfileData({
+              fullName: updatedValues.fullName || "",
+              email: updatedValues.email || "",
+              phoneNumber: updatedValues.phoneNumber || "",
+              age: parseInt(updatedValues.age) || 0,
+              sex: updatedValues.sex || "",
+              weight: parseFloat(updatedValues.weight) || 0,
+              height: parseFloat(updatedValues.height) || 0,
+            });
+            await loadProfileData();
+          } catch (error) {
+            Alert.alert(
+              "Error",
+              "Failed to update profile data. Please try again."
+            );
+            await loadProfileData();
+          }
         }
       }
       setModalVisible(false);
     },
-    [activeField, fieldValues]
+    [activeField, fieldValues, weightDate]
   );
 
   const handleChangeText = useCallback((field, text) => {
@@ -372,6 +437,9 @@ const ProfileView = () => {
               fieldValues={fieldValues}
               onChangeText={handleChangeText}
               onSave={handleModalClose}
+              weightDate={weightDate}
+              setWeightDate={setWeightDate}
+              weightDateError={weightDateError}
             />
           </TouchableOpacity>
         </TouchableOpacity>

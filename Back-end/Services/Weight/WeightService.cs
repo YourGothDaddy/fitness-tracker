@@ -72,10 +72,46 @@ namespace Fitness_Tracker.Services.Weight
                 currentDate = currentDate.AddDays(1);
             }
 
-            // Determine starting and current weight
-            float startingWeight = dailyWeights.FirstOrDefault()?.Weight ?? user.Weight;
-            float currentWeight = dailyWeights.LastOrDefault()?.Weight ?? user.Weight;
+            // --- NEW LOGIC: Get true starting and current weight from full history ---
+            var allWeightRecords = await _databaseContext.WeightRecords
+                .Where(wr => wr.UserId == userId)
+                .OrderBy(wr => wr.Date)
+                .ToListAsync();
+
+            float startingWeight = allWeightRecords.FirstOrDefault()?.Weight ?? user.Weight;
+            float currentWeight = allWeightRecords.LastOrDefault()?.Weight ?? user.Weight;
             float change = currentWeight - startingWeight;
+
+            // Only graph from the first real record date
+            DateTime? firstRecordDate = allWeightRecords.FirstOrDefault()?.Date;
+            var dailyWeightsFromHistory = new List<DailyWeightModel>();
+            if (firstRecordDate.HasValue)
+            {
+                var graphStartDate = startDate.Date < firstRecordDate.Value.Date ? firstRecordDate.Value.Date : startDate.Date;
+                var historyCurrentDate = graphStartDate;
+                while (historyCurrentDate <= endDate.Date)
+                {
+                    // Find weight record for this date or the closest previous record
+                    var recordForDate = allWeightRecords
+                        .Where(wr => wr.Date.Date <= historyCurrentDate.Date)
+                        .OrderByDescending(wr => wr.Date)
+                        .FirstOrDefault();
+
+                    float weightForDate = recordForDate != null 
+                        ? recordForDate.Weight 
+                        : user.Weight;
+
+                    dailyWeightsFromHistory.Add(new DailyWeightModel
+                    {
+                        Date = historyCurrentDate,
+                        Weight = weightForDate,
+                        DayName = historyCurrentDate.ToString("ddd")
+                    });
+
+                    historyCurrentDate = historyCurrentDate.AddDays(1);
+                }
+            }
+            // If no records, keep dailyWeights empty
 
             // Calculate progress percentage towards goal
             float totalWeightToLose = user.Weight - user.GoalWeight;
@@ -94,7 +130,7 @@ namespace Fitness_Tracker.Services.Weight
                 Change = change,
                 GoalWeight = user.GoalWeight,
                 ProgressPercentage = progressPercentage,
-                DailyWeights = dailyWeights
+                DailyWeights = dailyWeightsFromHistory
             };
         }
 
