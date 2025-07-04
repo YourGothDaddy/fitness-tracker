@@ -88,6 +88,11 @@ const TabsLayout = () => {
     router.push("/components/tabviews/add/addFoodView");
   };
 
+  const handleAddWorkout = () => {
+    hideMenu();
+    router.push("/components/tabviews/add/addWorkoutView");
+  };
+
   return (
     <View style={styles.container}>
       <Tabs
@@ -249,6 +254,36 @@ const TabsLayout = () => {
                 <Text style={styles.menuItemTitle}>Add Food</Text>
                 <Text style={styles.menuItemSubtitle}>
                   Add a new food with detailed nutrition
+                </Text>
+              </View>
+              <Image
+                source={icons.chevronRight}
+                style={styles.menuItemArrow}
+                tintColor="#CCC"
+              />
+            </Pressable>
+
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleAddWorkout}
+              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  { backgroundColor: "#F0F0FF" },
+                ]}
+              >
+                <Image
+                  source={icons.exercise}
+                  style={styles.menuIcon}
+                  tintColor="#7B61FF"
+                />
+              </View>
+              <View style={styles.menuItemContent}>
+                <Text style={styles.menuItemTitle}>Add Workout</Text>
+                <Text style={styles.menuItemSubtitle}>
+                  Add a new workout with details
                 </Text>
               </View>
               <Image
