@@ -155,8 +155,6 @@ const AccountView = () => {
         initials: profileData.initials || "",
         fullName: profileData.fullName || "",
       });
-      console.log("[AccountView] Profile fetched:", profileData);
-      console.log("[AccountView] Initials:", profileData?.initials);
       setFieldValues((prev) => ({
         ...prev,
         name: profileData.fullName || "",

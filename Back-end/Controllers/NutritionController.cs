@@ -140,9 +140,6 @@ namespace Fitness_Tracker.Controllers
                     return validationResult;
                 }
 
-                // Log the received date
-                Console.WriteLine($"Received date for carbohydrates: {date}");
-
                 if (date == default(DateTime))
                 {
                     return BadRequest("Invalid date parameter");
@@ -153,13 +150,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"InvalidOperationException in GetCarbohydrates: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetCarbohydrates: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving carbohydrates data: {ex.Message}");
             }
         }
@@ -175,9 +169,6 @@ namespace Fitness_Tracker.Controllers
                     return validationResult;
                 }
 
-                // Log the received date
-                Console.WriteLine($"Received date for amino acids: {date}");
-
                 if (date == default(DateTime))
                 {
                     return BadRequest("Invalid date parameter");
@@ -188,13 +179,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"InvalidOperationException in GetAminoAcids: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetAminoAcids: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving amino acids data: {ex.Message}");
             }
         }
@@ -215,8 +203,6 @@ namespace Fitness_Tracker.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetAminoAcids: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, "An error occurred while retrieving fats data");
             }
         }
@@ -232,9 +218,6 @@ namespace Fitness_Tracker.Controllers
                     return validationResult;
                 }
 
-                // Log the received date
-                Console.WriteLine($"Received date for minerals: {date}");
-
                 if (date == default(DateTime))
                 {
                     return BadRequest("Invalid date parameter");
@@ -245,13 +228,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"InvalidOperationException in GetMinerals: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetMinerals: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving minerals data: {ex.Message}");
             }
         }
@@ -267,8 +247,6 @@ namespace Fitness_Tracker.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetOtherNutrients: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, "An error occurred while retrieving other nutrients data");
             }
         }
@@ -284,9 +262,6 @@ namespace Fitness_Tracker.Controllers
                     return validationResult;
                 }
 
-                // Log the received date
-                Console.WriteLine($"Received date for sterols: {date}");
-
                 if (date == default(DateTime))
                 {
                     return BadRequest("Invalid date parameter");
@@ -297,13 +272,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"InvalidOperationException in GetSterols: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetSterols: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving sterols data: {ex.Message}");
             }
         }
@@ -319,9 +291,6 @@ namespace Fitness_Tracker.Controllers
                     return validationResult;
                 }
 
-                // Log the received date
-                Console.WriteLine($"Received date for vitamins: {date}");
-
                 if (date == default(DateTime))
                 {
                     return BadRequest("Invalid date parameter");
@@ -332,13 +301,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"InvalidOperationException in GetVitamins: {ex.Message}");
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in GetVitamins: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, $"An error occurred while retrieving vitamins data: {ex.Message}");
             }
         }

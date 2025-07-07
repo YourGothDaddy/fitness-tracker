@@ -11,9 +11,7 @@ const LoginForm = () => {
   const [error, setError] = useState(null);
 
   const handleChange = (e) => {
-    console.log(e.target);
     const { name, value } = e.target;
-    console.log(`${name}`);
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 

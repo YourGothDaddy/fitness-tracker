@@ -76,16 +76,13 @@ namespace Fitness_Tracker
                     {
                         // First check the Authorization header
                         var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
-                        Console.WriteLine($"Auth Header: {authHeader ?? "null"}");
                         
                         var token = authHeader?.Split(" ").Last();
-                        Console.WriteLine($"Token from header: {(token != null ? "present" : "null")}");
 
                         // If not found in header, check cookie
                         if (string.IsNullOrEmpty(token))
                         {
                             token = context.Request.Cookies["jwt"];
-                            Console.WriteLine($"Token from cookie: {(token != null ? "present" : "null")}");
                         }
 
                         context.Token = token;
@@ -93,17 +90,14 @@ namespace Fitness_Tracker
                     },
                     OnAuthenticationFailed = context =>
                     {
-                        Console.WriteLine($"Authentication failed: {context.Exception.Message}");
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
                     {
-                        Console.WriteLine("Token was successfully validated");
                         return Task.CompletedTask;
                     },
                     OnChallenge = context =>
                     {
-                        Console.WriteLine($"Authentication challenge issued: {context.Error}, {context.ErrorDescription}");
                         return Task.CompletedTask;
                     }
                 };

@@ -220,15 +220,12 @@ const TargetsView = () => {
       setError(null);
       try {
         const today = new Date();
-        console.log("Fetching data for date:", today.toISOString());
 
         // Fetch main targets first
         try {
           const mainTargetsData = await nutritionService.getMainTargets(today);
-          console.log("Main targets data received:", mainTargetsData);
           setMainTargets(mainTargetsData.targets);
         } catch (mainTargetsError) {
-          console.error("Error fetching main targets:", mainTargetsError);
           setError("Failed to load main targets");
           return;
         }
@@ -236,74 +233,59 @@ const TargetsView = () => {
         // Then fetch carbohydrates
         try {
           const carbsData = await nutritionService.getCarbohydrates(today);
-          console.log("Carbohydrates data received:", carbsData);
           setCarbohydratesData(carbsData);
         } catch (carbsError) {
-          console.error("Error fetching carbohydrates:", carbsError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch amino acids
         try {
           const aminoAcidsData = await nutritionService.getAminoAcids(today);
-          console.log("Amino acids data received:", aminoAcidsData);
           setAminoAcidsData(aminoAcidsData);
         } catch (aminoAcidsError) {
-          console.error("Error fetching amino acids:", aminoAcidsError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch fats
         try {
           const fatsData = await nutritionService.getFats(today);
-          console.log("Fats data received:", fatsData);
           setFatsData(fatsData);
         } catch (fatsError) {
-          console.error("Error fetching fats:", fatsError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch minerals
         try {
           const mineralsData = await nutritionService.getMinerals(today);
-          console.log("Minerals data received:", mineralsData);
           setMineralsData(mineralsData);
         } catch (mineralsError) {
-          console.error("Error fetching minerals:", mineralsError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch other nutrients
         try {
           const otherData = await nutritionService.getOtherNutrients(today);
-          console.log("Other nutrients data received:", otherData);
           setOtherData(otherData);
         } catch (otherError) {
-          console.error("Error fetching other nutrients:", otherError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch sterols
         try {
           const sterolsData = await nutritionService.getSterols(today);
-          console.log("Sterols data received:", sterolsData);
           setSterolsData(sterolsData);
         } catch (sterolsError) {
-          console.error("Error fetching sterols:", sterolsError);
           // Don't set error here as we still want to show main targets
         }
 
         // Then fetch vitamins
         try {
           const vitaminsData = await nutritionService.getVitamins(today);
-          console.log("Vitamins data received:", vitaminsData);
           setVitaminsData(vitaminsData);
         } catch (vitaminsError) {
-          console.error("Error fetching vitamins:", vitaminsError);
           // Don't set error here as we still want to show main targets
         }
       } catch (err) {
-        console.error("General error in fetchData:", err);
         setError("Failed to load data");
       } finally {
         setLoading(false);

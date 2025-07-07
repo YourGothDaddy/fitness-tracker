@@ -37,7 +37,7 @@ const AddedConsumablesPage = () => {
   }, [fetchResults]);
 
   const handleResultClick = (item) => {
-    console.log("Selected item:", item);
+    // REMOVE console.log("Selected item:", item);
   };
 
   return (

@@ -35,7 +35,6 @@ const AddActivityCategoryForm = () => {
         setErrorMessage(data.message);
       }
     } catch (err) {
-      console.log(err);
       setErrorMessage(err.message);
       setSuccessMessage("");
     } finally {

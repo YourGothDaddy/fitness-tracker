@@ -33,19 +33,19 @@ class UserService {
 
   async updateProfileData(profileData) {
     try {
-      console.log("Sending profile data update:", profileData);
-      console.log("API URL:", `${API_URL}/api/user/profile-data`);
       const response = await axiosInstance.put(
         `${API_URL}/api/user/profile-data`,
         profileData
       );
-      console.log("Update response:", response.data);
       return response.data;
     } catch (error) {
-      console.error("Error updating profile data:", error);
       if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
+        if (error.response.data) {
+          console.error("Error response data:", error.response.data);
+        }
+        if (error.response.status) {
+          console.error("Error response status:", error.response.status);
+        }
       }
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
@@ -62,7 +62,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating user profile:", error);
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
@@ -78,7 +77,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error changing password:", error);
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
@@ -96,7 +94,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating notifications:", error);
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
@@ -112,7 +109,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching macro settings:", error);
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
@@ -128,7 +124,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error updating macro settings:", error);
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }

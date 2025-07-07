@@ -62,15 +62,6 @@ const EnergySettingsView = () => {
           includeTef: false,
         });
         if (!isMounted) return;
-        console.log("Initial energy settings:", settings);
-        console.log(
-          "Initial MaintenanceCalories:",
-          settings.maintenanceCalories,
-          "type:",
-          typeof settings.maintenanceCalories
-        );
-        console.log("Initial BMR:", settings.bmr, "type:", typeof settings.bmr);
-
         // Ensure we have a valid settings object with the expected properties
         if (settings && typeof settings === "object") {
           setEnergySettings({
@@ -120,15 +111,6 @@ const EnergySettingsView = () => {
         includeTef: isTefEnabled,
       })
       .then((settings) => {
-        console.log("Energy settings response:", settings);
-        console.log(
-          "MaintenanceCalories type:",
-          typeof settings.maintenanceCalories,
-          "value:",
-          settings.maintenanceCalories
-        );
-        console.log("BMR type:", typeof settings.bmr, "value:", settings.bmr);
-
         // Ensure we have a valid settings object with the expected properties
         if (settings && typeof settings === "object") {
           setEnergySettings({
