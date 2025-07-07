@@ -54,6 +54,51 @@ class ActivityService {
       throw error;
     }
   }
+
+  async getActivityTypes() {
+    try {
+      const url = `${API_URL}/api/activity/types`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addActivity({
+    durationInMinutes,
+    timeOfDay,
+    caloriesBurned,
+    activityTypeId,
+    date,
+    notes,
+    isPublic = true,
+  }) {
+    try {
+      const url = `${API_URL}/api/activity/add`;
+      // Map timeOfDay string to enum index
+      const timeOfDayEnumMap = {
+        Morning: 0,
+        Afternoon: 1,
+        Evening: 2,
+        Night: 3,
+      };
+      const timeOfTheDayEnum = timeOfDayEnumMap[timeOfDay];
+      const payload = {
+        durationInMinutes: Number(durationInMinutes),
+        timeOfTheDay: timeOfTheDayEnum,
+        caloriesBurned: Number(caloriesBurned),
+        activityTypeId: Number(activityTypeId),
+        date: date,
+        notes: notes,
+        isPublic: isPublic,
+      };
+      const response = await axiosInstance.post(url, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

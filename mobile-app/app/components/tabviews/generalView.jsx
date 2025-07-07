@@ -201,6 +201,29 @@ const GeneralView = () => {
     }
   };
 
+  // Add this helper function near getMealTypeIcon
+  const getExerciseIcon = (activityTypeName, activityCategoryName) => {
+    if (activityCategoryName === "Cardio") {
+      if (activityTypeName === "Cycling") return "directions-bike";
+      if (activityTypeName === "Running") return "directions-run";
+      if (activityTypeName === "Swimming") return "pool";
+      if (activityTypeName === "Jumping Rope") return "sports";
+      if (activityTypeName === "Walking") return "directions-walk";
+      return "favorite";
+    }
+    if (activityCategoryName === "Gym") {
+      if (activityTypeName === "Resistance Training") return "fitness-center";
+      if (activityTypeName === "Circuit Training") return "fitness-center";
+      return "fitness-center";
+    }
+    if (activityCategoryName === "Outdoor Activity") {
+      if (activityTypeName === "Hiking") return "terrain";
+      if (activityTypeName === "Cycling") return "directions-bike";
+      return "explore";
+    }
+    return "fitness-center";
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Calorie Overview Card */}
@@ -479,7 +502,10 @@ const GeneralView = () => {
                       <View style={styles.mainContent}>
                         <View style={styles.titleContainer}>
                           <MaterialIcons
-                            name="fitness-center"
+                            name={getExerciseIcon(
+                              exercise.name,
+                              exercise.category
+                            )}
                             size={20}
                             color="#619819"
                           />

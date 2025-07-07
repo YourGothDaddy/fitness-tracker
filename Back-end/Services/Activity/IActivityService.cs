@@ -7,5 +7,7 @@ namespace Fitness_Tracker.Services.Activity
         Task<ActivityOverviewModel> GetActivityOverviewAsync(string userId, DateTime date);
         Task<ActivityOverviewModel> GetActivityOverviewForPeriodAsync(string userId, DateTime startDate, DateTime endDate);
         Task<List<ActivityLevelModel>> GetAllActivityLevelsAsync();
+        Task AddActivityAsync(Models.Activity.AddActivityModel model, string userId);
+        Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync();
     }
 } 

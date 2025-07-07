@@ -9,5 +9,6 @@ namespace Fitness_Tracker.Models.Activity
         public int CaloriesBurned { get; set; }
         public TimeOfTheDay TimeOfDay { get; set; }
         public TimeSpan Time { get; set; }
+        public string Category { get; set; }
     }
 } 

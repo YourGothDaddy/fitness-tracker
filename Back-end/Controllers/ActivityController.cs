@@ -88,6 +88,41 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpPost("add")]
+        public async Task<IActionResult> AddActivity([FromBody] Models.Activity.AddActivityModel model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                await _activityService.AddActivityAsync(model, userId);
+                return Ok(new { Message = "Activity added successfully." });
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while adding activity: {ex.Message}");
+            }
+        }
+
+        [HttpGet("types")]
+        public async Task<IActionResult> GetActivityTypes()
+        {
+            var types = await _activityService.GetAllActivityTypesAsync();
+            return Ok(types);
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

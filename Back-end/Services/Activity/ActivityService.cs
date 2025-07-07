@@ -86,6 +86,7 @@ namespace Fitness_Tracker.Services.Activity
         {
             return await _databaseContext.Activities
                 .Include(a => a.ActivityType)
+                .ThenInclude(at => at.ActivityCategory)
                 .Where(a => a.UserId == userId && a.Date >= startDate && a.Date <= endDate)
                 .OrderBy(a => a.Date)
                 .Select(a => new ExerciseActivityModel
@@ -94,7 +95,8 @@ namespace Fitness_Tracker.Services.Activity
                     DurationInMinutes = a.DurationInMinutes,
                     CaloriesBurned = a.CaloriesBurned,
                     TimeOfDay = a.TimeOfTheDay,
-                    Time = a.Date.TimeOfDay
+                    Time = a.Date.TimeOfDay,
+                    Category = a.ActivityType.ActivityCategory.Name
                 })
                 .ToListAsync();
         }
@@ -108,6 +110,52 @@ namespace Fitness_Tracker.Services.Activity
                     Id = al.Id,
                     Name = al.Name,
                     Multiplier = al.Multiplier
+                })
+                .ToListAsync();
+        }
+
+        public async Task AddActivityAsync(Models.Activity.AddActivityModel model, string userId)
+        {
+            if (model == null)
+                throw new ArgumentNullException(nameof(model));
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            // Validate ActivityType exists
+            var activityType = await _databaseContext.ActivityTypes.FindAsync(model.ActivityTypeId);
+            if (activityType == null)
+                throw new InvalidOperationException("Invalid ActivityTypeId");
+
+            // Validate User exists
+            var user = await _databaseContext.Users.FindAsync(userId);
+            if (user == null)
+                throw new InvalidOperationException("User not found");
+
+            var activity = new Data.Models.Activity
+            {
+                DurationInMinutes = model.DurationInMinutes,
+                TimeOfTheDay = model.TimeOfTheDay,
+                CaloriesBurned = model.CaloriesBurned,
+                ActivityTypeId = model.ActivityTypeId,
+                Date = model.Date,
+                UserId = userId,
+                IsPublic = model.IsPublic,
+                // Notes is not in the entity, but could be added if needed
+            };
+
+            _databaseContext.Activities.Add(activity);
+            await _databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync()
+        {
+            return await _databaseContext.ActivityTypes
+                .Include(at => at.ActivityCategory)
+                .Select(at => new Models.Activity.ActivityTypeModel
+                {
+                    Id = at.Id,
+                    Name = at.Name,
+                    Category = at.ActivityCategory.Name
                 })
                 .ToListAsync();
         }

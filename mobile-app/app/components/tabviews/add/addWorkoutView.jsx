@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import CustomField from "../../CustomField";
 import CustomButton from "../../CustomButton";
 import { Colors } from "../../../../constants/Colors";
+import activityService from "@/app/services/activityService";
 
 const workoutCategories = [
   {
@@ -39,6 +40,8 @@ const workoutCategories = [
   },
 ];
 
+const timeOfDayOptions = ["Morning", "Afternoon", "Evening", "Night"];
+
 const AddWorkoutView = () => {
   const router = useRouter();
   const [category, setCategory] = useState(workoutCategories[0].name);
@@ -51,15 +54,28 @@ const AddWorkoutView = () => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
   });
-  const [time, setTime] = useState(() => {
-    const now = new Date();
-    return now.toTimeString().slice(0, 5);
-  });
+  const [timeOfDay, setTimeOfDay] = useState(timeOfDayOptions[0]);
   const [notes, setNotes] = useState("");
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subcategoryModalVisible, setSubcategoryModalVisible] = useState(false);
+  const [timeOfDayModalVisible, setTimeOfDayModalVisible] = useState(false);
   const [dateError, setDateError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [activityTypes, setActivityTypes] = useState([]);
+
+  useEffect(() => {
+    const fetchTypes = async () => {
+      try {
+        const types = await activityService.getActivityTypes();
+        setActivityTypes(types);
+      } catch (err) {
+        console.error("Failed to fetch activity types", err);
+      }
+    };
+    fetchTypes();
+  }, []);
 
   const handleCategorySelect = (cat) => {
     setCategory(cat.name);
@@ -77,13 +93,18 @@ const AddWorkoutView = () => {
     setDateError("");
   };
 
-  const handleTimeChange = (text) => {
-    setTime(text);
-  };
-
   const handleSubmit = async () => {
     setDateError("");
-    if (!category || !subcategory || !duration || !energy || !date || !time) {
+    setError("");
+    setSuccess("");
+    if (
+      !category ||
+      !subcategory ||
+      !duration ||
+      !energy ||
+      !date ||
+      !timeOfDay
+    ) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
@@ -93,19 +114,39 @@ const AddWorkoutView = () => {
       setDateError("Invalid date format. Use YYYY-MM-DD.");
       return;
     }
-    const dateObj = new Date(date + "T" + time);
-    if (isNaN(dateObj.getTime())) {
-      setDateError("Invalid date or time.");
-      return;
-    }
     setIsLoading(true);
     try {
-      // Here you would send the workout data to the backend
-      // For now, just show a success alert
+      // Find the correct activityTypeId from the fetched types
+      const foundType = activityTypes.find(
+        (t) => t.name === subcategory && t.category === category
+      );
+      const activityTypeId = foundType ? foundType.id : null;
+      if (!activityTypeId) {
+        setError("Could not find a matching activity type.");
+        setIsLoading(false);
+        return;
+      }
+      const payload = {
+        durationInMinutes: duration,
+        timeOfDay,
+        caloriesBurned: energy,
+        activityTypeId,
+        date,
+        notes,
+        isPublic: true,
+      };
+      await activityService.addActivity(payload);
+      setSuccess("Workout added successfully!");
       Alert.alert("Success", "Workout added successfully!");
       router.back();
     } catch (err) {
-      Alert.alert("Error", err.message || "An error occurred.");
+      setError(
+        err?.response?.data?.message || err.message || "An error occurred."
+      );
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message || err.message || "An error occurred."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -236,15 +277,39 @@ const AddWorkoutView = () => {
             <Text style={{ color: "red", marginBottom: 10 }}>{dateError}</Text>
           ) : null}
 
-          <Text style={styles.label}>Start Time (HH:MM):</Text>
-          <CustomField
-            styles={styles.input}
-            placeholder="HH:MM"
-            value={time}
-            onChangeText={handleTimeChange}
-            keyboardType="default"
-            textInputStyle={{ fontSize: 14 }}
-          />
+          {/* Time of Day Picker */}
+          <Text style={styles.label}>Time of Day</Text>
+          <Pressable
+            onPress={() => setTimeOfDayModalVisible(true)}
+            style={[styles.input, { justifyContent: "center" }]}
+          >
+            <Text style={styles.pickerValue}>{timeOfDay}</Text>
+          </Pressable>
+          <Modal
+            visible={timeOfDayModalVisible}
+            transparent
+            animationType="fade"
+          >
+            <Pressable
+              style={styles.modalOverlay}
+              onPress={() => setTimeOfDayModalVisible(false)}
+            >
+              <View style={styles.modalContent}>
+                {timeOfDayOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setTimeOfDay(option);
+                      setTimeOfDayModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
+          </Modal>
 
           <Text style={styles.label}>Notes (optional):</Text>
           <TextInput
@@ -263,6 +328,18 @@ const AddWorkoutView = () => {
             textStyles={styles.saveButtonText}
             isLoading={isLoading}
           />
+          {error ? (
+            <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
+              {error}
+            </Text>
+          ) : null}
+          {success ? (
+            <Text
+              style={{ color: "green", textAlign: "center", marginTop: 10 }}
+            >
+              {success}
+            </Text>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     </>
