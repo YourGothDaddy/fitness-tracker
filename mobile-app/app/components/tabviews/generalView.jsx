@@ -272,67 +272,77 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Calorie Overview</Text>
           </View>
+        </View>
+        {/* Timeframe Badge - moved below title and centered */}
+        <View style={styles.timeframeBadgeWrapper}>
           <TouchableOpacity
             style={styles.badgeContainer}
             onPress={() => setIsTimeframeModalVisible(true)}
+            activeOpacity={0.8}
           >
             <Text style={styles.badgeText}>
               {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label ||
                 "This Week"}
             </Text>
+            <MaterialIcons
+              name="arrow-drop-down"
+              size={20}
+              color="#619819"
+              style={{ marginLeft: 2 }}
+            />
           </TouchableOpacity>
-          <Modal
-            visible={isTimeframeModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setIsTimeframeModalVisible(false)}
+        </View>
+        <Modal
+          visible={isTimeframeModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsTimeframeModalVisible(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.2)",
+            }}
+            onPress={() => setIsTimeframeModalVisible(false)}
           >
-            <Pressable
+            <View
               style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: "rgba(0,0,0,0.2)",
+                backgroundColor: "#fff",
+                borderRadius: 12,
+                padding: 16,
+                minWidth: 180,
+                elevation: 5,
               }}
-              onPress={() => setIsTimeframeModalVisible(false)}
             >
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 12,
-                  padding: 16,
-                  minWidth: 180,
-                  elevation: 5,
-                }}
-              >
-                {TIMEFRAMES.map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={{ paddingVertical: 10, paddingHorizontal: 8 }}
-                    onPress={() => {
-                      setSelectedTimeframe(option.value);
-                      setIsTimeframeModalVisible(false);
+              {TIMEFRAMES.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={{ paddingVertical: 10, paddingHorizontal: 8 }}
+                  onPress={() => {
+                    setSelectedTimeframe(option.value);
+                    setIsTimeframeModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color:
+                        option.value === selectedTimeframe
+                          ? "#619819"
+                          : "#2d3436",
+                      fontWeight:
+                        option.value === selectedTimeframe ? "700" : "500",
                     }}
                   >
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        color:
-                          option.value === selectedTimeframe
-                            ? "#619819"
-                            : "#2d3436",
-                        fontWeight:
-                          option.value === selectedTimeframe ? "700" : "500",
-                      }}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Pressable>
-          </Modal>
-        </View>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
 
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -415,6 +425,8 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Weight Progress</Text>
           </View>
+        </View>
+        <View style={styles.timeframeBadgeWrapper}>
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>This Week</Text>
           </View>
@@ -491,6 +503,8 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Today's Activity</Text>
           </View>
+        </View>
+        <View style={styles.timeframeBadgeWrapper}>
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>Today</Text>
           </View>
@@ -851,6 +865,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#636e72",
     fontStyle: "italic",
+  },
+  timeframeBadgeWrapper: {
+    alignItems: "center",
+    marginBottom: 16,
+    marginTop: -8, // pulls it a bit closer to the title, adjust as needed
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(97, 152, 25, 0.13)",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 24,
+    shadowColor: "#619819",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.18)",
+    marginTop: 0,
   },
 });
 
