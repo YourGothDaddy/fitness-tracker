@@ -7,6 +7,9 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  TouchableOpacity,
+  Modal,
+  Pressable,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -37,6 +40,39 @@ const getDayName = (date) => {
   return new Date(date).toLocaleDateString("en-US", { weekday: "short" });
 };
 
+const TIMEFRAMES = [
+  { label: "Today", value: "today" },
+  { label: "This Week", value: "week" },
+  { label: "This Month", value: "month" },
+];
+
+const getTimeframeDates = (timeframe) => {
+  const today = new Date();
+  let startDate, endDate;
+  switch (timeframe) {
+    case "today":
+      startDate = new Date(today);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(today);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "month":
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "week":
+    default:
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(today);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+  }
+  return { startDate, endDate };
+};
+
 const GeneralView = () => {
   const [error, setError] = useState("");
   const [calorieOverview, setCalorieOverview] = useState({
@@ -60,23 +96,21 @@ const GeneralView = () => {
   const [isWeightLoading, setIsWeightLoading] = useState(true);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
   const router = useRouter();
+  const [selectedTimeframe, setSelectedTimeframe] = useState("week");
+  const [isTimeframeModalVisible, setIsTimeframeModalVisible] = useState(false);
 
-  const fetchCalorieOverview = async () => {
+  const fetchCalorieOverview = async (timeframe = selectedTimeframe) => {
     try {
-      const { startDate, endDate } = getWeekDates();
       const data = await nutritionService.getCalorieOverview(
-        startDate,
-        endDate
+        null,
+        null,
+        timeframe
       );
       setCalorieOverview(data);
       setError("");
     } catch (err) {
       setError("Failed to fetch calorie data");
-      console.error("Error fetching calorie overview:", err);
-
-      // Check if this is an auth error that couldn't be automatically handled
       if (err.logout) {
-        // Redirect to login page if needed
         router.replace("/");
       }
     }
@@ -125,10 +159,10 @@ const GeneralView = () => {
   };
 
   useEffect(() => {
-    fetchCalorieOverview();
+    fetchCalorieOverview(selectedTimeframe);
     fetchWeightProgress();
     fetchActivityOverview();
-  }, []);
+  }, [selectedTimeframe]);
 
   const totalHorizontalPadding = 48;
   const cardPadding = 40;
@@ -238,9 +272,66 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Calorie Overview</Text>
           </View>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>This Week</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.badgeContainer}
+            onPress={() => setIsTimeframeModalVisible(true)}
+          >
+            <Text style={styles.badgeText}>
+              {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label ||
+                "This Week"}
+            </Text>
+          </TouchableOpacity>
+          <Modal
+            visible={isTimeframeModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsTimeframeModalVisible(false)}
+          >
+            <Pressable
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.2)",
+              }}
+              onPress={() => setIsTimeframeModalVisible(false)}
+            >
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 12,
+                  padding: 16,
+                  minWidth: 180,
+                  elevation: 5,
+                }}
+              >
+                {TIMEFRAMES.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={{ paddingVertical: 10, paddingHorizontal: 8 }}
+                    onPress={() => {
+                      setSelectedTimeframe(option.value);
+                      setIsTimeframeModalVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        color:
+                          option.value === selectedTimeframe
+                            ? "#619819"
+                            : "#2d3436",
+                        fontWeight:
+                          option.value === selectedTimeframe ? "700" : "500",
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Pressable>
+          </Modal>
         </View>
 
         <View style={styles.statsContainer}>

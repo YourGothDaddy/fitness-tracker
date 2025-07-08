@@ -19,7 +19,7 @@ namespace Fitness_Tracker.Controllers
         }
 
         [HttpGet(CalorieOverviewHttpAttributeName)]
-        public async Task<IActionResult> GetCalorieOverview([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        public async Task<IActionResult> GetCalorieOverview([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string timeframe = null)
         {
             var validationResult = ValidateUserAuthentication(out var userId);
             if (validationResult != null)
@@ -27,7 +27,38 @@ namespace Fitness_Tracker.Controllers
                 return validationResult;
             }
 
-            var result = await _nutritionService.GetCalorieOverviewAsync(userId, startDate, endDate);
+            DateTime sDate, eDate;
+            if (!string.IsNullOrEmpty(timeframe))
+            {
+                var today = DateTime.Now;
+                switch (timeframe.ToLower())
+                {
+                    case "today":
+                        sDate = today.Date;
+                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
+                        break;
+                    case "month":
+                        sDate = new DateTime(today.Year, today.Month, 1);
+                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
+                        break;
+                    case "week":
+                    default:
+                        sDate = today.Date.AddDays(-6);
+                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
+                        break;
+                }
+            }
+            else if (startDate.HasValue && endDate.HasValue)
+            {
+                sDate = startDate.Value;
+                eDate = endDate.Value;
+            }
+            else
+            {
+                return BadRequest("Either timeframe or both startDate and endDate must be provided.");
+            }
+
+            var result = await _nutritionService.GetCalorieOverviewAsync(userId, sDate, eDate);
             return Ok(result);
         }
 
