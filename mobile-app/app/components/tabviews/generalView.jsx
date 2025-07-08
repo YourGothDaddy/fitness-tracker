@@ -98,6 +98,10 @@ const GeneralView = () => {
   const router = useRouter();
   const [selectedTimeframe, setSelectedTimeframe] = useState("week");
   const [isTimeframeModalVisible, setIsTimeframeModalVisible] = useState(false);
+  const [selectedWeightTimeframe, setSelectedWeightTimeframe] =
+    useState("week");
+  const [isWeightTimeframeModalVisible, setIsWeightTimeframeModalVisible] =
+    useState(false);
 
   const fetchCalorieOverview = async (timeframe = selectedTimeframe) => {
     try {
@@ -116,10 +120,10 @@ const GeneralView = () => {
     }
   };
 
-  const fetchWeightProgress = async () => {
+  const fetchWeightProgress = async (timeframe = selectedWeightTimeframe) => {
     try {
-      setIsWeightLoading(true);
-      const { startDate, endDate } = getWeekDates();
+      // Use the same getTimeframeDates helper as for calories
+      const { startDate, endDate } = getTimeframeDates(timeframe);
       const data = await weightService.getWeightProgress(startDate, endDate);
       setWeightProgress(data);
       setError("");
@@ -160,9 +164,9 @@ const GeneralView = () => {
 
   useEffect(() => {
     fetchCalorieOverview(selectedTimeframe);
-    fetchWeightProgress();
+    fetchWeightProgress(selectedWeightTimeframe);
     fetchActivityOverview();
-  }, [selectedTimeframe]);
+  }, [selectedTimeframe, selectedWeightTimeframe]);
 
   const totalHorizontalPadding = 48;
   const cardPadding = 40;
@@ -426,11 +430,78 @@ const GeneralView = () => {
             <Text style={styles.cardTitle}>Weight Progress</Text>
           </View>
         </View>
+        {/* Timeframe Badge - moved below title and centered */}
         <View style={styles.timeframeBadgeWrapper}>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>This Week</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.badgeContainer}
+            onPress={() => setIsWeightTimeframeModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.badgeText}>
+              {TIMEFRAMES.find((t) => t.value === selectedWeightTimeframe)
+                ?.label || "This Week"}
+            </Text>
+            <MaterialIcons
+              name="arrow-drop-down"
+              size={20}
+              color="#619819"
+              style={{ marginLeft: 2 }}
+            />
+          </TouchableOpacity>
         </View>
+        <Modal
+          visible={isWeightTimeframeModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsWeightTimeframeModalVisible(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.2)",
+            }}
+            onPress={() => setIsWeightTimeframeModalVisible(false)}
+          >
+            <View
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 12,
+                padding: 16,
+                minWidth: 180,
+                elevation: 5,
+              }}
+            >
+              {TIMEFRAMES.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={{ paddingVertical: 10, paddingHorizontal: 8 }}
+                  onPress={() => {
+                    setSelectedWeightTimeframe(option.value);
+                    setIsWeightTimeframeModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      color:
+                        option.value === selectedWeightTimeframe
+                          ? "#619819"
+                          : "#2d3436",
+                      fontWeight:
+                        option.value === selectedWeightTimeframe
+                          ? "700"
+                          : "500",
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
 
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
