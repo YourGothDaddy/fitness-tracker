@@ -126,11 +126,41 @@ const GeneralView = () => {
       is24Hour: true,
       onChange: (event, selectedDate) => {
         if (event.type === "set" && selectedDate) {
+          // Set to midnight local time to avoid timezone issues
+          selectedDate.setHours(0, 0, 0, 0);
+          console.log(
+            "[GeneralView] Date selected from picker (midnight local):",
+            selectedDate,
+            "ISO:",
+            selectedDate.toISOString()
+          );
           setActivityDate(selectedDate);
         }
       },
       maximumDate: new Date(),
     });
+  };
+
+  // Helper to get a date object at midnight local, but send as UTC midnight for the selected local day
+  const getLocalDateAtMidnightUTC = (date) => {
+    // Create a new date at midnight local
+    const localMidnight = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      0,
+      0,
+      0,
+      0
+    );
+    // Get the UTC equivalent of that local midnight
+    return new Date(
+      Date.UTC(
+        localMidnight.getFullYear(),
+        localMidnight.getMonth(),
+        localMidnight.getDate()
+      )
+    );
   };
 
   const fetchCalorieOverview = async (timeframe = selectedTimeframe) => {
@@ -171,20 +201,25 @@ const GeneralView = () => {
     }
   };
 
-  const fetchActivityOverview = async () => {
+  // Fetch activity overview for the selected date
+  const fetchActivityOverview = async (date = activityDate) => {
     try {
       setIsActivityLoading(true);
-      const today = activityService.getTodayDate();
-      const data = await activityService.getActivityOverview(today);
+      // Always send the local day as UTC midnight for that local day
+      const dateToSend = getLocalDateAtMidnightUTC(date);
+      console.log(
+        "[GeneralView] Fetching activity overview for date:",
+        dateToSend,
+        "ISO:",
+        dateToSend.toISOString()
+      );
+      const data = await activityService.getActivityOverview(dateToSend);
       setActivityOverview(data);
       setError("");
     } catch (err) {
       setError("Failed to fetch activity data");
       console.error("Error fetching activity overview:", err);
-
-      // Check if this is an auth error that couldn't be automatically handled
       if (err.logout) {
-        // Redirect to login page if needed
         router.replace("/");
       }
     } finally {
@@ -192,11 +227,17 @@ const GeneralView = () => {
     }
   };
 
+  // Fetch activity overview when activityDate changes
   useEffect(() => {
-    fetchCalorieOverview(selectedTimeframe);
-    fetchWeightProgress(selectedWeightTimeframe);
-    fetchActivityOverview();
-  }, [selectedTimeframe, selectedWeightTimeframe]);
+    console.log(
+      "[GeneralView] activityDate state changed:",
+      activityDate,
+      "ISO:",
+      activityDate?.toISOString?.()
+    );
+    fetchActivityOverview(activityDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activityDate]);
 
   const totalHorizontalPadding = 48;
   const cardPadding = 40;

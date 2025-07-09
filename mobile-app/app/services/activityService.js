@@ -4,10 +4,21 @@ import axiosInstance from "@/app/services/authService";
 class ActivityService {
   async getActivityOverview(date) {
     try {
+      console.log(
+        "[ActivityService] Fetching activity overview for date:",
+        date,
+        "ISO:",
+        date.toISOString()
+      );
       const url = `${API_URL}/api/activity/activity-overview?date=${date.toISOString()}`;
       const response = await axiosInstance.get(url);
+      console.log("[ActivityService] Response data:", response.data);
       return response.data;
     } catch (error) {
+      console.error(
+        "[ActivityService] Error fetching activity overview:",
+        error
+      );
       throw error;
     }
   }
