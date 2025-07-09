@@ -227,6 +227,18 @@ const GeneralView = () => {
     }
   };
 
+  // Fetch calorie overview when selectedTimeframe changes
+  useEffect(() => {
+    fetchCalorieOverview(selectedTimeframe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTimeframe]);
+
+  // Fetch weight progress when selectedWeightTimeframe changes
+  useEffect(() => {
+    fetchWeightProgress(selectedWeightTimeframe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWeightTimeframe]);
+
   // Fetch activity overview when activityDate changes
   useEffect(() => {
     console.log(
