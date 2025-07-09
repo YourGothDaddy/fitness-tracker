@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Animated,
   Platform,
+  Modal,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -15,12 +17,84 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 
+const workoutCategories = [
+  {
+    name: "Cardio",
+    subcategories: [
+      "Cycling",
+      "Jumping Rope",
+      "Running",
+      "Swimming",
+      "Walking",
+    ],
+  },
+  {
+    name: "Gym",
+    subcategories: ["Resistance Training", "Circuit Training"],
+  },
+  {
+    name: "Outdoor Activity",
+    subcategories: ["Hiking", "Cycling"],
+  },
+];
+
+const EFFORT_LEVELS_CYCLING = ["Low", "Moderate", "Hard", "Maximal"];
+const EFFORT_LEVELS_DEFAULT = ["Low", "Moderate", "Hard"];
+const TERRAIN_TYPES = [
+  "Easy trail",
+  "Moderate incline",
+  "Steep or rough terrain",
+];
+
 const ExerciseItem = ({
   name,
   caloriesPerMin,
   caloriesPerHalfHour,
   caloriesPerHour,
+  category,
+  subcategory,
 }) => {
+  const [duration, setDuration] = useState("");
+  const [effort, setEffort] = useState("");
+  const [terrain, setTerrain] = useState("");
+  const [effortModalVisible, setEffortModalVisible] = useState(false);
+  const [terrainModalVisible, setTerrainModalVisible] = useState(false);
+
+  // Determine which buttons to show
+  let showDuration = false;
+  let showEffort = false;
+  let showTerrain = false;
+  let effortLevels = EFFORT_LEVELS_DEFAULT;
+
+  if (category === "Cardio") {
+    if (subcategory === "Cycling") {
+      showDuration = true;
+      showEffort = true;
+      effortLevels = EFFORT_LEVELS_CYCLING;
+    } else if (
+      ["Jumping Rope", "Running", "Swimming", "Walking"].includes(subcategory)
+    ) {
+      showDuration = true;
+      showEffort = true;
+      effortLevels = EFFORT_LEVELS_DEFAULT;
+    }
+  } else if (category === "Gym") {
+    if (["Resistance Training", "Circuit Training"].includes(subcategory)) {
+      showDuration = true;
+      showEffort = true;
+      effortLevels = EFFORT_LEVELS_DEFAULT;
+    }
+  } else if (category === "Outdoor Activity") {
+    if (subcategory === "Cycling") {
+      showDuration = true;
+      showEffort = true;
+      effortLevels = EFFORT_LEVELS_CYCLING;
+    } else if (subcategory === "Hiking") {
+      showDuration = true;
+      showTerrain = true;
+    }
+  }
+
   return (
     <Animated.View style={styles.exerciseItemContainer}>
       <View style={styles.exerciseItemLeft}>
@@ -31,6 +105,176 @@ const ExerciseItem = ({
             🔥 {caloriesPerHalfHour} kcal/30min
           </Text>
           <Text style={styles.calorieText}>⚡ {caloriesPerHour} kcal/hour</Text>
+        </View>
+        {/* Additional Buttons */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            marginTop: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          {showDuration && (
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Text style={{ fontSize: 14, color: "#333" }}>Duration:</Text>
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  minWidth: 50,
+                  fontSize: 14,
+                  color: "#333",
+                  backgroundColor: "#f5f5f5",
+                }}
+                placeholder="min"
+                value={duration}
+                onChangeText={setDuration}
+                keyboardType="numeric"
+              />
+            </View>
+          )}
+          {showEffort && (
+            <>
+              <TouchableOpacity
+                style={styles.badgeContainer}
+                onPress={() => setEffortModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.badgeText}>{effort || "Effort level"}</Text>
+                <MaterialIcons
+                  name="arrow-drop-down"
+                  size={20}
+                  color={Colors.darkGreen.color}
+                  style={{ marginLeft: 2 }}
+                />
+              </TouchableOpacity>
+              <Modal
+                visible={effortModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setEffortModalVisible(false)}
+              >
+                <Pressable
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.2)",
+                  }}
+                  onPress={() => setEffortModalVisible(false)}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: 12,
+                      padding: 16,
+                      minWidth: 180,
+                      elevation: 5,
+                    }}
+                  >
+                    {effortLevels.map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        style={{ paddingVertical: 10, paddingHorizontal: 8 }}
+                        onPress={() => {
+                          setEffort(option);
+                          setEffortModalVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            color:
+                              option === effort
+                                ? Colors.darkGreen.color
+                                : "#2d3436",
+                            fontWeight: option === effort ? "700" : "500",
+                          }}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Pressable>
+              </Modal>
+            </>
+          )}
+          {showTerrain && (
+            <>
+              <TouchableOpacity
+                style={styles.badgeContainer}
+                onPress={() => setTerrainModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.badgeText}>
+                  {terrain || "Terrain type"}
+                </Text>
+                <MaterialIcons
+                  name="arrow-drop-down"
+                  size={20}
+                  color={Colors.darkGreen.color}
+                  style={{ marginLeft: 2 }}
+                />
+              </TouchableOpacity>
+              <Modal
+                visible={terrainModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setTerrainModalVisible(false)}
+              >
+                <Pressable
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.2)",
+                  }}
+                  onPress={() => setTerrainModalVisible(false)}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "#fff",
+                      borderRadius: 12,
+                      padding: 16,
+                      minWidth: 180,
+                      elevation: 5,
+                    }}
+                  >
+                    {TERRAIN_TYPES.map((option) => (
+                      <TouchableOpacity
+                        key={option}
+                        style={{ paddingVertical: 10, paddingHorizontal: 8 }}
+                        onPress={() => {
+                          setTerrain(option);
+                          setTerrainModalVisible(false);
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            color:
+                              option === terrain
+                                ? Colors.darkGreen.color
+                                : "#2d3436",
+                            fontWeight: option === terrain ? "700" : "500",
+                          }}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Pressable>
+              </Modal>
+            </>
+          )}
         </View>
       </View>
       <TouchableOpacity style={styles.addExerciseButton}>
@@ -51,42 +295,64 @@ const TrackExerciseView = () => {
       caloriesPerMin: 11,
       caloriesPerHalfHour: 330,
       caloriesPerHour: 660,
+      category: "Cardio",
+      subcategory: "Running",
     },
     {
       name: "Swimming",
       caloriesPerMin: 10,
       caloriesPerHalfHour: 300,
       caloriesPerHour: 600,
+      category: "Cardio",
+      subcategory: "Swimming",
     },
     {
       name: "Cycling",
       caloriesPerMin: 8,
       caloriesPerHalfHour: 240,
       caloriesPerHour: 480,
+      category: "Cardio",
+      subcategory: "Cycling",
     },
     {
       name: "Jump Rope",
       caloriesPerMin: 12,
       caloriesPerHalfHour: 360,
       caloriesPerHour: 720,
+      category: "Cardio",
+      subcategory: "Jumping Rope",
     },
     {
-      name: "Weight Training",
+      name: "Walking",
+      caloriesPerMin: 5,
+      caloriesPerHalfHour: 150,
+      caloriesPerHour: 300,
+      category: "Cardio",
+      subcategory: "Walking",
+    },
+    {
+      name: "Resistance Training",
       caloriesPerMin: 6,
       caloriesPerHalfHour: 180,
       caloriesPerHour: 360,
+      category: "Gym",
+      subcategory: "Resistance Training",
     },
     {
-      name: "Yoga",
-      caloriesPerMin: 4,
-      caloriesPerHalfHour: 120,
-      caloriesPerHour: 240,
+      name: "Circuit Training",
+      caloriesPerMin: 9,
+      caloriesPerHalfHour: 270,
+      caloriesPerHour: 540,
+      category: "Gym",
+      subcategory: "Circuit Training",
     },
     {
-      name: "HIIT",
-      caloriesPerMin: 14,
-      caloriesPerHalfHour: 420,
-      caloriesPerHour: 840,
+      name: "Hiking",
+      caloriesPerMin: 7,
+      caloriesPerHalfHour: 210,
+      caloriesPerHour: 420,
+      category: "Outdoor Activity",
+      subcategory: "Hiking",
     },
   ];
 
@@ -325,6 +591,27 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.white.color,
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(97, 152, 25, 0.13)",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 24,
+    shadowColor: Colors.darkGreen.color,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.18)",
+    marginTop: 0,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
   },
 });
 
