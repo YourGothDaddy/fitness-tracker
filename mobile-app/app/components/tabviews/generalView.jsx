@@ -19,6 +19,7 @@ import { nutritionService } from "../../services/nutritionService";
 import { weightService } from "../../services/weightService";
 import { activityService } from "../../services/activityService";
 import { useRouter } from "expo-router";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 // Helper function to format numbers with commas
 const formatNumber = (num) => {
@@ -102,6 +103,35 @@ const GeneralView = () => {
     useState("week");
   const [isWeightTimeframeModalVisible, setIsWeightTimeframeModalVisible] =
     useState(false);
+  const [activityDate, setActivityDate] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+
+  // Helper to format date as YYYY-MM-DD
+  const formatDate = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Date picker handler
+  const showDatePicker = () => {
+    DateTimePickerAndroid.open({
+      value: activityDate,
+      mode: "date",
+      is24Hour: true,
+      onChange: (event, selectedDate) => {
+        if (event.type === "set" && selectedDate) {
+          setActivityDate(selectedDate);
+        }
+      },
+      maximumDate: new Date(),
+    });
+  };
 
   const fetchCalorieOverview = async (timeframe = selectedTimeframe) => {
     try {
@@ -576,9 +606,19 @@ const GeneralView = () => {
           </View>
         </View>
         <View style={styles.timeframeBadgeWrapper}>
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>Today</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.badgeContainer}
+            onPress={showDatePicker}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.badgeText}>{formatDate(activityDate)}</Text>
+            <MaterialIcons
+              name="calendar-today"
+              size={20}
+              color="#619819"
+              style={{ marginLeft: 2 }}
+            />
+          </TouchableOpacity>
         </View>
 
         {isActivityLoading ? (
