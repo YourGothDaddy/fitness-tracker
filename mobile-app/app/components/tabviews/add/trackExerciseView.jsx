@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,43 +16,16 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
-
-const workoutCategories = [
-  {
-    name: "Cardio",
-    subcategories: [
-      "Cycling",
-      "Jumping Rope",
-      "Running",
-      "Swimming",
-      "Walking",
-    ],
-  },
-  {
-    name: "Gym",
-    subcategories: ["Resistance Training", "Circuit Training"],
-  },
-  {
-    name: "Outdoor Activity",
-    subcategories: ["Hiking", "Cycling"],
-  },
-];
-
-const EFFORT_LEVELS_CYCLING = ["Low", "Moderate", "Hard", "Maximal"];
-const EFFORT_LEVELS_DEFAULT = ["Low", "Moderate", "Hard"];
-const TERRAIN_TYPES = [
-  "Easy trail",
-  "Moderate incline",
-  "Steep or rough terrain",
-];
+import { activityService } from "@/app/services/activityService";
 
 const ExerciseItem = ({
-  name,
-  caloriesPerMin,
-  caloriesPerHalfHour,
-  caloriesPerHour,
   category,
   subcategory,
+  caloriesPerMinute,
+  caloriesPerHalfHour,
+  caloriesPerHour,
+  effortLevels = [],
+  terrainTypes = [],
 }) => {
   const [duration, setDuration] = useState("");
   const [effort, setEffort] = useState("");
@@ -61,50 +34,24 @@ const ExerciseItem = ({
   const [terrainModalVisible, setTerrainModalVisible] = useState(false);
 
   // Determine which buttons to show
-  let showDuration = false;
-  let showEffort = false;
-  let showTerrain = false;
-  let effortLevels = EFFORT_LEVELS_DEFAULT;
-
-  if (category === "Cardio") {
-    if (subcategory === "Cycling") {
-      showDuration = true;
-      showEffort = true;
-      effortLevels = EFFORT_LEVELS_CYCLING;
-    } else if (
-      ["Jumping Rope", "Running", "Swimming", "Walking"].includes(subcategory)
-    ) {
-      showDuration = true;
-      showEffort = true;
-      effortLevels = EFFORT_LEVELS_DEFAULT;
-    }
-  } else if (category === "Gym") {
-    if (["Resistance Training", "Circuit Training"].includes(subcategory)) {
-      showDuration = true;
-      showEffort = true;
-      effortLevels = EFFORT_LEVELS_DEFAULT;
-    }
-  } else if (category === "Outdoor Activity") {
-    if (subcategory === "Cycling") {
-      showDuration = true;
-      showEffort = true;
-      effortLevels = EFFORT_LEVELS_CYCLING;
-    } else if (subcategory === "Hiking") {
-      showDuration = true;
-      showTerrain = true;
-    }
-  }
+  let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
+  let showEffort = effortLevels.length > 0;
+  let showTerrain = terrainTypes.length > 0;
 
   return (
     <Animated.View style={styles.exerciseItemContainer}>
       <View style={styles.exerciseItemLeft}>
-        <Text style={styles.exerciseName}>{name}</Text>
+        <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
-          <Text style={styles.calorieText}>⏱️ {caloriesPerMin} kcal/min</Text>
           <Text style={styles.calorieText}>
-            🔥 {caloriesPerHalfHour} kcal/30min
+            ⏱️ {caloriesPerMinute?.toFixed(1)} kcal/min
           </Text>
-          <Text style={styles.calorieText}>⚡ {caloriesPerHour} kcal/hour</Text>
+          <Text style={styles.calorieText}>
+            🔥 {caloriesPerHalfHour?.toFixed(1)} kcal/30min
+          </Text>
+          <Text style={styles.calorieText}>
+            ⚡ {caloriesPerHour?.toFixed(1)} kcal/hour
+          </Text>
         </View>
         {/* Additional Buttons */}
         <View
@@ -247,7 +194,7 @@ const ExerciseItem = ({
                       elevation: 5,
                     }}
                   >
-                    {TERRAIN_TYPES.map((option) => (
+                    {terrainTypes.map((option) => (
                       <TouchableOpacity
                         key={option}
                         style={{ paddingVertical: 10, paddingHorizontal: 8 }}
@@ -288,73 +235,25 @@ const TrackExerciseView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [exerciseItems, setExerciseItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const exerciseItems = [
-    {
-      name: "Running (8 km/h)",
-      caloriesPerMin: 11,
-      caloriesPerHalfHour: 330,
-      caloriesPerHour: 660,
-      category: "Cardio",
-      subcategory: "Running",
-    },
-    {
-      name: "Swimming",
-      caloriesPerMin: 10,
-      caloriesPerHalfHour: 300,
-      caloriesPerHour: 600,
-      category: "Cardio",
-      subcategory: "Swimming",
-    },
-    {
-      name: "Cycling",
-      caloriesPerMin: 8,
-      caloriesPerHalfHour: 240,
-      caloriesPerHour: 480,
-      category: "Cardio",
-      subcategory: "Cycling",
-    },
-    {
-      name: "Jump Rope",
-      caloriesPerMin: 12,
-      caloriesPerHalfHour: 360,
-      caloriesPerHour: 720,
-      category: "Cardio",
-      subcategory: "Jumping Rope",
-    },
-    {
-      name: "Walking",
-      caloriesPerMin: 5,
-      caloriesPerHalfHour: 150,
-      caloriesPerHour: 300,
-      category: "Cardio",
-      subcategory: "Walking",
-    },
-    {
-      name: "Resistance Training",
-      caloriesPerMin: 6,
-      caloriesPerHalfHour: 180,
-      caloriesPerHour: 360,
-      category: "Gym",
-      subcategory: "Resistance Training",
-    },
-    {
-      name: "Circuit Training",
-      caloriesPerMin: 9,
-      caloriesPerHalfHour: 270,
-      caloriesPerHour: 540,
-      category: "Gym",
-      subcategory: "Circuit Training",
-    },
-    {
-      name: "Hiking",
-      caloriesPerMin: 7,
-      caloriesPerHalfHour: 210,
-      caloriesPerHour: 420,
-      category: "Outdoor Activity",
-      subcategory: "Hiking",
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await activityService.getExerciseMetaData();
+        setExerciseItems(data);
+      } catch (err) {
+        setError("Failed to load exercise data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <>
@@ -453,15 +352,39 @@ const TrackExerciseView = () => {
         </View>
 
         {/* Exercises List */}
-        <ScrollView
-          style={styles.exercisesList}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.exercisesListContent}
-        >
-          {exerciseItems.map((item, index) => (
-            <ExerciseItem key={index} {...item} />
-          ))}
-        </ScrollView>
+        {loading ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <Text>Loading...</Text>
+          </View>
+        ) : error ? (
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <Text style={{ color: "red" }}>{error}</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.exercisesList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.exercisesListContent}
+          >
+            {exerciseItems
+              .filter(
+                (item) =>
+                  item.subcategory
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                  item.category
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+              )
+              .map((item, index) => (
+                <ExerciseItem key={index} {...item} />
+              ))}
+          </ScrollView>
+        )}
       </SafeAreaView>
     </>
   );

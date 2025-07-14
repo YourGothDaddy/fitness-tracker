@@ -110,6 +110,16 @@ class ActivityService {
       throw error;
     }
   }
+
+  async getExerciseMetaData() {
+    try {
+      const url = `${API_URL}/api/activity/exercise-metadata`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

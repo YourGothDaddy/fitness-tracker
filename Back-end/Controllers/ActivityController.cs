@@ -124,6 +124,26 @@ namespace Fitness_Tracker.Controllers
             return Ok(types);
         }
 
+        [AllowAnonymous]
+        [HttpGet("exercise-metadata")]
+        public async Task<IActionResult> GetExerciseMetaData()
+        {
+            string userId = null;
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                userId = GetUserId();
+            }
+            try
+            {
+                var result = await _activityService.GetExerciseMetaDataAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving exercise metadata: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

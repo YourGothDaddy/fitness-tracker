@@ -9,5 +9,6 @@ namespace Fitness_Tracker.Services.Activity
         Task<List<ActivityLevelModel>> GetAllActivityLevelsAsync();
         Task AddActivityAsync(Models.Activity.AddActivityModel model, string userId);
         Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync();
+        Task<List<Models.Activity.ExerciseMetaDataModel>> GetExerciseMetaDataAsync(string userId);
     }
 } 
