@@ -17,6 +17,7 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { activityService } from "@/app/services/activityService";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 const ExerciseItem = ({
   category,
@@ -42,6 +43,8 @@ const ExerciseItem = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [date, setDate] = useState(new Date());
+  const [showIOSPicker, setShowIOSPicker] = useState(false);
 
   // Helper to recalculate calories
   const recalculateCalories = async (newEffort, newTerrain, newDuration) => {
@@ -83,6 +86,27 @@ const ExerciseItem = ({
   let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
   let showEffort = effortLevels.length > 0;
   let showTerrain = terrainTypes.length > 0;
+
+  const handleAddPress = () => {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: date,
+        mode: "date",
+        is24Hour: true,
+        onChange: (event, selectedDate) => {
+          if (event.type === "set" && selectedDate) {
+            setDate(selectedDate);
+            // You can handle the selected date here (e.g., open next step)
+            // For now, just log it
+            console.log("Selected date:", selectedDate);
+          }
+        },
+        maximumDate: new Date(),
+      });
+    } else {
+      setShowIOSPicker(true);
+    }
+  };
 
   return (
     <Animated.View style={styles.exerciseItemContainer}>
@@ -282,9 +306,80 @@ const ExerciseItem = ({
           )}
         </View>
       </View>
-      <TouchableOpacity style={styles.addExerciseButton}>
+      <TouchableOpacity
+        style={styles.addExerciseButton}
+        onPress={handleAddPress}
+      >
         <Ionicons name="add-circle" size={28} color={Colors.darkGreen.color} />
       </TouchableOpacity>
+      {/* iOS Date Picker Modal */}
+      {Platform.OS === "ios" && showIOSPicker && (
+        <Modal
+          visible={showIOSPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowIOSPicker(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.2)",
+            }}
+            onPress={() => setShowIOSPicker(false)}
+          >
+            <View
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 12,
+                padding: 16,
+                minWidth: 250,
+                elevation: 5,
+              }}
+            >
+              <Text
+                style={{ fontSize: 16, fontWeight: "600", marginBottom: 10 }}
+              >
+                Select Date
+              </Text>
+              <View style={{ alignItems: "center" }}>
+                <DateTimePickerAndroid
+                  value={date}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event, selectedDate) => {
+                    if (event.type === "set" && selectedDate) {
+                      setDate(selectedDate);
+                      setShowIOSPicker(false);
+                      // You can handle the selected date here
+                      console.log("Selected date:", selectedDate);
+                    } else if (event.type === "dismissed") {
+                      setShowIOSPicker(false);
+                    }
+                  }}
+                  maximumDate={new Date()}
+                  style={{ width: 250 }}
+                />
+              </View>
+              <TouchableOpacity
+                style={{ marginTop: 16, alignSelf: "flex-end" }}
+                onPress={() => setShowIOSPicker(false)}
+              >
+                <Text
+                  style={{
+                    color: Colors.darkGreen.color,
+                    fontWeight: "600",
+                    fontSize: 16,
+                  }}
+                >
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
+      )}
     </Animated.View>
   );
 };
