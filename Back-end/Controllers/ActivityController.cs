@@ -172,6 +172,62 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpPost("track-exercise")]
+        public async Task<IActionResult> TrackExercise([FromBody] Models.Activity.TrackExerciseRequest model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                // Get ActivityTypeId
+                var activityTypeId = await _activityService.GetActivityTypeIdByCategoryAndSubcategoryAsync(model.Category, model.Subcategory);
+                if (activityTypeId == null)
+                {
+                    return BadRequest("Invalid category or subcategory");
+                }
+
+                // Calculate calories
+                var caloriesResult = await _activityService.CalculateExerciseCaloriesAsync(userId, new Models.Activity.CalculateExerciseCaloriesRequest
+                {
+                    Category = model.Category,
+                    Subcategory = model.Subcategory,
+                    EffortLevel = model.EffortLevel,
+                    DurationInMinutes = model.DurationInMinutes,
+                    TerrainType = model.TerrainType
+                });
+
+                // Add activity
+                var addModel = new Models.Activity.AddActivityModel
+                {
+                    DurationInMinutes = model.DurationInMinutes,
+                    TimeOfTheDay = Data.Models.Enums.TimeOfTheDay.Morning, // default to Morning
+                    CaloriesBurned = (int)Math.Round(caloriesResult.CaloriesPerMinute * model.DurationInMinutes),
+                    ActivityTypeId = activityTypeId.Value,
+                    Date = model.Date,
+                    Notes = model.Notes,
+                    IsPublic = model.IsPublic ?? true
+                };
+                await _activityService.AddActivityAsync(addModel, userId);
+                return Ok(new { Message = "Exercise tracked successfully." });
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while tracking exercise: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

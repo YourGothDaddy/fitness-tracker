@@ -11,5 +11,6 @@ namespace Fitness_Tracker.Services.Activity
         Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync();
         Task<List<Models.Activity.ExerciseMetaDataModel>> GetExerciseMetaDataAsync(string userId);
         Task<ExerciseMetaDataModel> CalculateExerciseCaloriesAsync(string userId, CalculateExerciseCaloriesRequest request);
+        Task<int?> GetActivityTypeIdByCategoryAndSubcategoryAsync(string category, string subcategory);
     }
 } 

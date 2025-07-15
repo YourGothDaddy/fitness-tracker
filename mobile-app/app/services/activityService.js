@@ -132,6 +132,46 @@ class ActivityService {
       throw error;
     }
   }
+
+  // Helper to format date in local time (YYYY-MM-DDTHH:mm:ss)
+  formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+
+  async trackExercise({
+    category,
+    subcategory,
+    effortLevel,
+    durationInMinutes,
+    terrainType,
+    date,
+    isPublic = true,
+    notes = "",
+  }) {
+    try {
+      const url = `${API_URL}/api/activity/track-exercise`;
+      const payload = {
+        category,
+        subcategory,
+        effortLevel,
+        durationInMinutes: Number(durationInMinutes),
+        terrainType: terrainType || null,
+        date: this.formatDate(date),
+        isPublic,
+        notes,
+      };
+      const response = await axiosInstance.post(url, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

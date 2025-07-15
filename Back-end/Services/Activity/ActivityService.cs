@@ -373,5 +373,16 @@ namespace Fitness_Tracker.Services.Activity
                 // EffortLevels and TerrainTypes are not needed in response here
             };
         }
+
+        /// <summary>
+        /// Gets the ActivityTypeId for a given category and subcategory.
+        /// </summary>
+        public async Task<int?> GetActivityTypeIdByCategoryAndSubcategoryAsync(string category, string subcategory)
+        {
+            var activityType = await _databaseContext.ActivityTypes
+                .Include(at => at.ActivityCategory)
+                .FirstOrDefaultAsync(at => at.Name == subcategory && at.ActivityCategory.Name == category);
+            return activityType?.Id;
+        }
     }
 } 

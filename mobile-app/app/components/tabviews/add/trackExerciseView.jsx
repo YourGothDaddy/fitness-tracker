@@ -10,6 +10,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -71,6 +72,40 @@ const ExerciseItem = ({
     }
   };
 
+  // Helper to track exercise
+  const trackExercise = async (selectedDate) => {
+    setLoading(true);
+    setError("");
+    try {
+      await activityService.trackExercise({
+        category,
+        subcategory,
+        effortLevel: effort,
+        durationInMinutes: duration,
+        terrainType: terrainTypes.length > 0 ? terrain : undefined,
+        date: selectedDate,
+        isPublic: true,
+        notes: "",
+      });
+      Alert.alert("Success", "Exercise tracked successfully!");
+      setDuration(30); // Reset duration
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to track exercise"
+      );
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to track exercise"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Recalculate when effort, terrain, or duration changes
   useEffect(() => {
     if (
@@ -96,9 +131,7 @@ const ExerciseItem = ({
         onChange: (event, selectedDate) => {
           if (event.type === "set" && selectedDate) {
             setDate(selectedDate);
-            // You can handle the selected date here (e.g., open next step)
-            // For now, just log it
-            console.log("Selected date:", selectedDate);
+            trackExercise(selectedDate);
           }
         },
         maximumDate: new Date(),
@@ -309,6 +342,7 @@ const ExerciseItem = ({
       <TouchableOpacity
         style={styles.addExerciseButton}
         onPress={handleAddPress}
+        disabled={loading}
       >
         <Ionicons name="add-circle" size={28} color={Colors.darkGreen.color} />
       </TouchableOpacity>
@@ -352,8 +386,7 @@ const ExerciseItem = ({
                     if (event.type === "set" && selectedDate) {
                       setDate(selectedDate);
                       setShowIOSPicker(false);
-                      // You can handle the selected date here
-                      console.log("Selected date:", selectedDate);
+                      trackExercise(selectedDate);
                     } else if (event.type === "dismissed") {
                       setShowIOSPicker(false);
                     }
