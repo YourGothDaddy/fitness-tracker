@@ -128,12 +128,6 @@ const GeneralView = () => {
         if (event.type === "set" && selectedDate) {
           // Set to midnight local time to avoid timezone issues
           selectedDate.setHours(0, 0, 0, 0);
-          console.log(
-            "[GeneralView] Date selected from picker (midnight local):",
-            selectedDate,
-            "ISO:",
-            selectedDate.toISOString()
-          );
           setActivityDate(selectedDate);
         }
       },
@@ -207,12 +201,6 @@ const GeneralView = () => {
       setIsActivityLoading(true);
       // Always send the local day as UTC midnight for that local day
       const dateToSend = getLocalDateAtMidnightUTC(date);
-      console.log(
-        "[GeneralView] Fetching activity overview for date:",
-        dateToSend,
-        "ISO:",
-        dateToSend.toISOString()
-      );
       const data = await activityService.getActivityOverview(dateToSend);
       setActivityOverview(data);
       setError("");
@@ -241,12 +229,6 @@ const GeneralView = () => {
 
   // Fetch activity overview when activityDate changes
   useEffect(() => {
-    console.log(
-      "[GeneralView] activityDate state changed:",
-      activityDate,
-      "ISO:",
-      activityDate?.toISOString?.()
-    );
     fetchActivityOverview(activityDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityDate]);

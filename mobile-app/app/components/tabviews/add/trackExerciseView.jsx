@@ -21,17 +21,63 @@ import { activityService } from "@/app/services/activityService";
 const ExerciseItem = ({
   category,
   subcategory,
-  caloriesPerMinute,
-  caloriesPerHalfHour,
-  caloriesPerHour,
+  caloriesPerMinute: initialCaloriesPerMinute,
+  caloriesPerHalfHour: initialCaloriesPerHalfHour,
+  caloriesPerHour: initialCaloriesPerHour,
   effortLevels = [],
   terrainTypes = [],
 }) => {
-  const [duration, setDuration] = useState("");
-  const [effort, setEffort] = useState("");
-  const [terrain, setTerrain] = useState("");
+  const [duration, setDuration] = useState(30);
+  const [effort, setEffort] = useState(
+    effortLevels[1] || effortLevels[0] || ""
+  );
+  const [terrain, setTerrain] = useState(terrainTypes[0] || "");
   const [effortModalVisible, setEffortModalVisible] = useState(false);
   const [terrainModalVisible, setTerrainModalVisible] = useState(false);
+  const [calories, setCalories] = useState({
+    caloriesPerMinute: initialCaloriesPerMinute,
+    caloriesPerHalfHour: initialCaloriesPerHalfHour,
+    caloriesPerHour: initialCaloriesPerHour,
+    totalCalories: initialCaloriesPerMinute * 30,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Helper to recalculate calories
+  const recalculateCalories = async (newEffort, newTerrain, newDuration) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await activityService.calculateExerciseCalories({
+        category,
+        subcategory,
+        effortLevel: newEffort,
+        durationInMinutes: newDuration,
+        terrainType: newTerrain,
+      });
+      setCalories({
+        caloriesPerMinute: res.caloriesPerMinute,
+        caloriesPerHalfHour: res.caloriesPerHalfHour,
+        caloriesPerHour: res.caloriesPerHour,
+        totalCalories: res.caloriesPerMinute * newDuration,
+      });
+    } catch (err) {
+      setError("Failed to recalculate calories");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Recalculate when effort, terrain, or duration changes
+  useEffect(() => {
+    if (
+      (effortLevels.length > 0 && effort) ||
+      (terrainTypes.length > 0 && terrain)
+    ) {
+      recalculateCalories(effort, terrain, duration);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effort, terrain, duration]);
 
   // Determine which buttons to show
   let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
@@ -44,15 +90,24 @@ const ExerciseItem = ({
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
           <Text style={styles.calorieText}>
-            ⏱️ {caloriesPerMinute?.toFixed(1)} kcal/min
+            ⏱️ {loading ? "..." : calories.caloriesPerMinute?.toFixed(1)}{" "}
+            kcal/min
           </Text>
           <Text style={styles.calorieText}>
-            🔥 {caloriesPerHalfHour?.toFixed(1)} kcal/30min
+            🔥 {loading ? "..." : calories.caloriesPerHalfHour?.toFixed(1)}{" "}
+            kcal/30min
           </Text>
           <Text style={styles.calorieText}>
-            ⚡ {caloriesPerHour?.toFixed(1)} kcal/hour
+            ⚡ {loading ? "..." : calories.caloriesPerHour?.toFixed(1)}{" "}
+            kcal/hour
+          </Text>
+          <Text style={styles.calorieText}>
+            Total: {loading ? "..." : calories.totalCalories?.toFixed(1)} kcal
           </Text>
         </View>
+        {error ? (
+          <Text style={{ color: "red", fontSize: 12 }}>{error}</Text>
+        ) : null}
         {/* Additional Buttons */}
         <View
           style={{
@@ -80,8 +135,11 @@ const ExerciseItem = ({
                   backgroundColor: "#f5f5f5",
                 }}
                 placeholder="min"
-                value={duration}
-                onChangeText={setDuration}
+                value={duration.toString()}
+                onChangeText={(val) => {
+                  const num = parseInt(val.replace(/[^0-9]/g, ""), 10) || 0;
+                  setDuration(num);
+                }}
                 keyboardType="numeric"
               />
             </View>

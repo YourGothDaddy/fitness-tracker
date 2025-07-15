@@ -281,5 +281,97 @@ namespace Fitness_Tracker.Services.Activity
             }
             return result;
         }
+
+        private static readonly Dictionary<(string Category, string Subcategory, string Level), float> MetValues = new()
+        {
+            // Cardio
+            { ("Cardio", "Cycling", "Low"), 4.0f },
+            { ("Cardio", "Cycling", "Moderate"), 6.8f },
+            { ("Cardio", "Cycling", "Hard"), 8.0f },
+            { ("Cardio", "Cycling", "Maximal"), 10.0f },
+            { ("Cardio", "Jumping Rope", "Low"), 8.8f },
+            { ("Cardio", "Jumping Rope", "Moderate"), 11.8f },
+            { ("Cardio", "Jumping Rope", "Hard"), 12.3f },
+            { ("Cardio", "Running", "Low"), 8.3f }, // 8 km/h
+            { ("Cardio", "Running", "Moderate"), 9.8f }, // 9.7 km/h
+            { ("Cardio", "Running", "Hard"), 11.0f }, // 11.3 km/h
+            { ("Cardio", "Swimming", "Low"), 6.0f },
+            { ("Cardio", "Swimming", "Moderate"), 8.0f },
+            { ("Cardio", "Swimming", "Hard"), 10.0f },
+            { ("Cardio", "Walking", "Low"), 2.0f }, // 3.2 km/h
+            { ("Cardio", "Walking", "Moderate"), 3.5f }, // 5.6 km/h
+            { ("Cardio", "Walking", "Hard"), 4.3f }, // 6.4 km/h
+            // Gym
+            { ("Gym", "Resistance Training", "Low"), 3.5f },
+            { ("Gym", "Resistance Training", "Moderate"), 5.0f },
+            { ("Gym", "Resistance Training", "Hard"), 6.0f },
+            { ("Gym", "Circuit Training", "Low"), 7.0f },
+            { ("Gym", "Circuit Training", "Moderate"), 8.0f },
+            { ("Gym", "Circuit Training", "Hard"), 9.0f },
+            // Outdoor Activity
+            { ("Outdoor Activity", "Hiking", "Easy trail"), 6.0f },
+            { ("Outdoor Activity", "Hiking", "Moderate incline"), 6.5f },
+            { ("Outdoor Activity", "Hiking", "Steep or rough terrain"), 7.8f },
+            { ("Outdoor Activity", "Cycling", "Low"), 4.0f },
+            { ("Outdoor Activity", "Cycling", "Moderate"), 6.8f },
+            { ("Outdoor Activity", "Cycling", "Hard"), 8.0f },
+            { ("Outdoor Activity", "Cycling", "Maximal"), 10.0f },
+        };
+
+        private static float GetMetValue(string category, string subcategory, string effortLevelOrTerrain)
+        {
+            // Try to get MET value for the given combination
+            if (MetValues.TryGetValue((category, subcategory, effortLevelOrTerrain), out var met))
+                return met;
+            // Fallback to Moderate or Moderate incline if not found
+            if (MetValues.TryGetValue((category, subcategory, "Moderate"), out met))
+                return met;
+            if (MetValues.TryGetValue((category, subcategory, "Moderate incline"), out met))
+                return met;
+            return 1f; // fallback
+        }
+
+        public async Task<ExerciseMetaDataModel> CalculateExerciseCaloriesAsync(string userId, CalculateExerciseCaloriesRequest request)
+        {
+            // Fetch user weight (default to 70kg if not found)
+            var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            float userWeight = user?.Weight ?? 70f;
+
+            string category = request.Category;
+            string subcategory = request.Subcategory;
+            string effortLevel = request.EffortLevel;
+            string terrainType = request.TerrainType;
+            int duration = request.DurationInMinutes;
+
+            // Validation
+            if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
+                throw new ArgumentNullException("Category and Subcategory are required.");
+            if (category == "Outdoor Activity" && subcategory == "Hiking") {
+                if (string.IsNullOrWhiteSpace(terrainType))
+                    throw new ArgumentNullException("TerrainType is required for Hiking.");
+            } else {
+                if (string.IsNullOrWhiteSpace(effortLevel))
+                    throw new ArgumentNullException("EffortLevel is required for this activity.");
+            }
+
+            // For hiking, use terrainType as the effort level
+            string metKey = (category == "Outdoor Activity" && subcategory == "Hiking") ? terrainType : effortLevel;
+            float met = GetMetValue(category, subcategory, metKey);
+
+            float caloriesPerMinute = (met * userWeight) / 60f;
+            float caloriesPerHalfHour = (met * userWeight * 30f) / 60f;
+            float caloriesPerHour = (met * userWeight * 60f) / 60f;
+            float totalCalories = caloriesPerMinute * duration;
+
+            return new ExerciseMetaDataModel
+            {
+                Category = category,
+                Subcategory = subcategory,
+                CaloriesPerMinute = caloriesPerMinute,
+                CaloriesPerHalfHour = caloriesPerHalfHour,
+                CaloriesPerHour = caloriesPerHour,
+                // EffortLevels and TerrainTypes are not needed in response here
+            };
+        }
     }
 } 

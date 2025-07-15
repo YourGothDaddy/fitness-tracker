@@ -4,21 +4,10 @@ import axiosInstance from "@/app/services/authService";
 class ActivityService {
   async getActivityOverview(date) {
     try {
-      console.log(
-        "[ActivityService] Fetching activity overview for date:",
-        date,
-        "ISO:",
-        date.toISOString()
-      );
       const url = `${API_URL}/api/activity/activity-overview?date=${date.toISOString()}`;
       const response = await axiosInstance.get(url);
-      console.log("[ActivityService] Response data:", response.data);
       return response.data;
     } catch (error) {
-      console.error(
-        "[ActivityService] Error fetching activity overview:",
-        error
-      );
       throw error;
     }
   }
@@ -115,6 +104,29 @@ class ActivityService {
     try {
       const url = `${API_URL}/api/activity/exercise-metadata`;
       const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async calculateExerciseCalories({
+    category,
+    subcategory,
+    effortLevel,
+    durationInMinutes,
+    terrainType,
+  }) {
+    try {
+      const url = `${API_URL}/api/activity/calculate-exercise-calories`;
+      const payload = {
+        category,
+        subcategory,
+        effortLevel,
+        durationInMinutes: Number(durationInMinutes),
+        terrainType: terrainType || null,
+      };
+      const response = await axiosInstance.post(url, payload);
       return response.data;
     } catch (error) {
       throw error;

@@ -144,6 +144,34 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpPost("calculate-exercise-calories")]
+        public async Task<IActionResult> CalculateExerciseCalories([FromBody] Models.Activity.CalculateExerciseCaloriesRequest request)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            try
+            {
+                var result = await _activityService.CalculateExerciseCaloriesAsync(userId, request);
+                return Ok(result);
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while calculating exercise calories: {ex.Message}");
+            }
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()
