@@ -172,6 +172,50 @@ class ActivityService {
       throw error;
     }
   }
+
+  async addFavoriteActivityType(activityTypeId) {
+    try {
+      const url = `${API_URL}/api/activity/favorites/add`;
+      const response = await axiosInstance.post(url, activityTypeId, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async removeFavoriteActivityType(activityTypeId) {
+    try {
+      const url = `${API_URL}/api/activity/favorites/remove`;
+      const response = await axiosInstance.post(url, activityTypeId, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async isFavoriteActivityType(activityTypeId) {
+    try {
+      const url = `${API_URL}/api/activity/favorites/${activityTypeId}/is-favorite`;
+      const response = await axiosInstance.get(url);
+      return response.data.isFavorite;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getFavoriteActivityTypes() {
+    try {
+      const url = `${API_URL}/api/activity/favorites`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

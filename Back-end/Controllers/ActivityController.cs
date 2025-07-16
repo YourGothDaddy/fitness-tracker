@@ -228,6 +228,54 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        [HttpPost("favorites/add")]
+        public async Task<IActionResult> AddFavoriteActivityType([FromBody] int activityTypeId)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            await _activityService.AddFavoriteActivityTypeAsync(userId, activityTypeId);
+            return Ok(new { Message = "Added to favorites." });
+        }
+
+        [HttpPost("favorites/remove")]
+        public async Task<IActionResult> RemoveFavoriteActivityType([FromBody] int activityTypeId)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            await _activityService.RemoveFavoriteActivityTypeAsync(userId, activityTypeId);
+            return Ok(new { Message = "Removed from favorites." });
+        }
+
+        [HttpGet("favorites")]
+        public async Task<IActionResult> GetFavoriteActivityTypes()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var favorites = await _activityService.GetFavoriteActivityTypesAsync(userId);
+            return Ok(favorites);
+        }
+
+        [HttpGet("favorites/{activityTypeId}/is-favorite")]
+        public async Task<IActionResult> IsFavoriteActivityType(int activityTypeId)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var isFavorite = await _activityService.IsFavoriteActivityTypeAsync(userId, activityTypeId);
+            return Ok(new { IsFavorite = isFavorite });
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

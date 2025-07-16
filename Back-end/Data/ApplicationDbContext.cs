@@ -24,6 +24,7 @@
         public DbSet<ActivityLevel> ActivityLevels { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserNutrientTarget> UserNutrientTargets { get; set; }
+        public DbSet<UserFavoriteActivityType> UserFavoriteActivityTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -74,6 +75,19 @@
                 .HasMany(u => u.UserNutrientTargets)
                 .WithOne(nt => nt.User)
                 .HasForeignKey(nt => nt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserFavoriteActivityType>()
+                .HasKey(uf => new { uf.UserId, uf.ActivityTypeId });
+            builder.Entity<UserFavoriteActivityType>()
+                .HasOne(uf => uf.User)
+                .WithMany()
+                .HasForeignKey(uf => uf.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<UserFavoriteActivityType>()
+                .HasOne(uf => uf.ActivityType)
+                .WithMany()
+                .HasForeignKey(uf => uf.ActivityTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
 

@@ -19,6 +19,7 @@ import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { activityService } from "@/app/services/activityService";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 
 const PARTICLE_COUNT = 10;
 const PARTICLE_COLOR = "#e74c3c";
@@ -41,6 +42,9 @@ const ExerciseItem = ({
   caloriesPerHour: initialCaloriesPerHour,
   effortLevels = [],
   terrainTypes = [],
+  activityTypeId,
+  favoriteActivityTypeIds = [],
+  onFavoriteToggle,
 }) => {
   const [duration, setDuration] = useState(30);
   const [effort, setEffort] = useState(
@@ -59,7 +63,9 @@ const ExerciseItem = ({
   const [error, setError] = useState("");
   const [date, setDate] = useState(new Date());
   const [showIOSPicker, setShowIOSPicker] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false); // Heart state
+  const [isFavorite, setIsFavorite] = useState(
+    favoriteActivityTypeIds.includes(activityTypeId)
+  );
   const heartAnim = useRef(new Animated.Value(0)).current; // 0: not favorite, 1: favorite
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -149,6 +155,31 @@ const ExerciseItem = ({
       ]).start();
     }
   }, [isFavorite, heartAnim, scaleAnim, rotateAnim, particleAnims]);
+
+  useEffect(() => {
+    setIsFavorite(favoriteActivityTypeIds.includes(activityTypeId));
+  }, [favoriteActivityTypeIds, activityTypeId]);
+
+  const handleFavoritePress = async () => {
+    try {
+      if (isFavorite) {
+        await activityService.removeFavoriteActivityType(activityTypeId);
+        setIsFavorite(false);
+        onFavoriteToggle && onFavoriteToggle(activityTypeId, false);
+      } else {
+        await activityService.addFavoriteActivityType(activityTypeId);
+        setIsFavorite(true);
+        onFavoriteToggle && onFavoriteToggle(activityTypeId, true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to update favorite"
+      );
+    }
+  };
 
   // Rotation interpolation
   const rotate = rotateAnim.interpolate({
@@ -261,7 +292,7 @@ const ExerciseItem = ({
       {/* Heart button in upper right corner */}
       <TouchableOpacity
         style={styles.heartButtonAbsolute}
-        onPress={() => setIsFavorite((prev) => !prev)}
+        onPress={handleFavoritePress}
         activeOpacity={0.7}
       >
         {/* Particle explosion */}
@@ -631,6 +662,8 @@ const TrackExerciseView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [exerciseItems, setExerciseItems] = useState([]);
+  const [activityTypes, setActivityTypes] = useState([]);
+  const [favoriteActivityTypeIds, setFavoriteActivityTypeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -639,8 +672,21 @@ const TrackExerciseView = () => {
       setLoading(true);
       setError("");
       try {
-        const data = await activityService.getExerciseMetaData();
-        setExerciseItems(data);
+        const [metaData, types, favorites] = await Promise.all([
+          activityService.getExerciseMetaData(),
+          activityService.getActivityTypes(),
+          activityService.getFavoriteActivityTypes(),
+        ]);
+        setActivityTypes(types);
+        setFavoriteActivityTypeIds(favorites.map((f) => f.id));
+        // Map metaData to include activityTypeId
+        const mapped = metaData.map((item) => {
+          const found = types.find(
+            (t) => t.name === item.subcategory && t.category === item.category
+          );
+          return { ...item, activityTypeId: found ? found.id : null };
+        });
+        setExerciseItems(mapped);
       } catch (err) {
         setError("Failed to load exercise data");
       } finally {
@@ -649,6 +695,24 @@ const TrackExerciseView = () => {
     };
     fetchData();
   }, []);
+
+  const handleFavoriteToggle = (activityTypeId, isNowFavorite) => {
+    setFavoriteActivityTypeIds((prev) => {
+      if (isNowFavorite) return [...prev, activityTypeId];
+      return prev.filter((id) => id !== activityTypeId);
+    });
+  };
+
+  // Filter for favorites tab
+  const filteredItems = exerciseItems.filter((item) => {
+    if (activeTab === "favorites") {
+      return favoriteActivityTypeIds.includes(item.activityTypeId);
+    }
+    return (
+      item.subcategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
     <>
@@ -765,19 +829,15 @@ const TrackExerciseView = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.exercisesListContent}
           >
-            {exerciseItems
-              .filter(
-                (item) =>
-                  item.subcategory
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                  item.category
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase())
-              )
-              .map((item, index) => (
-                <ExerciseItem key={index} {...item} />
-              ))}
+            {filteredItems.map((item, index) => (
+              <ExerciseItem
+                key={item.activityTypeId || index}
+                {...item}
+                activityTypeId={item.activityTypeId}
+                favoriteActivityTypeIds={favoriteActivityTypeIds}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            ))}
           </ScrollView>
         )}
       </SafeAreaView>

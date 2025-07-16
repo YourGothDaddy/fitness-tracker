@@ -384,5 +384,49 @@ namespace Fitness_Tracker.Services.Activity
                 .FirstOrDefaultAsync(at => at.Name == subcategory && at.ActivityCategory.Name == category);
             return activityType?.Id;
         }
+
+        public async Task AddFavoriteActivityTypeAsync(string userId, int activityTypeId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+            var exists = await _databaseContext.UserFavoriteActivityTypes.AnyAsync(x => x.UserId == userId && x.ActivityTypeId == activityTypeId);
+            if (!exists)
+            {
+                _databaseContext.UserFavoriteActivityTypes.Add(new Data.Models.UserFavoriteActivityType
+                {
+                    UserId = userId,
+                    ActivityTypeId = activityTypeId
+                });
+                await _databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveFavoriteActivityTypeAsync(string userId, int activityTypeId)
+        {
+            var entity = await _databaseContext.UserFavoriteActivityTypes.FirstOrDefaultAsync(x => x.UserId == userId && x.ActivityTypeId == activityTypeId);
+            if (entity != null)
+            {
+                _databaseContext.UserFavoriteActivityTypes.Remove(entity);
+                await _databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task<bool> IsFavoriteActivityTypeAsync(string userId, int activityTypeId)
+        {
+            return await _databaseContext.UserFavoriteActivityTypes.AnyAsync(x => x.UserId == userId && x.ActivityTypeId == activityTypeId);
+        }
+
+        public async Task<List<Models.Activity.ActivityTypeModel>> GetFavoriteActivityTypesAsync(string userId)
+        {
+            return await _databaseContext.UserFavoriteActivityTypes
+                .Where(x => x.UserId == userId)
+                .Select(x => new Models.Activity.ActivityTypeModel
+                {
+                    Id = x.ActivityType.Id,
+                    Name = x.ActivityType.Name,
+                    Category = x.ActivityType.ActivityCategory.Name
+                })
+                .ToListAsync();
+        }
     }
 } 
