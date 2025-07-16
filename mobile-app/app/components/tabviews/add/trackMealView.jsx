@@ -20,8 +20,207 @@ import { mealService } from "@/app/services/mealService";
 import { getAllPublicConsumableItems } from "@/app/services/foodService";
 
 const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
+  // Heart animation state and logic (copied from trackExerciseView.jsx, local only)
+  const [isFavorite, setIsFavorite] = React.useState(false);
+  const heartAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const rotateAnim = React.useRef(new Animated.Value(0)).current;
+  const PARTICLE_COUNT = 10;
+  const PARTICLE_COLOR = "#e74c3c";
+  const [showParticles, setShowParticles] = React.useState(false);
+  const [particleConfigs, setParticleConfigs] = React.useState(() =>
+    Array.from({ length: PARTICLE_COUNT }, () => {
+      const angle = Math.random() * 2 * Math.PI;
+      const distance = 14 + Math.random() * 16;
+      const rotation = Math.random() * 60 - 30;
+      return { angle, distance, rotation };
+    })
+  );
+  const particleAnims = React.useRef(
+    Array.from({ length: PARTICLE_COUNT }, () => ({
+      scale: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+    }))
+  ).current;
+
+  React.useEffect(() => {
+    if (isFavorite) {
+      Animated.parallel([
+        Animated.timing(heartAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.25,
+            duration: 120,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 130,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 120,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 130,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+      // Particle explosion
+      setParticleConfigs(
+        Array.from({ length: PARTICLE_COUNT }, () => {
+          const angle = Math.random() * 2 * Math.PI;
+          const distance = 14 + Math.random() * 16;
+          const rotation = Math.random() * 60 - 30;
+          return { angle, distance, rotation };
+        })
+      );
+      setShowParticles(true);
+      particleAnims.forEach((anim, i) => {
+        anim.scale.setValue(0);
+        anim.opacity.setValue(1);
+        Animated.parallel([
+          Animated.timing(anim.scale, {
+            toValue: 1.5 + Math.random() * 0.7,
+            duration: 500,
+            delay: i * 18,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim.opacity, {
+            toValue: 0,
+            duration: 500,
+            delay: i * 18,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          if (i === PARTICLE_COUNT - 1) setShowParticles(false);
+        });
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(heartAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isFavorite, heartAnim, scaleAnim, rotateAnim, particleAnims]);
+
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "-18deg"],
+  });
+
   return (
     <Animated.View style={styles.foodItemContainer}>
+      {/* Heart button in upper right corner */}
+      <TouchableOpacity
+        style={styles.heartButtonAbsolute}
+        onPress={() => setIsFavorite((prev) => !prev)}
+        activeOpacity={0.7}
+      >
+        {/* Particle explosion */}
+        {showParticles && (
+          <>
+            {particleAnims.map((anim, i) => {
+              const { angle, distance, rotation } = particleConfigs[i];
+              const translateX = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.cos(angle) * distance],
+              });
+              const translateY = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.sin(angle) * distance],
+              });
+              const rotateParticle = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0deg", `${rotation}deg`],
+              });
+              return (
+                <Animated.View
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: 16,
+                    width: 12,
+                    height: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: anim.opacity,
+                    transform: [
+                      { translateX },
+                      { translateY },
+                      { scale: anim.scale },
+                      { rotate: rotateParticle },
+                    ],
+                  }}
+                  pointerEvents="none"
+                >
+                  <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
+                </Animated.View>
+              );
+            })}
+          </>
+        )}
+        {/* Outline heart (gray), fades out as red heart fades in */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: heartAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
+          }}
+          pointerEvents="none"
+        >
+          <Ionicons name="heart-outline" size={26} color="#bbb" />
+        </Animated.View>
+        {/* Filled heart (red), opacity, scale, and rotation animated, always above outline */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: heartAnim,
+            transform: [{ scale: scaleAnim }, { rotate }],
+          }}
+          pointerEvents="none"
+        >
+          <Ionicons name="heart" size={26} color="#e74c3c" />
+        </Animated.View>
+      </TouchableOpacity>
       <View style={styles.foodItemLeft}>
         <Text style={styles.foodName}>{name}</Text>
         <View style={styles.macrosContainer}>
@@ -395,6 +594,25 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
     fontSize: 16,
+  },
+  heartButtonAbsolute: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 10,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    width: 32,
+    height: 32,
   },
 });
 
