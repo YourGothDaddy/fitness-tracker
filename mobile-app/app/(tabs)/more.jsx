@@ -17,6 +17,7 @@ import axios from "axios";
 import { API_URL } from "../../constants/Config";
 import { authService } from "@/app/services/authService";
 import userService from "@/app/services/userService";
+import * as ImagePicker from "expo-image-picker";
 
 const MenuCard = ({ icon, title, description, href, onPress }) => (
   <TouchableOpacity
@@ -45,6 +46,7 @@ const More = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [avatarUri, setAvatarUri] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -89,6 +91,34 @@ const More = () => {
     }
   };
 
+  // Handler to pick image from gallery
+  const handlePickAvatar = async () => {
+    try {
+      // Ask for permission
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "We need access to your gallery to set a profile picture."
+        );
+        return;
+      }
+      // Open image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } catch (err) {
+      Alert.alert("Error", "Could not open image picker.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeAreaViewContainer}>
       <View style={styles.header}>
@@ -99,15 +129,21 @@ const More = () => {
 
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.profilePreview}>
-          <View style={styles.avatarContainer}>
-            {loading ? (
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handlePickAvatar}
+            activeOpacity={0.7}
+          >
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : loading ? (
               <Text style={styles.avatarText}>--</Text>
             ) : error ? (
               <Text style={styles.avatarText}>?</Text>
             ) : (
               <Text style={styles.avatarText}>{profile?.initials || "--"}</Text>
             )}
-          </View>
+          </TouchableOpacity>
           <Text style={styles.welcomeText}>Welcome back!</Text>
           {loading ? (
             <Text style={styles.nameText}>Loading...</Text>
@@ -200,6 +236,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    overflow: "hidden", // Ensure image is clipped to circle
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    resizeMode: "cover",
   },
   avatarText: {
     fontSize: 32,
