@@ -49,5 +49,44 @@
             await _databaseContext.ConsumableItems.AddAsync(newConsumableItem);
             await _databaseContext.SaveChangesAsync();
         }
+
+        public async Task AddFavoriteConsumableItemAsync(string userId, int consumableItemId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+            var exists = await _databaseContext.UserFavoriteConsumableItems.AnyAsync(x => x.UserId == userId && x.ConsumableItemId == consumableItemId);
+            if (!exists)
+            {
+                _databaseContext.UserFavoriteConsumableItems.Add(new Data.Models.UserFavoriteConsumableItem
+                {
+                    UserId = userId,
+                    ConsumableItemId = consumableItemId
+                });
+                await _databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveFavoriteConsumableItemAsync(string userId, int consumableItemId)
+        {
+            var entity = await _databaseContext.UserFavoriteConsumableItems.FirstOrDefaultAsync(x => x.UserId == userId && x.ConsumableItemId == consumableItemId);
+            if (entity != null)
+            {
+                _databaseContext.UserFavoriteConsumableItems.Remove(entity);
+                await _databaseContext.SaveChangesAsync();
+            }
+        }
+
+        public async Task<bool> IsFavoriteConsumableItemAsync(string userId, int consumableItemId)
+        {
+            return await _databaseContext.UserFavoriteConsumableItems.AnyAsync(x => x.UserId == userId && x.ConsumableItemId == consumableItemId);
+        }
+
+        public async Task<List<Data.Models.Consumables.ConsumableItem>> GetFavoriteConsumableItemsAsync(string userId)
+        {
+            return await _databaseContext.UserFavoriteConsumableItems
+                .Where(x => x.UserId == userId)
+                .Select(x => x.ConsumableItem)
+                .ToListAsync();
+        }
     }
 }

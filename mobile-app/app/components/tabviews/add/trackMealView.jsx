@@ -17,11 +17,29 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
-import { getAllPublicConsumableItems } from "@/app/services/foodService";
+import {
+  getAllPublicConsumableItems,
+  addFavoriteConsumable,
+  removeFavoriteConsumable,
+  isFavoriteConsumable,
+  getFavoriteConsumables,
+} from "@/app/services/foodService";
 
-const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
+const FoodItem = ({
+  name,
+  calories,
+  protein,
+  carbs,
+  fat,
+  onAdd,
+  consumableItemId,
+  favoriteConsumableIds = [],
+  onFavoriteToggle,
+}) => {
   // Heart animation state and logic (copied from trackExerciseView.jsx, local only)
-  const [isFavorite, setIsFavorite] = React.useState(false);
+  const [isFavorite, setIsFavorite] = React.useState(
+    favoriteConsumableIds.includes(consumableItemId)
+  );
   const heartAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const rotateAnim = React.useRef(new Animated.Value(0)).current;
@@ -42,6 +60,10 @@ const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
       opacity: new Animated.Value(1),
     }))
   ).current;
+
+  React.useEffect(() => {
+    setIsFavorite(favoriteConsumableIds.includes(consumableItemId));
+  }, [favoriteConsumableIds, consumableItemId]);
 
   React.useEffect(() => {
     if (isFavorite) {
@@ -127,6 +149,27 @@ const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
     }
   }, [isFavorite, heartAnim, scaleAnim, rotateAnim, particleAnims]);
 
+  const handleFavoritePress = async () => {
+    try {
+      if (isFavorite) {
+        await removeFavoriteConsumable(consumableItemId);
+        setIsFavorite(false);
+        onFavoriteToggle && onFavoriteToggle(consumableItemId, false);
+      } else {
+        await addFavoriteConsumable(consumableItemId);
+        setIsFavorite(true);
+        onFavoriteToggle && onFavoriteToggle(consumableItemId, true);
+      }
+    } catch (err) {
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to update favorite"
+      );
+    }
+  };
+
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "-18deg"],
@@ -137,7 +180,7 @@ const FoodItem = ({ name, calories, protein, carbs, fat, onAdd }) => {
       {/* Heart button in upper right corner */}
       <TouchableOpacity
         style={styles.heartButtonAbsolute}
-        onPress={() => setIsFavorite((prev) => !prev)}
+        onPress={handleFavoritePress}
         activeOpacity={0.7}
       >
         {/* Particle explosion */}
@@ -243,14 +286,19 @@ const TrackMealView = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [foods, setFoods] = useState([]);
   const [filteredFoods, setFilteredFoods] = useState([]);
+  const [favoriteConsumableIds, setFavoriteConsumableIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchFoods = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getAllPublicConsumableItems();
+      const [data, favorites] = await Promise.all([
+        getAllPublicConsumableItems(),
+        getFavoriteConsumables(),
+      ]);
       setFoods(data);
+      setFavoriteConsumableIds(favorites.map((f) => f.id));
       setFilteredFoods(data);
       setError(null);
     } catch (err) {
@@ -275,6 +323,21 @@ const TrackMealView = () => {
       setFilteredFoods(filtered);
     }
   }, [searchQuery, foods]);
+
+  const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
+    setFavoriteConsumableIds((prev) => {
+      if (isNowFavorite) return [...prev, consumableItemId];
+      return prev.filter((id) => id !== consumableItemId);
+    });
+  };
+
+  // Filter for favorites tab
+  const displayedFoods = filteredFoods.filter((food) => {
+    if (activeTab === "favorites") {
+      return favoriteConsumableIds.includes(food.id);
+    }
+    return true;
+  });
 
   const handleAddMeal = async (food) => {
     try {
@@ -408,12 +471,12 @@ const TrackMealView = () => {
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : filteredFoods.length === 0 ? (
+          ) : displayedFoods.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No foods found</Text>
             </View>
           ) : (
-            filteredFoods.map((food) => (
+            displayedFoods.map((food) => (
               <FoodItem
                 key={food.id}
                 name={food.name}
@@ -422,6 +485,9 @@ const TrackMealView = () => {
                 carbs={food.carbohydratePer100g}
                 fat={food.fatPer100g}
                 onAdd={() => handleAddMeal(food)}
+                consumableItemId={food.id}
+                favoriteConsumableIds={favoriteConsumableIds}
+                onFavoriteToggle={handleFavoriteToggle}
               />
             ))
           )}

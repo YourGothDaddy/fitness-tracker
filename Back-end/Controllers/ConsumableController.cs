@@ -52,5 +52,45 @@
             var items = await _consumableService.GetAllPublicConsumableItemsAsync();
             return Ok(items);
         }
+
+        [HttpPost("favorites/add")]
+        public async Task<IActionResult> AddFavoriteConsumableItem([FromBody] int consumableItemId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            await _consumableService.AddFavoriteConsumableItemAsync(userId, consumableItemId);
+            return Ok(new { Message = "Added to favorites." });
+        }
+
+        [HttpPost("favorites/remove")]
+        public async Task<IActionResult> RemoveFavoriteConsumableItem([FromBody] int consumableItemId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            await _consumableService.RemoveFavoriteConsumableItemAsync(userId, consumableItemId);
+            return Ok(new { Message = "Removed from favorites." });
+        }
+
+        [HttpGet("favorites")]
+        public async Task<IActionResult> GetFavoriteConsumableItems()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var favorites = await _consumableService.GetFavoriteConsumableItemsAsync(userId);
+            return Ok(favorites);
+        }
+
+        [HttpGet("favorites/{consumableItemId}/is-favorite")]
+        public async Task<IActionResult> IsFavoriteConsumableItem(int consumableItemId)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var isFavorite = await _consumableService.IsFavoriteConsumableItemAsync(userId, consumableItemId);
+            return Ok(new { IsFavorite = isFavorite });
+        }
     }
 }

@@ -26,3 +26,53 @@ export async function getAllPublicConsumableItems() {
     throw new Error("Failed to fetch foods.");
   }
 }
+
+export async function addFavoriteConsumable(consumableItemId) {
+  try {
+    const response = await axiosInstance.post(
+      `/api/consumable/favorites/add`,
+      consumableItemId,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function removeFavoriteConsumable(consumableItemId) {
+  try {
+    const response = await axiosInstance.post(
+      `/api/consumable/favorites/remove`,
+      consumableItemId,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function isFavoriteConsumable(consumableItemId) {
+  try {
+    const response = await axiosInstance.get(
+      `/api/consumable/favorites/${consumableItemId}/is-favorite`
+    );
+    return response.data.isFavorite;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getFavoriteConsumables() {
+  try {
+    const response = await axiosInstance.get(`/api/consumable/favorites`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

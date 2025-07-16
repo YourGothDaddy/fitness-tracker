@@ -25,6 +25,7 @@
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserNutrientTarget> UserNutrientTargets { get; set; }
         public DbSet<UserFavoriteActivityType> UserFavoriteActivityTypes { get; set; }
+        public DbSet<UserFavoriteConsumableItem> UserFavoriteConsumableItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -88,6 +89,19 @@
                 .HasOne(uf => uf.ActivityType)
                 .WithMany()
                 .HasForeignKey(uf => uf.ActivityTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<UserFavoriteConsumableItem>()
+                .HasKey(uf => new { uf.UserId, uf.ConsumableItemId });
+            builder.Entity<UserFavoriteConsumableItem>()
+                .HasOne(uf => uf.User)
+                .WithMany()
+                .HasForeignKey(uf => uf.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Entity<UserFavoriteConsumableItem>()
+                .HasOne(uf => uf.ConsumableItem)
+                .WithMany()
+                .HasForeignKey(uf => uf.ConsumableItemId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
 
