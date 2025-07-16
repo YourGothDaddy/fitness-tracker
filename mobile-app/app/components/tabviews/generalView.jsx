@@ -20,6 +20,7 @@ import { weightService } from "../../services/weightService";
 import { activityService } from "../../services/activityService";
 import { useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useFocusEffect } from "@react-navigation/native";
 
 // Helper function to format numbers with commas
 const formatNumber = (num) => {
@@ -227,6 +228,15 @@ const GeneralView = () => {
     fetchActivityOverview(activityDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityDate]);
+
+  // Refresh all data when the screen regains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchCalorieOverview(selectedTimeframe);
+      fetchWeightProgress(selectedWeightTimeframe);
+      fetchActivityOverview(activityDate);
+    }, [selectedTimeframe, selectedWeightTimeframe, activityDate])
+  );
 
   const totalHorizontalPadding = 48;
   const cardPadding = 40;
