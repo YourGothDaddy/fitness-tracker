@@ -267,10 +267,18 @@ const FoodItem = ({
       <View style={styles.foodItemLeft}>
         <Text style={styles.foodName}>{name}</Text>
         <View style={styles.macrosContainer}>
-          <Text style={styles.macroText}>🔥 {calories}kcal</Text>
-          <Text style={styles.macroText}>🥩 {protein}g</Text>
-          <Text style={styles.macroText}>🌾 {carbs}g</Text>
-          <Text style={styles.macroText}>🥑 {fat}g</Text>
+          <Text style={[styles.macroText, styles.caloriesText]}>
+            <Text style={styles.macroLabel}>Calories:</Text> {calories}kcal
+          </Text>
+          <Text style={[styles.macroText, styles.proteinText]}>
+            <Text style={styles.macroLabel}>Protein:</Text> {protein}g
+          </Text>
+          <Text style={[styles.macroText, styles.carbsText]}>
+            <Text style={styles.macroLabel}>Carbs:</Text> {carbs}g
+          </Text>
+          <Text style={[styles.macroText, styles.fatText]}>
+            <Text style={styles.macroLabel}>Fat:</Text> {fat}g
+          </Text>
         </View>
       </View>
       <TouchableOpacity style={styles.addFoodButton} onPress={onAdd}>
@@ -679,6 +687,33 @@ const styles = StyleSheet.create({
     elevation: 2,
     width: 32,
     height: 32,
+  },
+  macroLabel: {
+    fontWeight: "bold",
+  },
+  caloriesText: {
+    backgroundColor: "#FFF4E0", // soft orange/yellow
+    color: "#E67E22", // readable orange
+    borderColor: "#FFE0B2",
+    borderWidth: 1,
+  },
+  proteinText: {
+    backgroundColor: "#E8F5E9", // soft green
+    color: "#388E3C", // readable green
+    borderColor: "#C8E6C9",
+    borderWidth: 1,
+  },
+  carbsText: {
+    backgroundColor: "#E3F2FD", // soft blue
+    color: "#1976D2", // readable blue
+    borderColor: "#BBDEFB",
+    borderWidth: 1,
+  },
+  fatText: {
+    backgroundColor: "#FCE4EC", // soft pink
+    color: "#D81B60", // readable pink
+    borderColor: "#F8BBD0",
+    borderWidth: 1,
   },
 });
 
