@@ -379,20 +379,21 @@ const ExerciseItem = ({
       <View style={styles.exerciseItemLeft}>
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
-          <Text style={styles.calorieText}>
-            ⏱️ {loading ? "..." : calories.caloriesPerMinute?.toFixed(1)}{" "}
-            kcal/min
+          <Text style={[styles.calorieText, styles.calMinText]}>
+            <Text style={styles.calorieLabel}>⚡ kcal/min:</Text>{" "}
+            {loading ? "..." : calories.caloriesPerMinute?.toFixed(1)}
           </Text>
-          <Text style={styles.calorieText}>
-            🔥 {loading ? "..." : calories.caloriesPerHalfHour?.toFixed(1)}{" "}
-            kcal/30min
+          <Text style={[styles.calorieText, styles.cal30MinText]}>
+            <Text style={styles.calorieLabel}>⏱️ kcal/30min:</Text>{" "}
+            {loading ? "..." : calories.caloriesPerHalfHour?.toFixed(1)}
           </Text>
-          <Text style={styles.calorieText}>
-            ⚡ {loading ? "..." : calories.caloriesPerHour?.toFixed(1)}{" "}
-            kcal/hour
+          <Text style={[styles.calorieText, styles.calHourText]}>
+            <Text style={styles.calorieLabel}>⏳ kcal/hour:</Text>{" "}
+            {loading ? "..." : calories.caloriesPerHour?.toFixed(1)}
           </Text>
-          <Text style={styles.calorieText}>
-            Total: {loading ? "..." : calories.totalCalories?.toFixed(1)} kcal
+          <Text style={[styles.calorieText, styles.calTotalText]}>
+            <Text style={styles.calorieLabel}>Total:</Text>{" "}
+            {loading ? "..." : calories.totalCalories?.toFixed(1)} kcal
           </Text>
         </View>
         {error ? (
@@ -1025,6 +1026,25 @@ const styles = StyleSheet.create({
     elevation: 2,
     width: 32,
     height: 32,
+  },
+  calorieLabel: {
+    fontWeight: "bold",
+  },
+  calMinText: {
+    backgroundColor: "#E3F2FD", // pastel blue
+    color: "#1976D2",
+  },
+  cal30MinText: {
+    backgroundColor: "#E8F5E9", // pastel green
+    color: "#388E3C",
+  },
+  calHourText: {
+    backgroundColor: "#FFF4E0", // pastel orange
+    color: "#E67E22",
+  },
+  calTotalText: {
+    backgroundColor: "#F3E5F5", // pastel purple
+    color: "#8E24AA",
   },
 });
 
