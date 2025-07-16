@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,19 @@ import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { activityService } from "@/app/services/activityService";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+
+const PARTICLE_COUNT = 10;
+const PARTICLE_COLOR = "#e74c3c";
+
+// Generate random particle configs (angle, distance, rotation)
+function getRandomParticles() {
+  return Array.from({ length: PARTICLE_COUNT }, () => {
+    const angle = Math.random() * 2 * Math.PI; // 0 to 2pi
+    const distance = 14 + Math.random() * 16; // 14 to 30 px
+    const rotation = Math.random() * 60 - 30; // -30deg to +30deg
+    return { angle, distance, rotation };
+  });
+}
 
 const ExerciseItem = ({
   category,
@@ -46,6 +59,108 @@ const ExerciseItem = ({
   const [error, setError] = useState("");
   const [date, setDate] = useState(new Date());
   const [showIOSPicker, setShowIOSPicker] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false); // Heart state
+  const heartAnim = useRef(new Animated.Value(0)).current; // 0: not favorite, 1: favorite
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [showParticles, setShowParticles] = useState(false);
+  const [particleConfigs, setParticleConfigs] = useState(getRandomParticles());
+  const particleAnims = useRef(
+    Array.from({ length: PARTICLE_COUNT }, () => ({
+      scale: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+    }))
+  ).current;
+
+  // Animate on favorite toggle
+  useEffect(() => {
+    if (isFavorite) {
+      Animated.parallel([
+        Animated.timing(heartAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.25,
+            duration: 120,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 130,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 120,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 130,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+      // Particle explosion
+      setParticleConfigs(getRandomParticles());
+      setShowParticles(true);
+      particleAnims.forEach((anim, i) => {
+        anim.scale.setValue(0);
+        anim.opacity.setValue(1);
+        Animated.parallel([
+          Animated.timing(anim.scale, {
+            toValue: 1.5 + Math.random() * 0.7, // randomize scale out
+            duration: 500,
+            delay: i * 18,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim.opacity, {
+            toValue: 0,
+            duration: 500,
+            delay: i * 18,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          if (i === PARTICLE_COUNT - 1) setShowParticles(false);
+        });
+      });
+    } else {
+      Animated.parallel([
+        Animated.timing(heartAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotateAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isFavorite, heartAnim, scaleAnim, rotateAnim, particleAnims]);
+
+  // Rotation interpolation
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "-18deg"], // wiggle left on pop
+  });
+
+  // Particle positions (angles)
+  const particleAngles = Array.from(
+    { length: PARTICLE_COUNT },
+    (_, i) => i * (360 / PARTICLE_COUNT) * (Math.PI / 180)
+  );
 
   // Helper to recalculate calories
   const recalculateCalories = async (newEffort, newTerrain, newDuration) => {
@@ -143,6 +258,93 @@ const ExerciseItem = ({
 
   return (
     <Animated.View style={styles.exerciseItemContainer}>
+      {/* Heart button in upper right corner */}
+      <TouchableOpacity
+        style={styles.heartButtonAbsolute}
+        onPress={() => setIsFavorite((prev) => !prev)}
+        activeOpacity={0.7}
+      >
+        {/* Particle explosion */}
+        {showParticles && (
+          <>
+            {particleAnims.map((anim, i) => {
+              const { angle, distance, rotation } = particleConfigs[i];
+              const translateX = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.cos(angle) * distance],
+              });
+              const translateY = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, Math.sin(angle) * distance],
+              });
+              const rotateParticle = anim.scale.interpolate({
+                inputRange: [0, 1],
+                outputRange: ["0deg", `${rotation}deg`],
+              });
+              return (
+                <Animated.View
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: 16,
+                    width: 12,
+                    height: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: anim.opacity,
+                    transform: [
+                      { translateX },
+                      { translateY },
+                      { scale: anim.scale },
+                      { rotate: rotateParticle },
+                    ],
+                  }}
+                  pointerEvents="none"
+                >
+                  <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
+                </Animated.View>
+              );
+            })}
+          </>
+        )}
+        {/* Outline heart (gray), fades out as red heart fades in */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: heartAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 0],
+            }),
+          }}
+          pointerEvents="none"
+        >
+          <Ionicons name="heart-outline" size={26} color="#bbb" />
+        </Animated.View>
+        {/* Filled heart (red), opacity, scale, and rotation animated, always above outline */}
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: heartAnim,
+            transform: [{ scale: scaleAnim }, { rotate }],
+          }}
+          pointerEvents="none"
+        >
+          <Ionicons name="heart" size={26} color="#e74c3c" />
+        </Animated.View>
+      </TouchableOpacity>
       <View style={styles.exerciseItemLeft}>
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
@@ -339,13 +541,20 @@ const ExerciseItem = ({
           )}
         </View>
       </View>
-      <TouchableOpacity
-        style={styles.addExerciseButton}
-        onPress={handleAddPress}
-        disabled={loading}
-      >
-        <Ionicons name="add-circle" size={28} color={Colors.darkGreen.color} />
-      </TouchableOpacity>
+      {/* Add button remains on the right */}
+      <View style={styles.rightButtonsContainer}>
+        <TouchableOpacity
+          style={styles.addExerciseButton}
+          onPress={handleAddPress}
+          disabled={loading}
+        >
+          <Ionicons
+            name="add-circle"
+            size={28}
+            color={Colors.darkGreen.color}
+          />
+        </TouchableOpacity>
+      </View>
       {/* iOS Date Picker Modal */}
       {Platform.OS === "ios" && showIOSPicker && (
         <Modal
@@ -721,6 +930,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: Colors.darkGreen.color,
+  },
+  heartButton: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 2,
+  },
+  rightButtonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: 8,
+  },
+  heartButtonAbsolute: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 10,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#eee",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    width: 32,
+    height: 32,
   },
 });
 
