@@ -163,7 +163,8 @@
                 user.Email,
                 user.PhoneNumber,
                 user.NotificationsEnabled,
-                initials = initials
+                initials = initials,
+                AvatarUrl = string.IsNullOrEmpty(user.AvatarUrl) ? null : (user.AvatarUrl.StartsWith("http") ? user.AvatarUrl : $"{Request.Scheme}://{Request.Host}{user.AvatarUrl}")
             });
         }
 
@@ -329,6 +330,51 @@
             {
                 return StatusCode(500, new { Message = ex.Message });
             }
+        }
+
+        [HttpPost("avatar")]
+        public async Task<IActionResult> UploadAvatar([FromForm] IFormFile avatar)
+        {
+            if (avatar == null || avatar.Length == 0)
+            {
+                return BadRequest(new { Message = "No file uploaded." });
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            // Only allow certain file types
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(avatar.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return BadRequest(new { Message = "Invalid file type. Only JPG, PNG, and GIF are allowed." });
+            }
+
+            // Save file to wwwroot/avatars
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+            var fileName = $"{userId}_{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await avatar.CopyToAsync(stream);
+            }
+
+            // Build the URL to return
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var avatarUrl = $"{baseUrl}/avatars/{fileName}";
+
+            // Update user
+            await _userService.UpdateUserAvatarAsync(userId, $"/avatars/{fileName}");
+
+            return Ok(new { AvatarUrl = avatarUrl });
         }
 
         // PRIVATE METHODS

@@ -55,8 +55,6 @@ const More = () => {
       try {
         const data = await userService.getProfile();
         setProfile(data);
-        console.log("[More.jsx] Profile fetched:", data);
-        console.log("[More.jsx] Initials:", data?.initials);
       } catch (err) {
         setError("Failed to load profile");
       } finally {
@@ -81,7 +79,6 @@ const More = () => {
       await authService.logout();
       router.replace("/");
     } catch (error) {
-      console.error("Logout error:", error);
       Alert.alert(
         "Logout Failed",
         "There was an issue logging out. Please try again."
@@ -112,7 +109,18 @@ const More = () => {
         quality: 0.7,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setAvatarUri(result.assets[0].uri);
+        const localUri = result.assets[0].uri;
+        // Upload to backend
+        try {
+          const uploadedUrl = await userService.uploadAvatar(localUri);
+          setAvatarUri(uploadedUrl);
+          Alert.alert("Success", "Profile image updated!");
+        } catch (uploadErr) {
+          Alert.alert(
+            "Upload Failed",
+            uploadErr.message || "Could not upload image."
+          );
+        }
       }
     } catch (err) {
       Alert.alert("Error", "Could not open image picker.");
@@ -136,6 +144,11 @@ const More = () => {
           >
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : profile?.avatarUrl ? (
+              <Image
+                source={{ uri: profile.avatarUrl }}
+                style={styles.avatarImage}
+              />
             ) : loading ? (
               <Text style={styles.avatarText}>--</Text>
             ) : error ? (

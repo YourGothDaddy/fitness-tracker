@@ -7,14 +7,12 @@ class MealService {
       const response = await axiosInstance.get(`${API_URL}/api/meal/all-meals`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching meals:", error);
       throw error;
     }
   }
 
   async addMeal(mealData) {
     try {
-      // Format date in local time
       const formatDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -35,7 +33,6 @@ class MealService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error adding meal:", error);
       throw error;
     }
   }

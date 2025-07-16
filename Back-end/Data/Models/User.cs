@@ -39,5 +39,7 @@
         public int FatKcal { get; set; } = 0; // For Fixed mode
 
         public virtual ICollection<UserNutrientTarget> UserNutrientTargets { get; set; } = new List<UserNutrientTarget>();
+
+        public string? AvatarUrl { get; set; } // Path to profile image
     }
 }

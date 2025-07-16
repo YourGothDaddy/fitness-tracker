@@ -49,11 +49,10 @@ class WeightService {
     }
   }
 
-  // Helper function to get week dates (similar to generalView.jsx)
   getWeekDates() {
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 6); // Last 7 days including today
+    startDate.setDate(today.getDate() - 6);
     return { startDate, endDate: today };
   }
 }

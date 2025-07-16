@@ -24,12 +24,11 @@ import { useFocusEffect } from "@react-navigation/native";
 const PARTICLE_COUNT = 10;
 const PARTICLE_COLOR = "#e74c3c";
 
-// Generate random particle configs (angle, distance, rotation)
 function getRandomParticles() {
   return Array.from({ length: PARTICLE_COUNT }, () => {
-    const angle = Math.random() * 2 * Math.PI; // 0 to 2pi
-    const distance = 14 + Math.random() * 16; // 14 to 30 px
-    const rotation = Math.random() * 60 - 30; // -30deg to +30deg
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = 14 + Math.random() * 16;
+    const rotation = Math.random() * 60 - 30;
     return { angle, distance, rotation };
   });
 }
@@ -66,7 +65,7 @@ const ExerciseItem = ({
   const [isFavorite, setIsFavorite] = useState(
     favoriteActivityTypeIds.includes(activityTypeId)
   );
-  const heartAnim = useRef(new Animated.Value(0)).current; // 0: not favorite, 1: favorite
+  const heartAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [showParticles, setShowParticles] = useState(false);
@@ -78,7 +77,6 @@ const ExerciseItem = ({
     }))
   ).current;
 
-  // Animate on favorite toggle
   useEffect(() => {
     if (isFavorite) {
       Animated.parallel([
@@ -112,7 +110,6 @@ const ExerciseItem = ({
           }),
         ]),
       ]).start();
-      // Particle explosion
       setParticleConfigs(getRandomParticles());
       setShowParticles(true);
       particleAnims.forEach((anim, i) => {
@@ -120,7 +117,7 @@ const ExerciseItem = ({
         anim.opacity.setValue(1);
         Animated.parallel([
           Animated.timing(anim.scale, {
-            toValue: 1.5 + Math.random() * 0.7, // randomize scale out
+            toValue: 1.5 + Math.random() * 0.7,
             duration: 500,
             delay: i * 18,
             useNativeDriver: true,
@@ -181,19 +178,16 @@ const ExerciseItem = ({
     }
   };
 
-  // Rotation interpolation
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["0deg", "-18deg"], // wiggle left on pop
+    outputRange: ["0deg", "-18deg"],
   });
 
-  // Particle positions (angles)
   const particleAngles = Array.from(
     { length: PARTICLE_COUNT },
     (_, i) => i * (360 / PARTICLE_COUNT) * (Math.PI / 180)
   );
 
-  // Helper to recalculate calories
   const recalculateCalories = async (newEffort, newTerrain, newDuration) => {
     setLoading(true);
     setError("");
@@ -218,7 +212,6 @@ const ExerciseItem = ({
     }
   };
 
-  // Helper to track exercise
   const trackExercise = async (selectedDate) => {
     setLoading(true);
     setError("");
@@ -234,7 +227,7 @@ const ExerciseItem = ({
         notes: "",
       });
       Alert.alert("Success", "Exercise tracked successfully!");
-      setDuration(30); // Reset duration
+      setDuration(30);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -252,7 +245,6 @@ const ExerciseItem = ({
     }
   };
 
-  // Recalculate when effort, terrain, or duration changes
   useEffect(() => {
     if (
       (effortLevels.length > 0 && effort) ||
@@ -260,10 +252,8 @@ const ExerciseItem = ({
     ) {
       recalculateCalories(effort, terrain, duration);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effort, terrain, duration]);
 
-  // Determine which buttons to show
   let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
   let showEffort = effortLevels.length > 0;
   let showTerrain = terrainTypes.length > 0;
@@ -289,13 +279,11 @@ const ExerciseItem = ({
 
   return (
     <Animated.View style={styles.exerciseItemContainer}>
-      {/* Heart button in upper right corner */}
       <TouchableOpacity
         style={styles.heartButtonAbsolute}
         onPress={handleFavoritePress}
         activeOpacity={0.7}
       >
-        {/* Particle explosion */}
         {showParticles && (
           <>
             {particleAnims.map((anim, i) => {
@@ -339,7 +327,6 @@ const ExerciseItem = ({
             })}
           </>
         )}
-        {/* Outline heart (gray), fades out as red heart fades in */}
         <Animated.View
           style={{
             position: "absolute",
@@ -358,7 +345,6 @@ const ExerciseItem = ({
         >
           <Ionicons name="heart-outline" size={26} color="#bbb" />
         </Animated.View>
-        {/* Filled heart (red), opacity, scale, and rotation animated, always above outline */}
         <Animated.View
           style={{
             position: "absolute",
@@ -399,7 +385,6 @@ const ExerciseItem = ({
         {error ? (
           <Text style={{ color: "red", fontSize: 12 }}>{error}</Text>
         ) : null}
-        {/* Additional Buttons */}
         <View
           style={{
             flexDirection: "row",
@@ -573,7 +558,6 @@ const ExerciseItem = ({
           )}
         </View>
       </View>
-      {/* Add button remains on the right */}
       <View style={styles.rightButtonsContainer}>
         <TouchableOpacity
           style={styles.addExerciseButton}
@@ -587,7 +571,6 @@ const ExerciseItem = ({
           />
         </TouchableOpacity>
       </View>
-      {/* iOS Date Picker Modal */}
       {Platform.OS === "ios" && showIOSPicker && (
         <Modal
           visible={showIOSPicker}
@@ -680,7 +663,6 @@ const TrackExerciseView = () => {
         ]);
         setActivityTypes(types);
         setFavoriteActivityTypeIds(favorites.map((f) => f.id));
-        // Map metaData to include activityTypeId
         const mapped = metaData.map((item) => {
           const found = types.find(
             (t) => t.name === item.subcategory && t.category === item.category
@@ -704,7 +686,6 @@ const TrackExerciseView = () => {
     });
   };
 
-  // Filter for favorites tab
   const filteredItems = exerciseItems.filter((item) => {
     if (activeTab === "favorites") {
       return favoriteActivityTypeIds.includes(item.activityTypeId);
@@ -741,7 +722,6 @@ const TrackExerciseView = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Search Section */}
         <View style={styles.searchSection}>
           <View style={styles.searchContainer}>
             <Ionicons
@@ -768,7 +748,6 @@ const TrackExerciseView = () => {
           </View>
         </View>
 
-        {/* Tabs Section */}
         <View style={styles.tabsContainer}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "all" && styles.activeTab]}
@@ -811,7 +790,6 @@ const TrackExerciseView = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Exercises List */}
         {loading ? (
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -1031,19 +1009,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   calMinText: {
-    backgroundColor: "#E3F2FD", // pastel blue
+    backgroundColor: "#E3F2FD",
     color: "#1976D2",
   },
   cal30MinText: {
-    backgroundColor: "#E8F5E9", // pastel green
+    backgroundColor: "#E8F5E9",
     color: "#388E3C",
   },
   calHourText: {
-    backgroundColor: "#FFF4E0", // pastel orange
+    backgroundColor: "#FFF4E0",
     color: "#E67E22",
   },
   calTotalText: {
-    backgroundColor: "#F3E5F5", // pastel purple
+    backgroundColor: "#F3E5F5",
     color: "#8E24AA",
   },
 });

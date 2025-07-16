@@ -469,9 +469,6 @@ const SignUp = () => {
           dailyCalorieGoal: manualKcal ? parseInt(kcalGoal) : null,
         };
 
-        console.log("Attempting to register with:", registrationData);
-        console.log("API URL:", "http://172.16.1.233:7009/api/auth/register");
-
         // Add explicit headers
         const response = await axios.post(
           "http://172.16.1.233:7009/api/auth/register",
@@ -485,19 +482,12 @@ const SignUp = () => {
           }
         );
 
-        console.log("Response:", response);
-
         if (response.status === 200) {
           Alert.alert("Success", "Registration successful!", [
             { text: "OK", onPress: () => router.push("/dashboard") },
           ]);
         }
       } catch (error) {
-        console.log("Full error:", error);
-        console.log("Error response:", error.response);
-        console.log("Error message:", error.message);
-        console.log("Error status:", error.response?.status);
-
         Alert.alert(
           "Registration Failed",
           `Error: ${

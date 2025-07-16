@@ -93,7 +93,6 @@ const TargetsView = () => {
     ],
   };
 
-  // Original data array for main targets
   const data = [
     {
       label: "Energy",
@@ -116,7 +115,6 @@ const TargetsView = () => {
     { label: "Fat", consumed: 10.0, required: 70.0, color: Colors.red.color },
   ];
 
-  // Sample data array for additional categories
   const sampleData = [
     // Carbohydrates
     { label: "Fiber", consumed: 10, required: 25 },

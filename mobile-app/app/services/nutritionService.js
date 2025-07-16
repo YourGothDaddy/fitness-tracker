@@ -8,7 +8,6 @@ class NutritionService {
       if (timeframe) {
         url = `/api/nutrition/calorie-overview?timeframe=${timeframe}`;
       } else {
-        // Format dates in local time
         const formatDate = (date) => {
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -86,10 +85,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -101,10 +96,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -116,10 +107,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -131,10 +118,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -146,10 +129,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -161,10 +140,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -176,10 +151,6 @@ class NutritionService {
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
-      if (error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
       throw error;
     }
   }
@@ -192,7 +163,6 @@ class NutritionService {
       if (activityLevelId !== undefined && activityLevelId !== null)
         url += `activityLevelId=${activityLevelId}&`;
       if (includeTef !== undefined) url += `includeTef=${includeTef}`;
-      // Remove trailing & or ?
       url = url.replace(/[&?]$/, "");
       const response = await axiosInstance.get(url);
       return response.data;

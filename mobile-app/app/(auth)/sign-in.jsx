@@ -24,9 +24,7 @@ const SignIn = () => {
       if (isAuthenticated) {
         router.replace("/dashboard");
       }
-    } catch (error) {
-      console.error("Error checking auth status:", error);
-    }
+    } catch (error) {}
   };
 
   const handleLogin = async () => {
@@ -42,7 +40,6 @@ const SignIn = () => {
       await authService.login(email, password);
       router.replace("/dashboard");
     } catch (error) {
-      console.error("Login error:", error);
       setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);

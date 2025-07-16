@@ -24,13 +24,11 @@ namespace Fitness_Tracker.Services.Weight
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all weight records in the date range
             var weightRecords = await _databaseContext.WeightRecords
                 .Where(wr => wr.UserId == userId && wr.Date.Date >= startDate.Date && wr.Date.Date <= endDate.Date)
                 .OrderBy(wr => wr.Date)
                 .ToListAsync();
 
-            // If no records in the range, try to get closest records before and after
             if (!weightRecords.Any())
             {
                 var closestBefore = await _databaseContext.WeightRecords
@@ -44,20 +42,16 @@ namespace Fitness_Tracker.Services.Weight
                 }
             }
 
-            // Create daily weight models
             var dailyWeights = new List<DailyWeightModel>();
             
-            // If we have weight records, create data points for each day in the range
             var currentDate = startDate.Date;
             while (currentDate <= endDate.Date)
             {
-                // Find weight record for this date or the closest previous record
                 var recordForDate = weightRecords
                     .Where(wr => wr.Date.Date <= currentDate.Date)
                     .OrderByDescending(wr => wr.Date)
                     .FirstOrDefault();
 
-                // If no previous record, use the user's current weight
                 float weightForDate = recordForDate != null 
                     ? recordForDate.Weight 
                     : user.Weight;
@@ -66,13 +60,12 @@ namespace Fitness_Tracker.Services.Weight
                 {
                     Date = currentDate,
                     Weight = weightForDate,
-                    DayName = currentDate.ToString("ddd") // Short day name (Mon, Tue, etc.)
+                    DayName = currentDate.ToString("ddd")
                 });
 
                 currentDate = currentDate.AddDays(1);
             }
 
-            // --- NEW LOGIC: Get true starting and current weight from full history ---
             var allWeightRecords = await _databaseContext.WeightRecords
                 .Where(wr => wr.UserId == userId)
                 .OrderBy(wr => wr.Date)
@@ -82,7 +75,6 @@ namespace Fitness_Tracker.Services.Weight
             float currentWeight = allWeightRecords.LastOrDefault()?.Weight ?? user.Weight;
             float change = currentWeight - startingWeight;
 
-            // Only graph from the first real record date
             DateTime? firstRecordDate = allWeightRecords.FirstOrDefault()?.Date;
             var dailyWeightsFromHistory = new List<DailyWeightModel>();
             if (firstRecordDate.HasValue)
@@ -91,7 +83,6 @@ namespace Fitness_Tracker.Services.Weight
                 var historyCurrentDate = graphStartDate;
                 while (historyCurrentDate <= endDate.Date)
                 {
-                    // Find weight record for this date or the closest previous record
                     var recordForDate = allWeightRecords
                         .Where(wr => wr.Date.Date <= historyCurrentDate.Date)
                         .OrderByDescending(wr => wr.Date)
@@ -111,16 +102,13 @@ namespace Fitness_Tracker.Services.Weight
                     historyCurrentDate = historyCurrentDate.AddDays(1);
                 }
             }
-            // If no records, keep dailyWeights empty
 
-            // Calculate progress percentage towards goal
             float totalWeightToLose = user.Weight - user.GoalWeight;
             float weightLostSoFar = user.Weight - currentWeight;
             float progressPercentage = totalWeightToLose <= 0 
                 ? 0 
                 : (weightLostSoFar / totalWeightToLose) * 100;
 
-            // Cap progress at 100%
             progressPercentage = Math.Min(Math.Max(progressPercentage, 0), 100);
 
             return new WeightProgressModel
@@ -142,19 +130,16 @@ namespace Fitness_Tracker.Services.Weight
                 throw new InvalidOperationException("User not found");
             }
 
-            // Check if a record already exists for this date
             var existingRecord = await _databaseContext.WeightRecords
                 .FirstOrDefaultAsync(wr => wr.UserId == userId && wr.Date.Date == date.Date);
 
             if (existingRecord != null)
             {
-                // Update existing record
                 existingRecord.Weight = weight;
                 existingRecord.Notes = notes;
             }
             else
             {
-                // Create new record
                 _databaseContext.WeightRecords.Add(new WeightRecord
                 {
                     UserId = userId,
@@ -164,7 +149,6 @@ namespace Fitness_Tracker.Services.Weight
                 });
             }
 
-            // Update the current weight in the user profile
             user.Weight = weight;
 
             await _databaseContext.SaveChangesAsync();
@@ -184,7 +168,6 @@ namespace Fitness_Tracker.Services.Weight
             record.Weight = weight;
             record.Notes = notes;
 
-            // Check if this is the most recent record
             var mostRecentRecord = await _databaseContext.WeightRecords
                 .Where(wr => wr.UserId == userId)
                 .OrderByDescending(wr => wr.Date)
@@ -192,7 +175,6 @@ namespace Fitness_Tracker.Services.Weight
 
             if (mostRecentRecord?.Id == recordId)
             {
-                // Update user's current weight if this is the most recent record
                 var user = await _databaseContext.Users.FindAsync(userId);
                 if (user != null)
                 {
@@ -216,7 +198,6 @@ namespace Fitness_Tracker.Services.Weight
 
             _databaseContext.WeightRecords.Remove(record);
 
-            // If deleting the most recent record, update user weight to the next most recent record
             var nextMostRecentRecord = await _databaseContext.WeightRecords
                 .Where(wr => wr.UserId == userId && wr.Id != recordId)
                 .OrderByDescending(wr => wr.Date)

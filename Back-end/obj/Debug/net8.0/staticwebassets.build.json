@@ -1,11 +1,39 @@
 {
   "Version": 1,
-  "Hash": "Ima9dEpEQdYBf5tGJcYbbqrmt10kBchRgBksmmVQMJc=",
+  "Hash": "B3/fLn/efc20/U992C9Sz58p6trJ/b/OStOPI+6rBeE=",
   "Source": "Fitness-Tracker",
   "BasePath": "_content/Fitness-Tracker",
   "Mode": "Default",
   "ManifestType": "Build",
   "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
+  "DiscoveryPatterns": [
+    {
+      "Name": "Fitness-Tracker\\wwwroot",
+      "Source": "Fitness-Tracker",
+      "ContentRoot": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\",
+      "BasePath": "_content/Fitness-Tracker",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png",
+      "SourceId": "Fitness-Tracker",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\",
+      "BasePath": "_content/Fitness-Tracker",
+      "RelativePath": "avatars/50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png"
+    }
+  ]
 }

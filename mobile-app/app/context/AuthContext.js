@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error("Auth check error:", error);
         setIsLoading(false);
       }
     };
@@ -38,7 +37,6 @@ export const AuthProvider = ({ children }) => {
       await authService.login(email, password);
       return true;
     } catch (error) {
-      console.error("Login error:", error);
       throw error;
     }
   };
@@ -49,7 +47,6 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
       router.replace("/");
     } catch (error) {
-      console.error("Logout error:", error);
       throw error;
     }
   };

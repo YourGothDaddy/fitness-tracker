@@ -222,9 +222,7 @@ const ProfileView = () => {
         bodyFat: profileData.bodyFat?.toString() || "",
       });
     } catch (error) {
-      console.error("Error loading profile data:", error);
       if (error.response) {
-        console.error("Error response:", error.response.data);
       }
       Alert.alert(
         "Error",

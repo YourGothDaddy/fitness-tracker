@@ -1,0 +1,25 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png",
+      "PackagePath": "staticwebassets\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Fitness-Tracker.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.Fitness-Tracker.props",
+      "PackagePath": "build\\Fitness-Tracker.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.Fitness-Tracker.props",
+      "PackagePath": "buildMultiTargeting\\Fitness-Tracker.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.Fitness-Tracker.props",
+      "PackagePath": "buildTransitive\\Fitness-Tracker.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

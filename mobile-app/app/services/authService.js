@@ -2,7 +2,6 @@ import { API_URL } from "@/constants/Config";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 
-// Create axios instance with default config
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -11,7 +10,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// Function to decode JWT token
 const decodeToken = (token) => {
   try {
     const tokenParts = token.split(".");
@@ -27,7 +25,6 @@ const decodeToken = (token) => {
   }
 };
 
-// Function to decode base64
 const decodeFromBase64 = (base64String) => {
   try {
     // For React Native
@@ -59,7 +56,6 @@ const decodeFromBase64 = (base64String) => {
   }
 };
 
-// Check if token needs refresh (less than 30 seconds until expiration)
 const tokenNeedsRefresh = async () => {
   try {
     const token = await SecureStore.getItemAsync("accessToken");
@@ -79,10 +75,8 @@ const tokenNeedsRefresh = async () => {
   }
 };
 
-// Queue to ensure we only have one refresh operation at a time
 let refreshTokenPromise = null;
 
-// Function to refresh token and return the promise
 const refreshTokenSingleton = async () => {
   if (refreshTokenPromise) {
     return refreshTokenPromise;
@@ -123,7 +117,6 @@ const refreshTokenSingleton = async () => {
   return refreshTokenPromise;
 };
 
-// Add a request interceptor to add token to all requests
 axiosInstance.interceptors.request.use(
   async (config) => {
     try {
@@ -152,7 +145,6 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle token expiration
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;

@@ -31,7 +31,6 @@ namespace Fitness_Tracker.Controllers
 
             try
             {
-                Console.WriteLine($"[ActivityController] userId: {userId}, received date: {date:O}");
                 var result = await _activityService.GetActivityOverviewAsync(userId, date);
                 return Ok(result);
             }

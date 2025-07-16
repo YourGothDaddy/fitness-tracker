@@ -126,8 +126,6 @@ namespace Fitness_Tracker
                 serverOptions.Listen(System.Net.IPAddress.Any, 7009);
             });
 
-            builder.Logging.AddConsole();
-
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
@@ -140,9 +138,9 @@ namespace Fitness_Tracker
                 DataSeeder.SeedNutrientsAsync(services).Wait();
             }
 
-            /*app.UseHttpsRedirection();*/
-
             app.UseCors("AllowReactApp");
+
+            app.UseStaticFiles(); // Enable serving static files (e.g., avatars)
 
             app.UseAuthentication();
             app.UseAuthorization();

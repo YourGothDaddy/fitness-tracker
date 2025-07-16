@@ -310,7 +310,6 @@ const TrackMealView = () => {
       setFilteredFoods(data);
       setError(null);
     } catch (err) {
-      console.error("Error fetching foods:", err);
       setError("Failed to load foods. Please try again.");
     } finally {
       setLoading(false);
@@ -361,7 +360,6 @@ const TrackMealView = () => {
       });
       Alert.alert("Success", "Meal added successfully!");
     } catch (err) {
-      console.error("Error adding meal:", err);
       Alert.alert("Error", "Failed to add meal. Please try again.");
     }
   };

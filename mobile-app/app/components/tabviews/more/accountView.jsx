@@ -163,7 +163,6 @@ const AccountView = () => {
         notifications: profileData.notificationsEnabled,
       }));
     } catch (error) {
-      console.error("Profile fetch error:", error);
       if (error.message === "Please log in again") {
         Alert.alert(
           "Session Expired",
@@ -251,7 +250,6 @@ const AccountView = () => {
               break;
           }
         } catch (error) {
-          console.error("Update error:", error);
           if (error.message === "Please log in again") {
             Alert.alert(
               "Session Expired",

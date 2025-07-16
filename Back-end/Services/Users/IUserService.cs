@@ -14,27 +14,21 @@
 
         public Task<IList<string>> GetUserRolesAsync(User userId);
         
-        // New methods for account management
         public Task<IdentityResult> UpdateProfileAsync(User user, UpdateProfileModel model);
         public Task<IdentityResult> ChangePasswordAsync(User user, string currentPassword, string newPassword);
         public Task<bool> UpdateNotificationsAsync(User user, bool notificationsEnabled);
-        /// <summary>
-        /// Returns the User entity for the given userId. Used for profile endpoints.
-        /// </summary>
         public Task<User> GetUserProfileAsync(string userId);
 
-        // New methods for profile management
         public Task<ProfileModel> GetProfileDataAsync(string userId);
         public Task<IdentityResult> UpdateProfileDataAsync(string userId, ProfileModel model);
         public Task<float> CalculateBMIAsync(float weight, float height);
         public Task<float> CalculateBodyFatAsync(float weight, float height, int age, string sex);
 
-        // Goals management
         public Task<UpdateGoalsModel> GetUserGoalsAsync(string userId);
         public Task<IdentityResult> UpdateUserGoalsAsync(string userId, UpdateGoalsModel model);
 
-        // Macro settings management
         public Task<MacroSettingsModel> GetMacroSettingsAsync(string userId);
         public Task UpdateMacroSettingsAsync(string userId, MacroSettingsModel model);
+        public Task UpdateUserAvatarAsync(string userId, string avatarUrl);
     }
 }

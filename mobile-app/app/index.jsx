@@ -20,13 +20,7 @@ export default function Index() {
       if (accessToken) {
         router.replace("/dashboard");
       }
-    } catch (error) {
-      console.error(
-        "[Auth Debug] Error checking auth status:",
-        error,
-        error?.stack
-      );
-    }
+    } catch (error) {}
   };
 
   return (

@@ -30,7 +30,7 @@ namespace Fitness_Tracker.Services.Nutrition
             }
 
             var startDateTime = startDate.Date;
-            var endDateTime = endDate.Date.AddDays(1).AddTicks(-1); // This sets it to 23:59:59.9999999
+            var endDateTime = endDate.Date.AddDays(1).AddTicks(-1);
 
             var dailyCalories = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date >= startDateTime && m.Date <= endDateTime)
@@ -104,7 +104,6 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Calculate BMR using Mifflin-St Jeor Equation
             double bmr;
             if (user.Gender == Data.Models.Enums.Gender.Male)
             {
@@ -115,33 +114,26 @@ namespace Fitness_Tracker.Services.Nutrition
                 bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) - 161;
             }
 
-            // Get exercise calories for the day
             var exerciseCalories = await _databaseContext.Activities
                 .Where(a => a.UserId == userId && a.Date.Date == date.Date)
                 .SumAsync(a => a.CaloriesBurned);
 
-            // Calculate baseline activity calories (based on activity level multiplier)
             var baselineActivityCalories = bmr * (user.ActivityLevel.Multiplier - 1);
 
-            // Get meals for TEF calculation
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Calculate TEF (Thermic Effect of Food)
             double tefCalories = 0;
             foreach (var meal in meals)
             {
-                // Protein: 25% of calories
-                var proteinCalories = meal.Protein * 4; // 4 calories per gram of protein
+                var proteinCalories = meal.Protein * 4;
                 tefCalories += proteinCalories * 0.25;
 
-                // Carbs: 8% of calories
-                var carbCalories = meal.Carbs * 4; // 4 calories per gram of carbs
+                var carbCalories = meal.Carbs * 4;
                 tefCalories += carbCalories * 0.08;
 
-                // Fat: 2% of calories
-                var fatCalories = meal.Fat * 9; // 9 calories per gram of fat
+                var fatCalories = meal.Fat * 9;
                 tefCalories += fatCalories * 0.02;
             }
 
@@ -196,7 +188,6 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get consumed values for the day
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
@@ -206,7 +197,6 @@ namespace Fitness_Tracker.Services.Nutrition
             var consumedCarbs = meals.Sum(m => m.Carbs);
             var consumedFat = meals.Sum(m => m.Fat);
 
-            // Calculate required values based on user's goals and settings
             var targets = new List<TargetModel>
             {
                 new TargetModel
@@ -214,28 +204,28 @@ namespace Fitness_Tracker.Services.Nutrition
                     Label = "Energy",
                     Consumed = consumedCalories,
                     Required = user.DailyCaloriesGoal,
-                    Color = "#FFFFFF" // White
+                    Color = "#FFFFFF"
                 },
                 new TargetModel
                 {
                     Label = "Protein",
                     Consumed = consumedProtein,
-                    Required = user.DailyCaloriesGoal * 0.3 / 4, // 30% of calories from protein (4 calories per gram)
-                    Color = "#8CC63F" // Green
+                    Required = user.DailyCaloriesGoal * 0.3 / 4,
+                    Color = "#8CC63F"
                 },
                 new TargetModel
                 {
                     Label = "Net Carbs",
                     Consumed = consumedCarbs,
-                    Required = user.DailyCaloriesGoal * 0.4 / 4, // 40% of calories from carbs (4 calories per gram)
-                    Color = "#4A90E2" // Blue
+                    Required = user.DailyCaloriesGoal * 0.4 / 4,
+                    Color = "#4A90E2"
                 },
                 new TargetModel
                 {
                     Label = "Fat",
                     Consumed = consumedFat,
-                    Required = user.DailyCaloriesGoal * 0.3 / 9, // 30% of calories from fat (9 calories per gram)
-                    Color = "#E24A4A" // Red
+                    Required = user.DailyCaloriesGoal * 0.3 / 9,
+                    Color = "#E24A4A"
                 }
             };
 
@@ -255,20 +245,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the carbohydrate nutrients we want to track
             var carbohydrateNutrients = new Dictionary<string, double>
             {
                 { "Fiber", 0 },      
@@ -284,7 +270,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new CarbohydratesModel();
 
-            // Calculate consumed amounts for each nutrient
             foreach (var nutrient in carbohydrateNutrients)
             {
                 var consumed = 0.0;
@@ -302,7 +287,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new CarbohydrateNutrientModel
                 {
                     Label = nutrient.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = nutrient.Value
                 });
             }
@@ -320,20 +305,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the amino acids we want to track
             var aminoAcids = new Dictionary<string, double>
             {
                 { "Alanine", 0 },
@@ -359,7 +340,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new AminoAcidsModel();
 
-            // Calculate consumed amounts for each amino acid
             foreach (var aminoAcid in aminoAcids)
             {
                 var consumed = 0.0;
@@ -377,7 +357,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new AminoAcidNutrientModel
                 {
                     Label = aminoAcid.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = aminoAcid.Value
                 });
             }
@@ -395,20 +375,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the fat nutrients we want to track
             var fatNutrients = new Dictionary<string, double>
             {
                 { "TotalFats", 0 },
@@ -420,7 +396,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new FatsModel();
 
-            // Calculate consumed amounts for each nutrient
             foreach (var nutrient in fatNutrients)
             {
                 var consumed = 0.0;
@@ -438,7 +413,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new FatNutrientModel
                 {
                     Label = nutrient.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = nutrient.Value
                 });
             }
@@ -456,20 +431,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the minerals we want to track
             var minerals = new Dictionary<string, double>
             {
                 { "Iron", 0 },
@@ -487,7 +458,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new MineralsModel();
 
-            // Calculate consumed amounts for each mineral
             foreach (var mineral in minerals)
             {
                 var consumed = 0.0;
@@ -505,7 +475,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new MineralNutrientModel
                 {
                     Label = mineral.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = mineral.Value
                 });
             }
@@ -515,20 +485,16 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<OtherNutrientsModel> GetOtherNutrients(DateTime date)
         {
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the other nutrients we want to track
             var otherNutrients = new Dictionary<string, double>
             {
                 { "Alcohol", 10 },
@@ -544,7 +510,6 @@ namespace Fitness_Tracker.Services.Nutrition
                 Nutrients = new List<OtherNutrient>()
             };
 
-            // Calculate consumed amounts for each nutrient
             foreach (var nutrient in otherNutrients)
             {
                 var consumed = 0.0;
@@ -562,7 +527,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new OtherNutrient
                 {
                     Label = nutrient.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = nutrient.Value
                 });
             }
@@ -580,20 +545,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the sterols we want to track
             var sterols = new Dictionary<string, double>
             {
                 { "Cholesterol", 0 },
@@ -605,7 +566,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new SterolsModel();
 
-            // Calculate consumed amounts for each sterol
             foreach (var sterol in sterols)
             {
                 var consumed = 0.0;
@@ -623,7 +583,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new SterolNutrientModel
                 {
                     Label = sterol.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = sterol.Value
                 });
             }
@@ -641,20 +601,16 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Get all meals for the specified date
             var meals = await _databaseContext.Meals
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
-            // Get all consumable items
             var consumableItems = await _databaseContext.ConsumableItems
                 .Include(ci => ci.NutritionalInformation)
                 .ToListAsync();
 
-            // Create a dictionary of meal names to consumable items for faster lookup
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
 
-            // Define the vitamins we want to track
             var vitamins = new Dictionary<string, double>
             {
                 { "Betaine", 0 },
@@ -676,7 +632,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new VitaminsModel();
 
-            // Calculate consumed amounts for each vitamin
             foreach (var vitamin in vitamins)
             {
                 var consumed = 0.0;
@@ -694,7 +649,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 result.Nutrients.Add(new VitaminNutrientModel
                 {
                     Label = vitamin.Key,
-                    Consumed = consumed > 0 ? consumed : null, // Set to null if no data available
+                    Consumed = consumed > 0 ? consumed : null,
                     Required = vitamin.Value
                 });
             }
@@ -713,7 +668,6 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            // Determine BMR
             double bmr;
             if (customBmr.HasValue && customBmr.Value > 0)
             {
@@ -732,10 +686,9 @@ namespace Fitness_Tracker.Services.Nutrition
             }
             else
             {
-                bmr = 0; // Not enough data
+                bmr = 0;
             }
 
-            // Determine activity level
             ActivityLevel activityLevel = null;
             if (activityLevelId.HasValue)
             {
@@ -747,7 +700,6 @@ namespace Fitness_Tracker.Services.Nutrition
             }
             if (activityLevel == null)
             {
-                // fallback to first available
                 activityLevel = await _databaseContext.ActivityLevels.OrderBy(al => al.Id).FirstOrDefaultAsync();
             }
 
@@ -755,11 +707,10 @@ namespace Fitness_Tracker.Services.Nutrition
             string activityLevelName = activityLevel?.Name ?? "Unknown";
             int activityLevelIdResult = activityLevel?.Id ?? 0;
 
-            // Calculate maintenance calories
             double maintenance = bmr * multiplier;
             if (includeTef)
             {
-                maintenance *= 1.1; // Add 10% for TEF
+                maintenance *= 1.1;
             }
 
             return new EnergySettingsModel
@@ -775,13 +726,11 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<List<UserNutrientTargetModel>> GetUserNutrientTargetsAsync(string userId)
         {
-            // Get all master nutrients
             var allNutrients = await _databaseContext.Nutrients
                 .Select(n => new { n.Name, n.Category })
                 .Distinct()
                 .ToListAsync();
 
-            // Get all user-specific targets
             var userTargets = await _databaseContext.UserNutrientTargets
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
@@ -806,7 +755,6 @@ namespace Fitness_Tracker.Services.Nutrition
                 }
                 else
                 {
-                    // Default: not tracked, no targets
                     result.Add(new UserNutrientTargetModel
                     {
                         Id = 0,

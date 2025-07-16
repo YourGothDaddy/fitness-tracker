@@ -127,7 +127,6 @@
                 return 0;
             }
 
-            // Convert height from cm to m and calculate BMI
             float heightInMeters = height / 100;
             return weight / (heightInMeters * heightInMeters);
         }
@@ -139,7 +138,6 @@
                 return 0;
             }
 
-            // Using the U.S. Navy Body Fat Formula
             float bmi = await CalculateBMIAsync(weight, height);
             float bodyFat;
 
@@ -152,7 +150,7 @@
                 bodyFat = (1.20f * bmi) + (0.23f * age) - 5.4f;
             }
 
-            return Math.Max(0, Math.Min(100, bodyFat)); // Ensure result is between 0 and 100
+            return Math.Max(0, Math.Min(100, bodyFat));
         }
 
         public async Task<UpdateGoalsModel> GetUserGoalsAsync(string userId)
@@ -190,7 +188,6 @@
             if (user == null)
                 throw new InvalidOperationException("User not found");
 
-            // Defensive: handle missing/legacy data
             var macroMode = (int)user.MacroMode;
             var totalKcal = user.DailyCaloriesGoal > 0 ? user.DailyCaloriesGoal : 2000;
             return new MacroSettingsModel
@@ -213,7 +210,6 @@
                 throw new InvalidOperationException("User not found");
 
             user.MacroMode = (Fitness_Tracker.Data.Models.Enums.MacroMode)model.MacroMode;
-            // Save total kcal as DailyCaloriesGoal for consistency
             if (model.TotalKcal > 0)
                 user.DailyCaloriesGoal = model.TotalKcal;
 
@@ -235,6 +231,17 @@
                 user.CarbsRatio = 0;
                 user.FatRatio = 0;
             }
+            await _userManager.UpdateAsync(user);
+        }
+
+        public async Task UpdateUserAvatarAsync(string userId, string avatarUrl)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+            user.AvatarUrl = avatarUrl;
             await _userManager.UpdateAsync(user);
         }
     }

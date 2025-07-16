@@ -73,7 +73,6 @@ const EnergySettingsView = () => {
             TEFIncluded: settings.tefIncluded,
           });
         } else {
-          console.error("Invalid initial settings response:", settings);
           setError("Invalid response from server");
         }
       } catch (err) {
@@ -122,12 +121,10 @@ const EnergySettingsView = () => {
             TEFIncluded: settings.tefIncluded,
           });
         } else {
-          console.error("Invalid settings response:", settings);
           setError("Invalid response from server");
         }
       })
       .catch((error) => {
-        console.error("Error fetching energy settings:", error);
         setError("Failed to update energy settings.");
       })
       .finally(() => setLoading(false));

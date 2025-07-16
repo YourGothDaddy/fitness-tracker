@@ -183,11 +183,7 @@ const GeneralView = () => {
       setError("");
     } catch (err) {
       setError("Failed to fetch weight data");
-      console.error("Error fetching weight progress:", err);
-
-      // Check if this is an auth error that couldn't be automatically handled
       if (err.logout) {
-        // Redirect to login page if needed
         router.replace("/");
       }
     } finally {
@@ -206,7 +202,6 @@ const GeneralView = () => {
       setError("");
     } catch (err) {
       setError("Failed to fetch activity data");
-      console.error("Error fetching activity overview:", err);
       if (err.logout) {
         router.replace("/");
       }

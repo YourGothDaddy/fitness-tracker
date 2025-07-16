@@ -70,9 +70,7 @@ const AddWorkoutView = () => {
       try {
         const types = await activityService.getActivityTypes();
         setActivityTypes(types);
-      } catch (err) {
-        console.error("Failed to fetch activity types", err);
-      }
+      } catch (err) {}
     };
     fetchTypes();
   }, []);

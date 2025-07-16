@@ -10,9 +10,6 @@ class UserService {
       }
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -24,9 +21,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -39,17 +33,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response) {
-        if (error.response.data) {
-          console.error("Error response data:", error.response.data);
-        }
-        if (error.response.status) {
-          console.error("Error response status:", error.response.status);
-        }
-      }
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -62,9 +45,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -77,9 +57,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -94,9 +71,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -109,9 +83,6 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
       throw error;
     }
   }
@@ -124,9 +95,34 @@ class UserService {
       );
       return response.data;
     } catch (error) {
-      if (error.response?.status === 401) {
-        throw new Error("Please log in again");
-      }
+      throw error;
+    }
+  }
+
+  // Upload avatar image
+  async uploadAvatar(imageUri) {
+    try {
+      const formData = new FormData();
+      // Extract filename and type from URI
+      const uriParts = imageUri.split("/");
+      const fileName = uriParts[uriParts.length - 1];
+      const fileType = fileName.split(".").pop();
+      formData.append("avatar", {
+        uri: imageUri,
+        name: fileName,
+        type: `image/${fileType}`,
+      });
+      const response = await axiosInstance.post(
+        `${API_URL}/api/user/avatar`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data.AvatarUrl;
+    } catch (error) {
       throw error;
     }
   }

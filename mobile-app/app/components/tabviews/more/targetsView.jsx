@@ -120,8 +120,7 @@ const TargetsView = () => {
       const data = await goalsService.getUserGoals();
       setGoals(data);
     } catch (error) {
-      console.error("Error fetching goals:", error);
-      Alert.alert("Error", "Failed to load goals. Please try again.");
+      setError("Failed to fetch goals");
     } finally {
       setLoading(false);
     }
@@ -161,8 +160,7 @@ const TargetsView = () => {
       await goalsService.updateUserGoals(updatedGoals);
       setGoals(updatedGoals);
     } catch (error) {
-      console.error("Error updating goals:", error);
-      Alert.alert("Error", "Failed to update goals. Please try again.");
+      setError("Failed to update goals");
     }
   };
 

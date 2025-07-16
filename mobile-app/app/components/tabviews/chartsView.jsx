@@ -80,9 +80,7 @@ const ChartsView = () => {
           consumed: budgetData.consumed,
           remaining: budgetData.remaining,
         });
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+      } catch (error) {}
     };
 
     fetchData();

@@ -22,24 +22,19 @@ class ActivityService {
     }
   }
 
-  // Helper function to get today's date at midnight
   getTodayDate() {
     const today = new Date();
-    // Set to midnight UTC to ensure consistent date comparison
     today.setUTCHours(0, 0, 0, 0);
     return today;
   }
 
-  // Helper function to format time from TimeSpan
   formatTime(timeSpan) {
     if (!timeSpan) return "00:00";
 
-    // TimeSpan comes as "HH:mm:ss" from backend
     const timeParts = timeSpan.split(":");
     const hours = parseInt(timeParts[0], 10);
     const minutes = parseInt(timeParts[1], 10);
 
-    // Format as "HH:MM" (24-hour format)
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
@@ -76,7 +71,6 @@ class ActivityService {
   }) {
     try {
       const url = `${API_URL}/api/activity/add`;
-      // Map timeOfDay string to enum index
       const timeOfDayEnumMap = {
         Morning: 0,
         Afternoon: 1,
@@ -133,7 +127,6 @@ class ActivityService {
     }
   }
 
-  // Helper to format date in local time (YYYY-MM-DDTHH:mm:ss)
   formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
