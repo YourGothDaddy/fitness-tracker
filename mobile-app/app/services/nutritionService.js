@@ -40,7 +40,14 @@ class NutritionService {
 
   async getMacronutrients(date) {
     try {
-      const url = `/api/nutrition/macronutrients?date=${date.toISOString()}`;
+      const dateStr =
+        date instanceof Date
+          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}-${String(date.getDate()).padStart(2, "0")}`
+          : date;
+      const url = `/api/nutrition/macronutrients?date=${dateStr}`;
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
@@ -50,7 +57,14 @@ class NutritionService {
 
   async getEnergyExpenditure(date) {
     try {
-      const url = `/api/nutrition/energy-expenditure?date=${date.toISOString()}`;
+      const dateStr =
+        date instanceof Date
+          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}-${String(date.getDate()).padStart(2, "0")}`
+          : date;
+      const url = `/api/nutrition/energy-expenditure?date=${dateStr}`;
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
@@ -60,7 +74,14 @@ class NutritionService {
 
   async getEnergyBudget(date) {
     try {
-      const url = `/api/nutrition/energy-budget?date=${date.toISOString()}`;
+      const dateStr =
+        date instanceof Date
+          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}-${String(date.getDate()).padStart(2, "0")}`
+          : date;
+      const url = `/api/nutrition/energy-budget?date=${dateStr}`;
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {

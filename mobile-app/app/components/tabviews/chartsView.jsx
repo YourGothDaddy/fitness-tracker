@@ -90,7 +90,6 @@ const ChartsView = () => {
         nutritionService.getEnergyExpenditure(date),
         nutritionService.getEnergyBudget(date),
       ]);
-
       setMacronutrients({
         protein: macrosData.protein,
         carbs: macrosData.carbs,
@@ -419,6 +418,21 @@ const ChartsView = () => {
         <View style={styles.cardHeader}>
           <MaterialIcons name="account-balance" size={24} color="#619819" />
           <Text style={styles.cardTitle}>Energy Budget</Text>
+          <View style={styles.timeframeBadgeWrapper}>
+            <TouchableOpacity
+              style={styles.badgeContainer}
+              onPress={showDatePicker}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
+              <MaterialIcons
+                name="calendar-today"
+                size={20}
+                color="#619819"
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.chartSection}>

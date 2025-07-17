@@ -84,7 +84,7 @@ namespace Fitness_Tracker.Controllers
                 return validationResult;
             }
 
-            var result = await _nutritionService.GetMacronutrientsAsync(userId, date);
+            var result = await _nutritionService.GetMacronutrientsAsync(userId, date.Date);
             return Ok(result);
         }
 
@@ -123,7 +123,7 @@ namespace Fitness_Tracker.Controllers
 
             try
             {
-                var result = await _nutritionService.GetEnergyBudgetAsync(userId, date);
+                var result = await _nutritionService.GetEnergyBudgetAsync(userId, date.Date);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)

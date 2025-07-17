@@ -81,7 +81,7 @@ namespace Fitness_Tracker.Services.Nutrition
             var totalFat = meals.Sum(m => m.Fat);
             var totalMacros = totalProtein + totalCarbs + totalFat;
 
-            return new MacronutrientsModel
+            var result = new MacronutrientsModel
             {
                 Protein = totalProtein,
                 Carbs = totalCarbs,
@@ -91,6 +91,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 CarbsPercentage = totalMacros > 0 ? (totalCarbs / totalMacros) * 100 : 0,
                 FatPercentage = totalMacros > 0 ? (totalFat / totalMacros) * 100 : 0
             };
+            return result;
         }
 
         public async Task<EnergyExpenditureModel> GetEnergyExpenditureAsync(string userId, DateTime date)
@@ -170,12 +171,13 @@ namespace Fitness_Tracker.Services.Nutrition
             var target = user.DailyCaloriesGoal;
             var remaining = target - consumedCalories;
 
-            return new EnergyBudgetModel
+            var result = new EnergyBudgetModel
             {
                 Target = target,
                 Consumed = consumedCalories,
                 Remaining = remaining
             };
+            return result;
         }
 
         public async Task<MainTargetsModel> GetMainTargetsAsync(string userId, DateTime date)
