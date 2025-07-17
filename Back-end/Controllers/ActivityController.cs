@@ -8,6 +8,9 @@ namespace Fitness_Tracker.Controllers
     using static Constants.ActivityController;
     using static Constants.General;
 
+    /// <summary>
+    /// Controller responsible for managing user activities, including tracking, retrieving, and managing activity types and favorites.
+    /// </summary>
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
@@ -15,11 +18,25 @@ namespace Fitness_Tracker.Controllers
     {
         private readonly IActivityService _activityService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ActivityController"/> class.
+        /// </summary>
+        /// <param name="activityService">The activity service used for activity-related operations.</param>
         public ActivityController(IActivityService activityService)
         {
             _activityService = activityService;
         }
 
+        /// <summary>
+        /// Retrieves an overview of the user's activity for a specific date.
+        /// </summary>
+        /// <param name="date">The date for which to retrieve the activity overview.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the activity overview or an error response.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the operation is invalid for the current state.</exception>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 400 for invalid operations. Returns 500 for server errors.
+        /// </remarks>
         [HttpGet(ActivityOverviewHttpAttributeName)]
         public async Task<IActionResult> GetActivityOverview([FromQuery] DateTime date)
         {
@@ -44,6 +61,17 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves an overview of the user's activity for a specified date range.
+        /// </summary>
+        /// <param name="startDate">The start date of the period.</param>
+        /// <param name="endDate">The end date of the period.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the activity overview for the period or an error response.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the operation is invalid for the current state.</exception>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 400 for invalid operations. Returns 500 for server errors.
+        /// </remarks>
         [HttpGet(ActivityOverviewForPeriodHttpAttributeName)]
         public async Task<IActionResult> GetActivityOverviewForPeriod([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
@@ -68,6 +96,14 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all available activity levels.
+        /// </summary>
+        /// <returns>An <see cref="IActionResult"/> containing a list of activity levels or an error response.</returns>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 500 for server errors.
+        /// </remarks>
         [HttpGet("activity-levels")]
         public async Task<IActionResult> GetActivityLevels()
         {
@@ -88,6 +124,17 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Adds a new activity for the authenticated user.
+        /// </summary>
+        /// <param name="model">The model containing activity details to add.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the operation is invalid for the current state.</exception>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 400 for invalid or null input. Returns 500 for server errors.
+        /// </remarks>
         [HttpPost("add")]
         public async Task<IActionResult> AddActivity([FromBody] Models.Activity.AddActivityModel model)
         {
@@ -116,6 +163,10 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves all available activity types.
+        /// </summary>
+        /// <returns>An <see cref="IActionResult"/> containing a list of activity types.</returns>
         [HttpGet("types")]
         public async Task<IActionResult> GetActivityTypes()
         {
@@ -123,6 +174,14 @@ namespace Fitness_Tracker.Controllers
             return Ok(types);
         }
 
+        /// <summary>
+        /// Retrieves exercise metadata, such as categories and subcategories. Allows anonymous access.
+        /// </summary>
+        /// <returns>An <see cref="IActionResult"/> containing exercise metadata or an error response.</returns>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// If the user is authenticated, user-specific metadata may be returned. Returns 500 for server errors.
+        /// </remarks>
         [AllowAnonymous]
         [HttpGet("exercise-metadata")]
         public async Task<IActionResult> GetExerciseMetaData()
@@ -143,6 +202,17 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Calculates the calories burned for a specific exercise based on user input.
+        /// </summary>
+        /// <param name="request">The request containing exercise details for calorie calculation.</param>
+        /// <returns>An <see cref="IActionResult"/> containing the calculated calories or an error response.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the operation is invalid for the current state.</exception>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 400 for invalid or null input. Returns 500 for server errors.
+        /// </remarks>
         [HttpPost("calculate-exercise-calories")]
         public async Task<IActionResult> CalculateExerciseCalories([FromBody] Models.Activity.CalculateExerciseCaloriesRequest request)
         {
@@ -171,6 +241,17 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Tracks an exercise for the authenticated user, including calorie calculation and activity addition.
+        /// </summary>
+        /// <param name="model">The model containing exercise tracking details.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when required parameters are null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the operation is invalid for the current state.</exception>
+        /// <exception cref="Exception">Thrown when an unexpected error occurs.</exception>
+        /// <remarks>
+        /// Returns 401 if the user is not authenticated. Returns 400 for invalid or null input, or if the category/subcategory is invalid. Returns 500 for server errors.
+        /// </remarks>
         [HttpPost("track-exercise")]
         public async Task<IActionResult> TrackExercise([FromBody] Models.Activity.TrackExerciseRequest model)
         {
@@ -227,6 +308,11 @@ namespace Fitness_Tracker.Controllers
             }
         }
 
+        /// <summary>
+        /// Adds an activity type to the user's list of favorite activities.
+        /// </summary>
+        /// <param name="activityTypeId">The ID of the activity type to add to favorites.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         [HttpPost("favorites/add")]
         public async Task<IActionResult> AddFavoriteActivityType([FromBody] int activityTypeId)
         {
@@ -239,6 +325,11 @@ namespace Fitness_Tracker.Controllers
             return Ok(new { Message = "Added to favorites." });
         }
 
+        /// <summary>
+        /// Removes an activity type from the user's list of favorite activities.
+        /// </summary>
+        /// <param name="activityTypeId">The ID of the activity type to remove from favorites.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
         [HttpPost("favorites/remove")]
         public async Task<IActionResult> RemoveFavoriteActivityType([FromBody] int activityTypeId)
         {
@@ -251,6 +342,10 @@ namespace Fitness_Tracker.Controllers
             return Ok(new { Message = "Removed from favorites." });
         }
 
+        /// <summary>
+        /// Retrieves the user's favorite activity types.
+        /// </summary>
+        /// <returns>An <see cref="IActionResult"/> containing a list of favorite activity types.</returns>
         [HttpGet("favorites")]
         public async Task<IActionResult> GetFavoriteActivityTypes()
         {
@@ -263,6 +358,11 @@ namespace Fitness_Tracker.Controllers
             return Ok(favorites);
         }
 
+        /// <summary>
+        /// Determines whether a specific activity type is marked as a favorite by the user.
+        /// </summary>
+        /// <param name="activityTypeId">The ID of the activity type to check.</param>
+        /// <returns>An <see cref="IActionResult"/> containing a boolean indicating if the activity type is a favorite.</returns>
         [HttpGet("favorites/{activityTypeId}/is-favorite")]
         public async Task<IActionResult> IsFavoriteActivityType(int activityTypeId)
         {
