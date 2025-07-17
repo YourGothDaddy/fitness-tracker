@@ -53,11 +53,12 @@ const EnergySettingsView = () => {
       const userLevel =
         levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
       setSelectedActivityLevel(userLevel);
+      setIsTefEnabled(!!profile.includeTef); // <-- Initialize TEF toggle from profile
       // Fetch initial energy settings
       const settings = await nutritionService.getEnergySettings({
         customBmr: undefined,
         activityLevelId: userLevel.id,
-        includeTef: false,
+        includeTef: !!profile.includeTef,
       });
       // Ensure we have a valid settings object with the expected properties
       if (settings && typeof settings === "object") {
@@ -158,6 +159,23 @@ const EnergySettingsView = () => {
       );
     } catch (err) {
       setError("Failed to save activity level. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Persist TEF toggle change
+  const handleTefToggle = async () => {
+    const newTef = !isTefEnabled;
+    setIsTefEnabled(newTef);
+    setLoading(true);
+    setError(null);
+    try {
+      const profile = await userService.getProfileData();
+      const updatedProfile = { ...profile, includeTef: newTef };
+      await userService.updateProfileData(updatedProfile);
+    } catch (err) {
+      setError("Failed to save TEF setting. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -385,7 +403,7 @@ const EnergySettingsView = () => {
                 <Text style={styles.sectionTitle}>Thermic Effect of Food</Text>
                 <TouchableOpacity
                   style={styles.toggle}
-                  onPress={() => setIsTefEnabled((prev) => !prev)}
+                  onPress={handleTefToggle}
                 >
                   <Animated.View
                     style={[

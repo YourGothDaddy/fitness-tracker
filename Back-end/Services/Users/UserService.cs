@@ -99,7 +99,8 @@
                 Height = user.Height,
                 BMI = bmi,
                 BodyFat = bodyFat,
-                ActivityLevelId = user.ActivityLevelId
+                ActivityLevelId = user.ActivityLevelId,
+                IncludeTef = user.IncludeTef
             };
         }
 
@@ -118,6 +119,7 @@
             user.Weight = model.Weight;
             user.Height = model.Height;
             user.ActivityLevelId = model.ActivityLevelId;
+            user.IncludeTef = model.IncludeTef;
 
             return await _userManager.UpdateAsync(user);
         }

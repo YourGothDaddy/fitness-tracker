@@ -39,5 +39,7 @@
         public virtual ICollection<UserNutrientTarget> UserNutrientTargets { get; set; } = new List<UserNutrientTarget>();
 
         public string? AvatarUrl { get; set; } // Path to profile image
+
+        public bool IncludeTef { get; set; } = false; // Whether to include Thermic Effect of Food
     }
 }

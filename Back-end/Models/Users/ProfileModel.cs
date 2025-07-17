@@ -15,6 +15,7 @@ namespace Fitness_Tracker.Models.Users
         public float BodyFat { get; set; }
         [Required]
         public int ActivityLevelId { get; set; }
+        public bool IncludeTef { get; set; } // Whether to include Thermic Effect of Food
         public string Initials
         {
             get
