@@ -60,7 +60,6 @@ CREATE TABLE [AspNetUsers] (
     [WeeklyWeightChangeGoal] real NOT NULL,
     [DailyCaloriesGoal] int NOT NULL,
     [MonthlyCaloriesGoal] int NOT NULL,
-    [DailyProteinGoal] int NOT NULL,
     [GoalWeight] real NOT NULL,
     [IsDailyCaloriesGoal] bit NOT NULL,
     [NotificationsEnabled] bit NOT NULL,

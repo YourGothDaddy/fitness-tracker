@@ -106,7 +106,6 @@ const TargetsView = () => {
   const { hideHeader } = useLocalSearchParams();
   const [goals, setGoals] = useState({
     dailyCaloriesGoal: 0,
-    dailyProteinGoal: 0,
   });
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState({
@@ -118,7 +117,7 @@ const TargetsView = () => {
   const fetchGoals = useCallback(async () => {
     try {
       const data = await goalsService.getUserGoals();
-      setGoals(data);
+      setGoals({ dailyCaloriesGoal: data.dailyCaloriesGoal });
     } catch (error) {
       setError("Failed to fetch goals");
     } finally {
@@ -140,22 +139,18 @@ const TargetsView = () => {
     [router]
   );
 
-  const handleGoalPress = (type) => {
+  const handleGoalPress = () => {
     setEditModal({
       visible: true,
-      type,
-      value:
-        type === "calories" ? goals.dailyCaloriesGoal : goals.dailyProteinGoal,
+      type: "calories",
+      value: goals.dailyCaloriesGoal,
     });
   };
 
   const handleSaveGoal = async (value) => {
     try {
       const updatedGoals = {
-        dailyCaloriesGoal:
-          editModal.type === "calories" ? value : goals.dailyCaloriesGoal,
-        dailyProteinGoal:
-          editModal.type === "protein" ? value : goals.dailyProteinGoal,
+        dailyCaloriesGoal: value,
       };
       await goalsService.updateUserGoals(updatedGoals);
       setGoals(updatedGoals);
@@ -197,12 +192,7 @@ const TargetsView = () => {
               <GoalBadge
                 value={goals.dailyCaloriesGoal}
                 label="Daily Calories"
-                onPress={() => handleGoalPress("calories")}
-              />
-              <GoalBadge
-                value={goals.dailyProteinGoal}
-                label="Protein Goal"
-                onPress={() => handleGoalPress("protein")}
+                onPress={handleGoalPress}
               />
             </View>
           </View>
@@ -253,9 +243,7 @@ const TargetsView = () => {
         <EditGoalModal
           visible={editModal.visible}
           onClose={() => setEditModal({ visible: false, type: null, value: 0 })}
-          title={`Edit ${
-            editModal.type === "calories" ? "Daily Calories" : "Protein"
-          } Goal`}
+          title={`Edit Daily Calories Goal`}
           value={editModal.value}
           onSave={handleSaveGoal}
         />

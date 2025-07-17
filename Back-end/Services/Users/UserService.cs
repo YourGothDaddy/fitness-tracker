@@ -165,8 +165,7 @@
 
             return new UpdateGoalsModel
             {
-                DailyCaloriesGoal = user.DailyCaloriesGoal,
-                DailyProteinGoal = user.DailyProteinGoal
+                DailyCaloriesGoal = user.DailyCaloriesGoal
             };
         }
 
@@ -179,7 +178,6 @@
             }
 
             user.DailyCaloriesGoal = model.DailyCaloriesGoal;
-            user.DailyProteinGoal = model.DailyProteinGoal;
 
             return await _userManager.UpdateAsync(user);
         }

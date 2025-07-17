@@ -104,7 +104,6 @@ namespace Fitness_Tracker.Migrations
                     WeeklyWeightChangeGoal = table.Column<float>(type: "real", nullable: false),
                     DailyCaloriesGoal = table.Column<int>(type: "int", nullable: false),
                     MonthlyCaloriesGoal = table.Column<int>(type: "int", nullable: false),
-                    DailyProteinGoal = table.Column<int>(type: "int", nullable: false),
                     GoalWeight = table.Column<float>(type: "real", nullable: false),
                     IsDailyCaloriesGoal = table.Column<bool>(type: "bit", nullable: false),
                     NotificationsEnabled = table.Column<bool>(type: "bit", nullable: false),
