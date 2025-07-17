@@ -98,7 +98,8 @@
                 Weight = user.Weight,
                 Height = user.Height,
                 BMI = bmi,
-                BodyFat = bodyFat
+                BodyFat = bodyFat,
+                ActivityLevelId = user.ActivityLevelId
             };
         }
 
@@ -116,6 +117,7 @@
             user.Gender = (Gender)Enum.Parse(typeof(Gender), model.Sex);
             user.Weight = model.Weight;
             user.Height = model.Height;
+            user.ActivityLevelId = model.ActivityLevelId;
 
             return await _userManager.UpdateAsync(user);
         }

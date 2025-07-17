@@ -13,6 +13,8 @@ namespace Fitness_Tracker.Models.Users
         public float Height { get; set; }
         public float BMI { get; set; }
         public float BodyFat { get; set; }
+        [Required]
+        public int ActivityLevelId { get; set; }
         public string Initials
         {
             get

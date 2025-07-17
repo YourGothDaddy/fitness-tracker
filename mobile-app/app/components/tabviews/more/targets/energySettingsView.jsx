@@ -24,6 +24,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import activityService from "@/app/services/activityService";
 import nutritionService from "@/app/services/nutritionService";
 import userService from "@/app/services/userService";
+import { useFocusEffect } from "@react-navigation/native";
 
 const EnergySettingsView = () => {
   const router = useRouter();
@@ -38,53 +39,55 @@ const EnergySettingsView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch activity levels and user info on mount
-  useEffect(() => {
-    let isMounted = true;
-    const fetchInitialData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [levels, profile] = await Promise.all([
-          activityService.getActivityLevels(),
-          userService.getProfile(),
-        ]);
-        if (!isMounted) return;
-        setActivityLevels(levels);
-        // Find user's current activity level
-        const userLevel =
-          levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
-        setSelectedActivityLevel(userLevel);
-        // Fetch initial energy settings
-        const settings = await nutritionService.getEnergySettings({
-          customBmr: undefined,
-          activityLevelId: userLevel.id,
-          includeTef: false,
+  // Fetch activity levels and user info on mount and on focus
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [levels, profile] = await Promise.all([
+        activityService.getActivityLevels(),
+        userService.getProfileData(),
+      ]);
+      setActivityLevels(levels);
+      // Find user's current activity level
+      const userLevel =
+        levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
+      setSelectedActivityLevel(userLevel);
+      // Fetch initial energy settings
+      const settings = await nutritionService.getEnergySettings({
+        customBmr: undefined,
+        activityLevelId: userLevel.id,
+        includeTef: false,
+      });
+      // Ensure we have a valid settings object with the expected properties
+      if (settings && typeof settings === "object") {
+        setEnergySettings({
+          BMR: settings.bmr || 0,
+          MaintenanceCalories: settings.maintenanceCalories || 0,
+          ActivityLevelId: settings.activityLevelId,
+          ActivityLevelName: settings.activityLevelName,
+          ActivityMultiplier: settings.activityMultiplier,
+          TEFIncluded: settings.tefIncluded,
         });
-        if (!isMounted) return;
-        // Ensure we have a valid settings object with the expected properties
-        if (settings && typeof settings === "object") {
-          setEnergySettings({
-            BMR: settings.bmr || 0,
-            MaintenanceCalories: settings.maintenanceCalories || 0,
-            ActivityLevelId: settings.activityLevelId,
-            ActivityLevelName: settings.activityLevelName,
-            ActivityMultiplier: settings.activityMultiplier,
-            TEFIncluded: settings.tefIncluded,
-          });
-        } else {
-          setError("Invalid response from server");
-        }
-      } catch (err) {
-        setError("Failed to load energy settings. Please try again.");
-      } finally {
-        setLoading(false);
+      } else {
+        setError("Invalid response from server");
       }
-    };
-    fetchInitialData();
-    return () => {
-      isMounted = false;
-    };
+    } catch (err) {
+      setError("Failed to load energy settings. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchInitialData();
+    }, [fetchInitialData])
+  );
+
+  useEffect(() => {
+    fetchInitialData(); // initial mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refetch energy settings when dependencies change
@@ -136,9 +139,28 @@ const EnergySettingsView = () => {
     if (option === "Default") setCustomBMR("");
   };
 
-  const handleActivityLevelSelect = (level) => {
+  const handleActivityLevelSelect = async (level) => {
     setSelectedActivityLevel(level);
     setActiveDropdown(null);
+    setLoading(true);
+    setError(null);
+    try {
+      // Get current profile data
+      const profile = await userService.getProfileData();
+      // Update with new activity level
+      const updatedProfile = { ...profile, activityLevelId: level.id };
+      await userService.updateProfileData(updatedProfile);
+      // Optionally, fetch again to ensure state is in sync
+      const refreshedProfile = await userService.getProfileData();
+      setSelectedActivityLevel(
+        activityLevels.find((l) => l.id === refreshedProfile.activityLevelId) ||
+          level
+      );
+    } catch (err) {
+      setError("Failed to save activity level. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Helper function to safely format numbers
