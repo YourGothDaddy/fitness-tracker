@@ -13,6 +13,7 @@ import React, { useEffect, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import nutritionService from "@/app/services/nutritionService";
+import { useFocusEffect } from "@react-navigation/native";
 
 const ChartsView = () => {
   const [macronutrients, setMacronutrients] = useState({
@@ -43,48 +44,54 @@ const ChartsView = () => {
     remaining: 0,
   });
 
+  const fetchData = async () => {
+    try {
+      const today = new Date();
+      const [macrosData, energyData, budgetData] = await Promise.all([
+        nutritionService.getMacronutrients(today),
+        nutritionService.getEnergyExpenditure(today),
+        nutritionService.getEnergyBudget(today),
+      ]);
+
+      setMacronutrients({
+        protein: macrosData.protein,
+        carbs: macrosData.carbs,
+        fat: macrosData.fat,
+        totalMacros: macrosData.totalMacros,
+        proteinPercentage: macrosData.proteinPercentage,
+        carbsPercentage: macrosData.carbsPercentage,
+        fatPercentage: macrosData.fatPercentage,
+      });
+
+      setEnergyExpenditure({
+        bmr: energyData.bmr,
+        exerciseCalories: energyData.exerciseCalories,
+        baselineActivityCalories: energyData.baselineActivityCalories,
+        tefCalories: energyData.tefCalories,
+        totalEnergyBurned: energyData.totalEnergyBurned,
+        bmrPercentage: energyData.bmrPercentage,
+        exercisePercentage: energyData.exercisePercentage,
+        baselineActivityPercentage: energyData.baselineActivityPercentage,
+        tefPercentage: energyData.tefPercentage,
+      });
+
+      setEnergyBudget({
+        target: budgetData.target,
+        consumed: budgetData.consumed,
+        remaining: budgetData.remaining,
+      });
+    } catch (error) {}
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const today = new Date();
-        const [macrosData, energyData, budgetData] = await Promise.all([
-          nutritionService.getMacronutrients(today),
-          nutritionService.getEnergyExpenditure(today),
-          nutritionService.getEnergyBudget(today),
-        ]);
-
-        setMacronutrients({
-          protein: macrosData.protein,
-          carbs: macrosData.carbs,
-          fat: macrosData.fat,
-          totalMacros: macrosData.totalMacros,
-          proteinPercentage: macrosData.proteinPercentage,
-          carbsPercentage: macrosData.carbsPercentage,
-          fatPercentage: macrosData.fatPercentage,
-        });
-
-        setEnergyExpenditure({
-          bmr: energyData.bmr,
-          exerciseCalories: energyData.exerciseCalories,
-          baselineActivityCalories: energyData.baselineActivityCalories,
-          tefCalories: energyData.tefCalories,
-          totalEnergyBurned: energyData.totalEnergyBurned,
-          bmrPercentage: energyData.bmrPercentage,
-          exercisePercentage: energyData.exercisePercentage,
-          baselineActivityPercentage: energyData.baselineActivityPercentage,
-          tefPercentage: energyData.tefPercentage,
-        });
-
-        setEnergyBudget({
-          target: budgetData.target,
-          consumed: budgetData.consumed,
-          remaining: budgetData.remaining,
-        });
-      } catch (error) {}
-    };
-
     fetchData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   const burnedData = [
     {
