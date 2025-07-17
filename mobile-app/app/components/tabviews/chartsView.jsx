@@ -5,6 +5,10 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
@@ -14,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import nutritionService from "@/app/services/nutritionService";
 import { useFocusEffect } from "@react-navigation/native";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 const ChartsView = () => {
   const [macronutrients, setMacronutrients] = useState({
@@ -44,13 +49,46 @@ const ChartsView = () => {
     remaining: 0,
   });
 
-  const fetchData = async () => {
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Helper to format date as YYYY-MM-DD
+  const formatDate = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Date picker handler
+  const showDatePicker = () => {
+    DateTimePickerAndroid.open({
+      value: selectedDate,
+      mode: "date",
+      is24Hour: true,
+      onChange: (event, pickedDate) => {
+        if (event.type === "set" && pickedDate) {
+          pickedDate.setHours(0, 0, 0, 0);
+          setSelectedDate(pickedDate);
+        }
+      },
+      maximumDate: new Date(),
+    });
+  };
+
+  const fetchData = async (date = selectedDate) => {
     try {
-      const today = new Date();
+      setIsLoading(true);
       const [macrosData, energyData, budgetData] = await Promise.all([
-        nutritionService.getMacronutrients(today),
-        nutritionService.getEnergyExpenditure(today),
-        nutritionService.getEnergyBudget(today),
+        nutritionService.getMacronutrients(date),
+        nutritionService.getEnergyExpenditure(date),
+        nutritionService.getEnergyBudget(date),
       ]);
 
       setMacronutrients({
@@ -80,17 +118,21 @@ const ChartsView = () => {
         consumed: budgetData.consumed,
         remaining: budgetData.remaining,
       });
-    } catch (error) {}
+    } catch (error) {
+      // Optionally handle error
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(selectedDate);
+  }, [selectedDate]);
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchData();
-    }, [])
+      fetchData(selectedDate);
+    }, [selectedDate])
   );
 
   const burnedData = [
@@ -207,64 +249,92 @@ const ChartsView = () => {
         <View style={styles.cardHeader}>
           <MaterialIcons name="pie-chart" size={24} color="#619819" />
           <Text style={styles.cardTitle}>Macronutrients</Text>
+          <View style={styles.timeframeBadgeWrapper}>
+            <TouchableOpacity
+              style={styles.badgeContainer}
+              onPress={showDatePicker}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
+              <MaterialIcons
+                name="calendar-today"
+                size={20}
+                color="#619819"
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <View style={styles.chartSection}>
-          <PieChart
-            data={macroData}
-            width={screenWidth * 0.85}
-            height={180}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="0"
-            absolute
-          />
-        </View>
-
-        <View style={styles.macroDetailsContainer}>
-          {[
-            {
-              title: "Protein",
-              value: macronutrients.protein,
-              percentage: macronutrients.proteinPercentage.toFixed(1),
-              color: Colors.green.color,
-              icon: "fitness-center",
-            },
-            {
-              title: "Carbs",
-              value: macronutrients.carbs,
-              percentage: macronutrients.carbsPercentage.toFixed(1),
-              color: Colors.blue.color,
-              icon: "grain",
-            },
-            {
-              title: "Fat",
-              value: macronutrients.fat,
-              percentage: macronutrients.fatPercentage.toFixed(1),
-              color: Colors.brightRed.color,
-              icon: "opacity",
-            },
-          ].map((macro, index) => (
-            <View key={macro.title} style={styles.macroRow}>
-              <View style={styles.macroIconContainer}>
-                <LinearGradient
-                  colors={[macro.color, shadeColor(macro.color, 20)]}
-                  style={styles.macroIconGradient}
-                >
-                  <MaterialIcons name={macro.icon} size={20} color="white" />
-                </LinearGradient>
-              </View>
-              <View style={styles.macroInfo}>
-                <Text style={styles.macroTitle}>{macro.title}</Text>
-                <Text style={styles.macroValue}>{macro.value}g</Text>
-              </View>
-              <View style={styles.percentageContainer}>
-                <Text style={styles.percentageText}>{macro.percentage}%</Text>
-              </View>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#619819" />
+          </View>
+        ) : (
+          <>
+            <View style={styles.chartSection}>
+              <PieChart
+                data={macroData}
+                width={screenWidth * 0.85}
+                height={180}
+                chartConfig={chartConfig}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="0"
+                absolute
+              />
             </View>
-          ))}
-        </View>
+
+            <View style={styles.macroDetailsContainer}>
+              {[
+                {
+                  title: "Protein",
+                  value: macronutrients.protein,
+                  percentage: macronutrients.proteinPercentage.toFixed(1),
+                  color: Colors.green.color,
+                  icon: "fitness-center",
+                },
+                {
+                  title: "Carbs",
+                  value: macronutrients.carbs,
+                  percentage: macronutrients.carbsPercentage.toFixed(1),
+                  color: Colors.blue.color,
+                  icon: "grain",
+                },
+                {
+                  title: "Fat",
+                  value: macronutrients.fat,
+                  percentage: macronutrients.fatPercentage.toFixed(1),
+                  color: Colors.brightRed.color,
+                  icon: "opacity",
+                },
+              ].map((macro, index) => (
+                <View key={macro.title} style={styles.macroRow}>
+                  <View style={styles.macroIconContainer}>
+                    <LinearGradient
+                      colors={[macro.color, shadeColor(macro.color, 20)]}
+                      style={styles.macroIconGradient}
+                    >
+                      <MaterialIcons
+                        name={macro.icon}
+                        size={20}
+                        color="white"
+                      />
+                    </LinearGradient>
+                  </View>
+                  <View style={styles.macroInfo}>
+                    <Text style={styles.macroTitle}>{macro.title}</Text>
+                    <Text style={styles.macroValue}>{macro.value}g</Text>
+                  </View>
+                  <View style={styles.percentageContainer}>
+                    <Text style={styles.percentageText}>
+                      {macro.percentage}%
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
       </LinearGradient>
 
       {/* Energy Expenditure Card */}
@@ -551,6 +621,36 @@ const styles = StyleSheet.create({
   budgetValue: {
     fontSize: 14,
     color: "#636e72",
+  },
+  timeframeBadgeWrapper: {
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(97, 152, 25, 0.13)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 24,
+    shadowColor: "#619819",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.18)",
+    marginTop: 0,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#619819",
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
