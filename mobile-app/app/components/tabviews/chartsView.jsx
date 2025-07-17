@@ -246,8 +246,10 @@ const ChartsView = () => {
       {/* Macronutrients Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
-          <MaterialIcons name="pie-chart" size={24} color="#619819" />
-          <Text style={styles.cardTitle}>Macronutrients</Text>
+          <View style={styles.headerLeft}>
+            <MaterialIcons name="pie-chart" size={24} color="#619819" />
+            <Text style={styles.cardTitle}>Macronutrients</Text>
+          </View>
           <View style={styles.timeframeBadgeWrapper}>
             <TouchableOpacity
               style={styles.badgeContainer}
@@ -339,14 +341,33 @@ const ChartsView = () => {
       {/* Energy Expenditure Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
-          <MaterialIcons
-            name="local-fire-department"
-            size={24}
-            color="#619819"
-          />
-          <Text style={styles.cardTitle}>Energy Expenditure</Text>
+          <View style={styles.headerLeft}>
+            <MaterialIcons
+              name="local-fire-department"
+              size={24}
+              color="#619819"
+            />
+            <Text
+              style={styles.cardTitleWithWrap}
+              numberOfLines={2}
+            >{`Energy\nExpenditure`}</Text>
+          </View>
+          <View style={styles.timeframeBadgeWrapper}>
+            <TouchableOpacity
+              style={styles.badgeContainer}
+              onPress={showDatePicker}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
+              <MaterialIcons
+                name="calendar-today"
+                size={20}
+                color="#619819"
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-
         <View style={styles.chartSection}>
           <PieChart
             data={burnedChartData}
@@ -359,7 +380,6 @@ const ChartsView = () => {
             absolute
           />
         </View>
-
         <View style={styles.energyDetailsContainer}>
           {[
             {
@@ -416,8 +436,10 @@ const ChartsView = () => {
       {/* Energy Budget Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
-          <MaterialIcons name="account-balance" size={24} color="#619819" />
-          <Text style={styles.cardTitle}>Energy Budget</Text>
+          <View style={styles.headerLeft}>
+            <MaterialIcons name="account-balance" size={24} color="#619819" />
+            <Text style={styles.cardTitle}>Energy Budget</Text>
+          </View>
           <View style={styles.timeframeBadgeWrapper}>
             <TouchableOpacity
               style={styles.badgeContainer}
@@ -514,13 +536,25 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
     gap: 10,
+    paddingRight: 0,
+    paddingLeft: 0,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexShrink: 1,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#2d3436",
+    flexShrink: 1,
+    flexWrap: "wrap",
+    lineHeight: 20,
   },
   chartSection: {
     alignItems: "center",
@@ -638,7 +672,8 @@ const styles = StyleSheet.create({
   },
   timeframeBadgeWrapper: {
     alignItems: "center",
-    marginLeft: 10,
+    justifyContent: "center",
+    // Remove marginLeft, minWidth, flexShrink
   },
   badgeContainer: {
     flexDirection: "row",
@@ -655,6 +690,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(97, 152, 25, 0.18)",
     marginTop: 0,
+    minWidth: 0,
+    justifyContent: "center",
   },
   badgeText: {
     fontSize: 12,
@@ -665,6 +702,14 @@ const styles = StyleSheet.create({
     padding: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  cardTitleWithWrap: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    flexShrink: 1,
+    flexWrap: "wrap",
+    lineHeight: 20,
   },
 });
 
