@@ -428,5 +428,57 @@ namespace Fitness_Tracker.Services.Activity
                 })
                 .ToListAsync();
         }
+
+        public async Task<int> CreateCustomActivityTypeAsync(Models.Admins.AddActivityTypeModel model, string userId)
+        {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            var activityCategory = await _databaseContext.ActivityCategories.FindAsync(model.ActivityCategoryId);
+            if (activityCategory == null) throw new InvalidOperationException("Invalid ActivityCategoryId");
+
+            var newActivityType = new Data.Models.ActivityType
+            {
+                Name = model.Name,
+                ActivityCategoryId = activityCategory.Id,
+                IsPublic = false,
+                CreatedByUserId = userId
+            };
+            _databaseContext.ActivityTypes.Add(newActivityType);
+            await _databaseContext.SaveChangesAsync();
+            return newActivityType.Id;
+        }
+
+        public async Task<List<Models.Activity.ActivityTypeModel>> GetPublicActivityTypesAsync()
+        {
+            return await _databaseContext.ActivityTypes
+                .Include(at => at.ActivityCategory)
+                .Where(at => at.IsPublic)
+                .Select(at => new Models.Activity.ActivityTypeModel
+                {
+                    Id = at.Id,
+                    Name = at.Name,
+                    Category = at.ActivityCategory.Name,
+                    IsPublic = at.IsPublic,
+                    CreatedByUserId = at.CreatedByUserId
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId)
+        {
+            return await _databaseContext.ActivityTypes
+                .Include(at => at.ActivityCategory)
+                .Where(at => at.CreatedByUserId == userId && !at.IsPublic)
+                .Select(at => new Models.Activity.ActivityTypeModel
+                {
+                    Id = at.Id,
+                    Name = at.Name,
+                    Category = at.ActivityCategory.Name,
+                    IsPublic = at.IsPublic,
+                    CreatedByUserId = at.CreatedByUserId
+                })
+                .ToListAsync();
+        }
     }
 } 

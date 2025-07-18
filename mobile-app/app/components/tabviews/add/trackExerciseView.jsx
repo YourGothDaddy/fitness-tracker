@@ -646,38 +646,49 @@ const TrackExerciseView = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [exerciseItems, setExerciseItems] = useState([]);
-  const [activityTypes, setActivityTypes] = useState([]);
   const [favoriteActivityTypeIds, setFavoriteActivityTypeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchFavorites = async () => {
+      try {
+        const favorites = await activityService.getFavoriteActivityTypes();
+        setFavoriteActivityTypeIds(favorites.map((f) => f.id));
+      } catch (err) {}
+    };
+    fetchFavorites();
+  }, []);
+
+  useEffect(() => {
+    const fetchItems = async () => {
       setLoading(true);
       setError("");
       try {
-        const [metaData, types, favorites] = await Promise.all([
-          activityService.getExerciseMetaData(),
-          activityService.getActivityTypes(),
-          activityService.getFavoriteActivityTypes(),
-        ]);
-        setActivityTypes(types);
-        setFavoriteActivityTypeIds(favorites.map((f) => f.id));
-        const mapped = metaData.map((item) => {
-          const found = types.find(
-            (t) => t.name === item.subcategory && t.category === item.category
+        let items = [];
+        if (activeTab === "all") {
+          items = await activityService.getPublicActivityTypes();
+        } else if (activeTab === "custom") {
+          items = await activityService.getUserCustomActivityTypes();
+        } else if (activeTab === "favorites") {
+          // For favorites, fetch all public and custom, then filter by favorite ids
+          const [publicTypes, customTypes] = await Promise.all([
+            activityService.getPublicActivityTypes(),
+            activityService.getUserCustomActivityTypes(),
+          ]);
+          items = [...publicTypes, ...customTypes].filter((t) =>
+            favoriteActivityTypeIds.includes(t.id)
           );
-          return { ...item, activityTypeId: found ? found.id : null };
-        });
-        setExerciseItems(mapped);
+        }
+        setExerciseItems(items);
       } catch (err) {
         setError("Failed to load exercise data");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    fetchItems();
+  }, [activeTab, favoriteActivityTypeIds]);
 
   const handleFavoriteToggle = (activityTypeId, isNowFavorite) => {
     setFavoriteActivityTypeIds((prev) => {
@@ -687,11 +698,8 @@ const TrackExerciseView = () => {
   };
 
   const filteredItems = exerciseItems.filter((item) => {
-    if (activeTab === "favorites") {
-      return favoriteActivityTypeIds.includes(item.activityTypeId);
-    }
     return (
-      item.subcategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
@@ -810,9 +818,10 @@ const TrackExerciseView = () => {
           >
             {filteredItems.map((item, index) => (
               <ExerciseItem
-                key={item.activityTypeId || index}
-                {...item}
-                activityTypeId={item.activityTypeId}
+                key={item.id || index}
+                category={item.category}
+                subcategory={item.name}
+                activityTypeId={item.id}
                 favoriteActivityTypeIds={favoriteActivityTypeIds}
                 onFavoriteToggle={handleFavoriteToggle}
               />

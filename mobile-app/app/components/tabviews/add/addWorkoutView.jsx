@@ -64,6 +64,8 @@ const AddWorkoutView = () => {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [activityTypes, setActivityTypes] = useState([]);
+  const [isCustom, setIsCustom] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const fetchTypes = async () => {
@@ -73,6 +75,19 @@ const AddWorkoutView = () => {
       } catch (err) {}
     };
     fetchTypes();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        // Try to fetch categories from backend if available
+        const res = await activityService.getActivityLevels(); // Replace with getActivityCategories if available
+        setCategories(res);
+      } catch {
+        setCategories(workoutCategories);
+      }
+    };
+    fetchCategories();
   }, []);
 
   const handleCategorySelect = (cat) => {
@@ -137,6 +152,46 @@ const AddWorkoutView = () => {
       setSuccess("Workout added successfully!");
       Alert.alert("Success", "Workout added successfully!");
       router.back();
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || err.message || "An error occurred."
+      );
+      Alert.alert(
+        "Error",
+        err?.response?.data?.message || err.message || "An error occurred."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCustomCreate = async () => {
+    setError("");
+    setSuccess("");
+    if (!category || !subcategory) {
+      Alert.alert("Error", "Please select category and subcategory.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      // Find categoryId (simulate or map if needed)
+      let activityCategoryId = 1;
+      if (categories && categories.length > 0) {
+        const found = categories.find(
+          (c) => c.name === category || c.Name === category
+        );
+        activityCategoryId = found?.id || found?.Id || 1;
+      }
+      await activityService.createCustomActivityType({
+        name: subcategory,
+        activityCategoryId,
+      });
+      setSuccess("Custom workout created! It will appear in your Custom tab.");
+      Alert.alert(
+        "Success",
+        "Custom workout created! It will appear in your Custom tab."
+      );
+      setIsCustom(false);
     } catch (err) {
       setError(
         err?.response?.data?.message || err.message || "An error occurred."
@@ -319,13 +374,44 @@ const AddWorkoutView = () => {
             numberOfLines={4}
           />
 
-          <CustomButton
-            title={isLoading ? "Adding..." : "Add Workout"}
-            handleOnPress={handleSubmit}
-            containerStyles={styles.saveButton}
-            textStyles={styles.saveButtonText}
-            isLoading={isLoading}
-          />
+          <Text style={styles.label}>Add as Custom Workout?</Text>
+          <TouchableOpacity
+            style={{
+              marginBottom: 14,
+              backgroundColor: isCustom ? Colors.darkGreen.color : "#eee",
+              borderRadius: 8,
+              padding: 10,
+            }}
+            onPress={() => setIsCustom((prev) => !prev)}
+          >
+            <Text
+              style={{
+                color: isCustom ? "#fff" : Colors.darkGreen.color,
+                textAlign: "center",
+              }}
+            >
+              {isCustom
+                ? "Will be added as custom workout"
+                : "Tap to add as custom workout"}
+            </Text>
+          </TouchableOpacity>
+          {isCustom ? (
+            <CustomButton
+              title={isLoading ? "Adding..." : "Add Custom Workout"}
+              handleOnPress={handleCustomCreate}
+              containerStyles={styles.saveButton}
+              textStyles={styles.saveButtonText}
+              isLoading={isLoading}
+            />
+          ) : (
+            <CustomButton
+              title={isLoading ? "Adding..." : "Add Workout"}
+              handleOnPress={handleSubmit}
+              containerStyles={styles.saveButton}
+              textStyles={styles.saveButtonText}
+              isLoading={isLoading}
+            />
+          )}
           {error ? (
             <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
               {error}

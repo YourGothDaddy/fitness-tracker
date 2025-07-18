@@ -209,6 +209,37 @@ class ActivityService {
       throw error;
     }
   }
+
+  async createCustomActivityType({ name, activityCategoryId }) {
+    try {
+      const url = `${API_URL}/api/activity/custom-activity-type`;
+      const payload = { name, activityCategoryId };
+      const response = await axiosInstance.post(url, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getPublicActivityTypes() {
+    try {
+      const url = `${API_URL}/api/activity/public-activity-types`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getUserCustomActivityTypes() {
+    try {
+      const url = `${API_URL}/api/activity/custom-activity-types`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

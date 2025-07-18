@@ -16,5 +16,8 @@ namespace Fitness_Tracker.Services.Activity
         Task RemoveFavoriteActivityTypeAsync(string userId, int activityTypeId);
         Task<bool> IsFavoriteActivityTypeAsync(string userId, int activityTypeId);
         Task<List<Models.Activity.ActivityTypeModel>> GetFavoriteActivityTypesAsync(string userId);
+        Task<int> CreateCustomActivityTypeAsync(Models.Admins.AddActivityTypeModel model, string userId);
+        Task<List<Models.Activity.ActivityTypeModel>> GetPublicActivityTypesAsync();
+        Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId);
     }
 } 

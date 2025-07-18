@@ -49,6 +49,12 @@
                 .HasForeignKey(a => a.ActivityTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Entity<ActivityType>()
+                .HasOne<User>()
+                .WithMany()
+                .HasForeignKey(at => at.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.Entity<User>()
                 .HasOne(u => u.ActivityLevel)
                 .WithMany(al => al.Users)

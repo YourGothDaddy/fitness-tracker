@@ -375,6 +375,63 @@ namespace Fitness_Tracker.Controllers
             return Ok(new { IsFavorite = isFavorite });
         }
 
+        /// <summary>
+        /// Creates a custom activity type for the authenticated user (not public).
+        /// </summary>
+        /// <param name="model">The model containing activity type details to add.</param>
+        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
+        [HttpPost("custom-activity-type")]
+        public async Task<IActionResult> CreateCustomActivityType([FromBody] Models.Admins.AddActivityTypeModel model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            try
+            {
+                var id = await _activityService.CreateCustomActivityTypeAsync(model, userId);
+                return Ok(new { Id = id, Message = "Custom activity type created." });
+            }
+            catch (ArgumentNullException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while creating custom activity type: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all public activity types (for 'All' section).
+        /// </summary>
+        [HttpGet("public-activity-types")]
+        public async Task<IActionResult> GetPublicActivityTypes()
+        {
+            var types = await _activityService.GetPublicActivityTypesAsync();
+            return Ok(types);
+        }
+
+        /// <summary>
+        /// Retrieves all custom activity types created by the current user (for 'Custom' section).
+        /// </summary>
+        [HttpGet("custom-activity-types")]
+        public async Task<IActionResult> GetUserCustomActivityTypes()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            var types = await _activityService.GetUserCustomActivityTypesAsync(userId);
+            return Ok(types);
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

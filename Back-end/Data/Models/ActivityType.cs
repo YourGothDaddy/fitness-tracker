@@ -7,5 +7,7 @@
         public int ActivityCategoryId { get; set; }
         public ActivityCategory ActivityCategory { get; set; }
         public ICollection<Activity> Activities { get; set; } = new List<Activity>();
+        public bool IsPublic { get; set; } = false;
+        public string? CreatedByUserId { get; set; }
     }
 }
