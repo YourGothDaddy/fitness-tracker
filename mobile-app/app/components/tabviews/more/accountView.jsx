@@ -10,12 +10,14 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
+import { API_URL } from "../../../../constants/Config";
 
 const Field = React.memo(({ title, value, onPress, icon }) => (
   <TouchableOpacity
@@ -136,7 +138,12 @@ const AccountView = () => {
   const [activeField, setActiveField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
-  const [profile, setProfile] = useState({ initials: "", fullName: "" });
+  const [profile, setProfile] = useState({
+    initials: "",
+    fullName: "",
+    avatarUrl: null,
+  });
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [fieldValues, setFieldValues] = useState({
     name: "",
     email: "",
@@ -154,7 +161,9 @@ const AccountView = () => {
       setProfile({
         initials: profileData.initials || "",
         fullName: profileData.fullName || "",
+        avatarUrl: profileData.avatarUrl || null,
       });
+      setAvatarLoadError(false);
       setFieldValues((prev) => ({
         ...prev,
         name: profileData.fullName || "",
@@ -335,7 +344,21 @@ const AccountView = () => {
         <ScrollView contentContainerStyle={styles.scrollViewContainer}>
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>{profile.initials || "--"}</Text>
+              {profile.avatarUrl && !avatarLoadError ? (
+                <Image
+                  source={{
+                    uri: profile.avatarUrl.startsWith("http")
+                      ? profile.avatarUrl
+                      : `${API_URL}${profile.avatarUrl}`,
+                  }}
+                  style={styles.avatarImage}
+                  onError={() => setAvatarLoadError(true)}
+                />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {profile.initials || "--"}
+                </Text>
+              )}
             </View>
           </View>
           {isProfileLoading ? (
@@ -419,6 +442,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    overflow: "hidden", // Ensure image is clipped to circle
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    resizeMode: "cover",
   },
   avatarText: {
     fontSize: 36,
