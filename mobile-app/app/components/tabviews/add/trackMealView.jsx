@@ -23,6 +23,7 @@ import {
   removeFavoriteConsumable,
   isFavoriteConsumable,
   getFavoriteConsumables,
+  getAllCustomConsumableItems,
 } from "@/app/services/foodService";
 
 const FoodItem = ({
@@ -297,6 +298,7 @@ const TrackMealView = () => {
   const [favoriteConsumableIds, setFavoriteConsumableIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [customFoods, setCustomFoods] = useState([]);
 
   const fetchFoods = useCallback(async () => {
     try {
@@ -316,20 +318,42 @@ const TrackMealView = () => {
     }
   }, []);
 
+  const fetchCustomFoods = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getAllCustomConsumableItems();
+      setCustomFoods(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to load custom foods. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchFoods();
-  }, [fetchFoods]);
+    if (activeTab === "custom") {
+      fetchCustomFoods();
+    } else {
+      fetchFoods();
+    }
+  }, [activeTab, fetchFoods, fetchCustomFoods]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredFoods(foods);
+      if (activeTab === "custom") {
+        setFilteredFoods(customFoods);
+      } else {
+        setFilteredFoods(foods);
+      }
     } else {
-      const filtered = foods.filter((food) =>
+      const baseFoods = activeTab === "custom" ? customFoods : foods;
+      const filtered = baseFoods.filter((food) =>
         food.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredFoods(filtered);
     }
-  }, [searchQuery, foods]);
+  }, [searchQuery, foods, customFoods, activeTab]);
 
   const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
     setFavoriteConsumableIds((prev) => {
@@ -446,16 +470,16 @@ const TrackMealView = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === "common" && styles.activeTab]}
-            onPress={() => setActiveTab("common")}
+            style={[styles.tab, activeTab === "custom" && styles.activeTab]}
+            onPress={() => setActiveTab("custom")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "common" && styles.activeTabText,
+                activeTab === "custom" && styles.activeTabText,
               ]}
             >
-              Common
+              Custom
             </Text>
           </TouchableOpacity>
         </View>

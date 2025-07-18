@@ -33,7 +33,7 @@
                 .ToListAsync();
         }
 
-        public async Task AddConsumableItemAsync(AddConsumableItemModel model)
+        public async Task AddConsumableItemAsync(AddConsumableItemModel model, string? userId = null)
         {
             var newConsumableItem = new ConsumableItem
             {
@@ -44,7 +44,8 @@
                 FatPer100g = model.FatPer100g,
                 Type = model.Type,
                 NutritionalInformation = model.NutritionalInformation ?? new List<Nutrient>(),
-                IsPublic = true // For now, always public
+                IsPublic = model.IsPublic,
+                UserId = userId
             };
             await _databaseContext.ConsumableItems.AddAsync(newConsumableItem);
             await _databaseContext.SaveChangesAsync();
@@ -86,6 +87,13 @@
             return await _databaseContext.UserFavoriteConsumableItems
                 .Where(x => x.UserId == userId)
                 .Select(x => x.ConsumableItem)
+                .ToListAsync();
+        }
+
+        public async Task<List<ConsumableItem>> GetAllUserCustomConsumableItemsAsync(string userId)
+        {
+            return await _databaseContext.ConsumableItems
+                .Where(ci => !ci.IsPublic && ci.UserId == userId)
                 .ToListAsync();
         }
     }

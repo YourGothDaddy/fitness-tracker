@@ -71,3 +71,12 @@ export async function getFavoriteConsumables() {
     throw error;
   }
 }
+
+export async function getAllCustomConsumableItems() {
+  try {
+    const response = await axiosInstance.get(`/api/consumable/custom`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch custom foods.");
+  }
+}

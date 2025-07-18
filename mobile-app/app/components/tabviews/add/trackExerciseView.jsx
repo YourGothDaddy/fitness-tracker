@@ -776,16 +776,16 @@ const TrackExerciseView = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === "common" && styles.activeTab]}
-            onPress={() => setActiveTab("common")}
+            style={[styles.tab, activeTab === "custom" && styles.activeTab]}
+            onPress={() => setActiveTab("custom")}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === "common" && styles.activeTabText,
+                activeTab === "custom" && styles.activeTabText,
               ]}
             >
-              Common
+              Custom
             </Text>
           </TouchableOpacity>
         </View>

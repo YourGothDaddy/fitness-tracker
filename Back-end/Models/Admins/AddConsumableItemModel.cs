@@ -23,5 +23,9 @@
         /// Whether the food item is public. Defaults to true. (For future use)
         /// </summary>
         public bool IsPublic { get; set; } = true;
+        /// <summary>
+        /// The user who created this food (for backend use; not required from client)
+        /// </summary>
+        public string? UserId { get; set; }
     }
 }

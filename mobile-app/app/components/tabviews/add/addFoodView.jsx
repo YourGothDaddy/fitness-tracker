@@ -186,7 +186,8 @@ const AddFoodView = () => {
         FatPer100g: Number(macros.Fat),
         Type: 0, // Default to Food (TypeOfConsumable.Food)
         NutritionalInformation: nutritionalInformation,
-        IsPublic: true,
+        IsPublic: false, // Custom foods are not public by default
+        // Do NOT send UserId; backend will set it
       };
       await addFoodItem(payload);
       setSuccess("Food item added successfully!");

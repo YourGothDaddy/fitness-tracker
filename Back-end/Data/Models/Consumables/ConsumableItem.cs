@@ -16,6 +16,11 @@
         /// Whether the food item is public/approved. Defaults to true.
         /// </summary>
         public bool IsPublic { get; set; } = true;
+        /// <summary>
+        /// The user who created this food (null if public/global food)
+        /// </summary>
+        public string? UserId { get; set; }
+        public Fitness_Tracker.Data.Models.User? User { get; set; }
     }
 
 

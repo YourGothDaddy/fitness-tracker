@@ -103,6 +103,12 @@
                 .WithMany()
                 .HasForeignKey(uf => uf.ConsumableItemId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ConsumableItem>()
+                .HasOne(ci => ci.User)
+                .WithMany()
+                .HasForeignKey(ci => ci.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

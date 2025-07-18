@@ -24,7 +24,7 @@
         }
 
         /// <summary>
-        /// Adds a new consumable item (food) to the database. The item is public by default.
+        /// Adds a new consumable item (food) to the database. The item can be public or custom (user-specific).
         /// </summary>
         /// <param name="model">The food item to add.</param>
         /// <returns>Result of the add operation.</returns>
@@ -37,7 +37,9 @@
             }
             try
             {
-                await _consumableService.AddConsumableItemAsync(model);
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                // If IsPublic is false, associate with user; if true, userId is null (admin/global food)
+                await _consumableService.AddConsumableItemAsync(model, model.IsPublic ? null : userId);
                 return Ok(new { Message = "Food item added successfully." });
             }
             catch (Exception ex)
@@ -50,6 +52,16 @@
         public async Task<IActionResult> GetAllPublicConsumableItems()
         {
             var items = await _consumableService.GetAllPublicConsumableItemsAsync();
+            return Ok(items);
+        }
+
+        [HttpGet("custom")]
+        public async Task<IActionResult> GetAllUserCustomConsumableItems()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+            var items = await _consumableService.GetAllUserCustomConsumableItemsAsync(userId);
             return Ok(items);
         }
 
