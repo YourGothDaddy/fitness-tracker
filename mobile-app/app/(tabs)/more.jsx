@@ -47,6 +47,7 @@ const More = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [avatarUri, setAvatarUri] = useState(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -142,9 +143,13 @@ const More = () => {
             onPress={handlePickAvatar}
             activeOpacity={0.7}
           >
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-            ) : profile?.avatarUrl ? (
+            {avatarUri && !avatarLoadError ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImage}
+                onError={() => setAvatarLoadError(true)}
+              />
+            ) : profile?.avatarUrl && !avatarLoadError ? (
               <Image
                 source={{
                   uri: profile.avatarUrl.startsWith("http")
@@ -152,11 +157,10 @@ const More = () => {
                     : `${API_URL}${profile.avatarUrl}`,
                 }}
                 style={styles.avatarImage}
+                onError={() => setAvatarLoadError(true)}
               />
             ) : loading ? (
               <Text style={styles.avatarText}>--</Text>
-            ) : error ? (
-              <Text style={styles.avatarText}>?</Text>
             ) : (
               <Text style={styles.avatarText}>{profile?.initials || "--"}</Text>
             )}
