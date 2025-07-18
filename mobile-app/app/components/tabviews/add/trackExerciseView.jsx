@@ -365,21 +365,18 @@ const ExerciseItem = ({
       <View style={styles.exerciseItemLeft}>
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
-          <Text style={[styles.calorieText, styles.calMinText]}>
-            <Text style={styles.calorieLabel}>⚡ kcal/min:</Text>{" "}
-            {loading ? "..." : calories.caloriesPerMinute?.toFixed(1)}
-          </Text>
-          <Text style={[styles.calorieText, styles.cal30MinText]}>
-            <Text style={styles.calorieLabel}>⏱️ kcal/30min:</Text>{" "}
-            {loading ? "..." : calories.caloriesPerHalfHour?.toFixed(1)}
-          </Text>
-          <Text style={[styles.calorieText, styles.calHourText]}>
-            <Text style={styles.calorieLabel}>⏳ kcal/hour:</Text>{" "}
-            {loading ? "..." : calories.caloriesPerHour?.toFixed(1)}
-          </Text>
           <Text style={[styles.calorieText, styles.calTotalText]}>
             <Text style={styles.calorieLabel}>Total:</Text>{" "}
             {loading ? "..." : calories.totalCalories?.toFixed(1)} kcal
+          </Text>
+          <Text style={[styles.calorieText]}>
+            <Text style={styles.calorieLabel}>Duration:</Text> {duration} min
+          </Text>
+          <Text style={[styles.calorieText]}>
+            <Text style={styles.calorieLabel}>Length:</Text> (coming soon)
+          </Text>
+          <Text style={[styles.calorieText]}>
+            <Text style={styles.calorieLabel}>Effort:</Text> {effort || "N/A"}
           </Text>
         </View>
         {error ? (
