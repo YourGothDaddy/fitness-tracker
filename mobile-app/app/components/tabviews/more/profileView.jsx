@@ -360,12 +360,19 @@ const ProfileView = () => {
             <>
               <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{fieldValues.bmi || "–"}</Text>
+                  <Text style={styles.statValue}>
+                    {fieldValues.bmi && !isNaN(Number(fieldValues.bmi))
+                      ? Number(fieldValues.bmi).toFixed(1)
+                      : "–"}
+                  </Text>
                   <Text style={styles.statLabel}>BMI</Text>
                 </View>
                 <View style={styles.statCard}>
                   <Text style={styles.statValue}>
-                    {fieldValues.bodyFat || "–"}%
+                    {fieldValues.bodyFat && !isNaN(Number(fieldValues.bodyFat))
+                      ? Number(fieldValues.bodyFat).toFixed(1)
+                      : "–"}
+                    %
                   </Text>
                   <Text style={styles.statLabel}>Body Fat</Text>
                 </View>
