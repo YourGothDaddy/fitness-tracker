@@ -146,7 +146,11 @@ const More = () => {
               <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
             ) : profile?.avatarUrl ? (
               <Image
-                source={{ uri: profile.avatarUrl }}
+                source={{
+                  uri: profile.avatarUrl.startsWith("http")
+                    ? profile.avatarUrl
+                    : `${API_URL}${profile.avatarUrl}`,
+                }}
                 style={styles.avatarImage}
               />
             ) : loading ? (
