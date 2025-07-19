@@ -12,6 +12,8 @@ import { Colors } from "../../constants/Colors";
 import React from "react";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const TabIcon = ({ icon, color, name, focused, size }) => {
   return (
@@ -198,9 +200,19 @@ const TabsLayout = () => {
               },
             ]}
           >
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>What would you like to add?</Text>
-              <Text style={styles.menuSubtitle}>Choose an option below</Text>
+            {/* Redesigned Menu Header */}
+            <View style={styles.menuHeaderGradientWrapper}>
+              <LinearGradient
+                colors={["#8cc63f", "#619819"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.menuHeaderGradient}
+              >
+                <Text style={styles.menuTitle}>
+                  What would you like to add?
+                </Text>
+                <Text style={styles.menuSubtitle}>Choose an option below</Text>
+              </LinearGradient>
             </View>
 
             {/* 1. Add Food/Meal (renamed from Add Food) */}
@@ -215,11 +227,7 @@ const TabsLayout = () => {
                   { backgroundColor: "#F0FFF0" },
                 ]}
               >
-                <Image
-                  source={icons.food}
-                  style={styles.menuIcon}
-                  tintColor="#4CAF50"
-                />
+                <MaterialIcons name="restaurant" size={28} color="#4CAF50" />
               </View>
               <View style={styles.menuItemContent}>
                 <Text style={styles.menuItemTitle}>Add Food/Meal</Text>
@@ -227,10 +235,11 @@ const TabsLayout = () => {
                   Add a new food or meal with detailed nutrition
                 </Text>
               </View>
-              <Image
-                source={icons.chevronRight}
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color="#CCC"
                 style={styles.menuItemArrow}
-                tintColor="#CCC"
               />
             </Pressable>
 
@@ -246,10 +255,10 @@ const TabsLayout = () => {
                   { backgroundColor: "#F0F0FF" },
                 ]}
               >
-                <Image
-                  source={icons.exercise}
-                  style={styles.menuIcon}
-                  tintColor="#7B61FF"
+                <MaterialIcons
+                  name="fitness-center"
+                  size={28}
+                  color="#7B61FF"
                 />
               </View>
               <View style={styles.menuItemContent}>
@@ -258,10 +267,11 @@ const TabsLayout = () => {
                   Add a new workout with details
                 </Text>
               </View>
-              <Image
-                source={icons.chevronRight}
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color="#CCC"
                 style={styles.menuItemArrow}
-                tintColor="#CCC"
               />
             </Pressable>
 
@@ -277,11 +287,7 @@ const TabsLayout = () => {
                   { backgroundColor: "#FFF0F0" },
                 ]}
               >
-                <Image
-                  source={icons.food}
-                  style={styles.menuIcon}
-                  tintColor="#FF6B6B"
-                />
+                <MaterialIcons name="fastfood" size={28} color="#FF6B6B" />
               </View>
               <View style={styles.menuItemContent}>
                 <Text style={styles.menuItemTitle}>Log Food/Meal</Text>
@@ -289,10 +295,11 @@ const TabsLayout = () => {
                   Log your food or meal intake and calories
                 </Text>
               </View>
-              <Image
-                source={icons.chevronRight}
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color="#CCC"
                 style={styles.menuItemArrow}
-                tintColor="#CCC"
               />
             </Pressable>
 
@@ -308,10 +315,10 @@ const TabsLayout = () => {
                   { backgroundColor: "#F0F8FF" },
                 ]}
               >
-                <Image
-                  source={icons.exercise}
-                  style={styles.menuIcon}
-                  tintColor="#4DA6FF"
+                <MaterialIcons
+                  name="directions-run"
+                  size={28}
+                  color="#4DA6FF"
                 />
               </View>
               <View style={styles.menuItemContent}>
@@ -320,10 +327,11 @@ const TabsLayout = () => {
                   Record your exercise activity
                 </Text>
               </View>
-              <Image
-                source={icons.chevronRight}
+              <MaterialIcons
+                name="chevron-right"
+                size={24}
+                color="#CCC"
                 style={styles.menuItemArrow}
-                tintColor="#CCC"
               />
             </Pressable>
 
@@ -421,8 +429,10 @@ const styles = StyleSheet.create({
   menuContainer: {
     width: "85%",
     backgroundColor: "white",
-    borderRadius: 24,
-    paddingTop: 24,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
     paddingBottom: 16,
     shadowColor: "#000",
     shadowOffset: {
@@ -516,6 +526,47 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#666",
+  },
+  menuHeaderGradientWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  menuHeaderGradient: {
+    width: "100%",
+    paddingTop: 28,
+    paddingBottom: 18,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  menuTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(0,0,0,0.18)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+    marginBottom: 4,
+  },
+  menuSubtitle: {
+    color: "#f0f8e0",
+    fontSize: 15,
+    textAlign: "center",
+    fontWeight: "500",
+    letterSpacing: 0.2,
   },
 });
 
