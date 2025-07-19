@@ -203,36 +203,7 @@ const TabsLayout = () => {
               <Text style={styles.menuSubtitle}>Choose an option below</Text>
             </View>
 
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleTrackMeal}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: "#FFF0F0" },
-                ]}
-              >
-                <Image
-                  source={icons.food}
-                  style={styles.menuIcon}
-                  tintColor="#FF6B6B"
-                />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Track Meal</Text>
-                <Text style={styles.menuItemSubtitle}>
-                  Log your food intake and calories
-                </Text>
-              </View>
-              <Image
-                source={icons.chevronRight}
-                style={styles.menuItemArrow}
-                tintColor="#CCC"
-              />
-            </Pressable>
-
+            {/* 1. Add Food/Meal (renamed from Add Food) */}
             <Pressable
               style={styles.menuItem}
               onPress={handleAddFood}
@@ -251,9 +222,9 @@ const TabsLayout = () => {
                 />
               </View>
               <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Add Food</Text>
+                <Text style={styles.menuItemTitle}>Add Food/Meal</Text>
                 <Text style={styles.menuItemSubtitle}>
-                  Add a new food with detailed nutrition
+                  Add a new food or meal with detailed nutrition
                 </Text>
               </View>
               <Image
@@ -263,6 +234,7 @@ const TabsLayout = () => {
               />
             </Pressable>
 
+            {/* 2. Add Workout */}
             <Pressable
               style={styles.menuItem}
               onPress={handleAddWorkout}
@@ -293,6 +265,38 @@ const TabsLayout = () => {
               />
             </Pressable>
 
+            {/* 3. Log Food/Meal (renamed from Track Meal) */}
+            <Pressable
+              style={styles.menuItem}
+              onPress={handleTrackMeal}
+              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+            >
+              <View
+                style={[
+                  styles.menuIconContainer,
+                  { backgroundColor: "#FFF0F0" },
+                ]}
+              >
+                <Image
+                  source={icons.food}
+                  style={styles.menuIcon}
+                  tintColor="#FF6B6B"
+                />
+              </View>
+              <View style={styles.menuItemContent}>
+                <Text style={styles.menuItemTitle}>Log Food/Meal</Text>
+                <Text style={styles.menuItemSubtitle}>
+                  Log your food or meal intake and calories
+                </Text>
+              </View>
+              <Image
+                source={icons.chevronRight}
+                style={styles.menuItemArrow}
+                tintColor="#CCC"
+              />
+            </Pressable>
+
+            {/* 4. Log Workout */}
             <Pressable
               style={styles.menuItem}
               onPress={handleLogWorkout}
