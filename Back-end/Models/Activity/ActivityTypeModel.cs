@@ -7,5 +7,6 @@ namespace Fitness_Tracker.Models.Activity
         public string Category { get; set; }
         public bool IsPublic { get; set; }
         public string? CreatedByUserId { get; set; }
+        public int? Calories { get; set; }
     }
 } 

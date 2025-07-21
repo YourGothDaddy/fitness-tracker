@@ -210,10 +210,10 @@ class ActivityService {
     }
   }
 
-  async createCustomActivityType({ name, activityCategoryId }) {
+  async createCustomActivityType({ name, activityCategoryId, calories }) {
     try {
       const url = `${API_URL}/api/activity/custom-activity-type`;
-      const payload = { name, activityCategoryId };
+      const payload = { name, activityCategoryId, calories };
       const response = await axiosInstance.post(url, payload);
       return response.data;
     } catch (error) {

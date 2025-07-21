@@ -418,15 +418,19 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<Models.Activity.ActivityTypeModel>> GetFavoriteActivityTypesAsync(string userId)
         {
-            return await _databaseContext.UserFavoriteActivityTypes
+            var result = await _databaseContext.UserFavoriteActivityTypes
                 .Where(x => x.UserId == userId)
                 .Select(x => new Models.Activity.ActivityTypeModel
                 {
                     Id = x.ActivityType.Id,
                     Name = x.ActivityType.Name,
-                    Category = x.ActivityType.ActivityCategory.Name
+                    Category = x.ActivityType.ActivityCategory.Name,
+                    IsPublic = x.ActivityType.IsPublic,
+                    CreatedByUserId = x.ActivityType.CreatedByUserId,
+                    Calories = x.ActivityType.Calories
                 })
                 .ToListAsync();
+            return result;
         }
 
         public async Task<int> CreateCustomActivityTypeAsync(Models.Admins.AddActivityTypeModel model, string userId)
@@ -442,7 +446,8 @@ namespace Fitness_Tracker.Services.Activity
                 Name = model.Name,
                 ActivityCategoryId = activityCategory.Id,
                 IsPublic = false,
-                CreatedByUserId = userId
+                CreatedByUserId = userId,
+                Calories = model.Calories // Set the calories for custom workouts
             };
             _databaseContext.ActivityTypes.Add(newActivityType);
             await _databaseContext.SaveChangesAsync();
@@ -460,14 +465,15 @@ namespace Fitness_Tracker.Services.Activity
                     Name = at.Name,
                     Category = at.ActivityCategory.Name,
                     IsPublic = at.IsPublic,
-                    CreatedByUserId = at.CreatedByUserId
+                    CreatedByUserId = at.CreatedByUserId,
+                    Calories = at.Calories
                 })
                 .ToListAsync();
         }
 
         public async Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId)
         {
-            return await _databaseContext.ActivityTypes
+            var result = await _databaseContext.ActivityTypes
                 .Include(at => at.ActivityCategory)
                 .Where(at => at.CreatedByUserId == userId && !at.IsPublic)
                 .Select(at => new Models.Activity.ActivityTypeModel
@@ -476,9 +482,11 @@ namespace Fitness_Tracker.Services.Activity
                     Name = at.Name,
                     Category = at.ActivityCategory.Name,
                     IsPublic = at.IsPublic,
-                    CreatedByUserId = at.CreatedByUserId
+                    CreatedByUserId = at.CreatedByUserId,
+                    Calories = at.Calories
                 })
                 .ToListAsync();
+            return result;
         }
     }
 } 

@@ -44,6 +44,11 @@ const ExerciseItem = ({
   activityTypeId,
   favoriteActivityTypeIds = [],
   onFavoriteToggle,
+  isCustomTab,
+  hideEffortAndDuration,
+  isCustomWorkout,
+  customCalories,
+  ...rest
 }) => {
   const [duration, setDuration] = useState(30);
   const [effort, setEffort] = useState(
@@ -246,13 +251,15 @@ const ExerciseItem = ({
   };
 
   useEffect(() => {
-    if (
-      (effortLevels.length > 0 && effort) ||
-      (terrainTypes.length > 0 && terrain)
-    ) {
-      recalculateCalories(effort, terrain, duration);
+    if (!isCustomWorkout) {
+      if (
+        (effortLevels.length > 0 && effort) ||
+        (terrainTypes.length > 0 && terrain)
+      ) {
+        recalculateCalories(effort, terrain, duration);
+      }
     }
-  }, [effort, terrain, duration]);
+  }, [effort, terrain, duration, isCustomWorkout]);
 
   let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
   let showEffort = effortLevels.length > 0;
@@ -367,16 +374,20 @@ const ExerciseItem = ({
         <View style={styles.caloriesContainer}>
           <Text style={[styles.calorieText, styles.calTotalText]}>
             <Text style={styles.calorieLabel}>Total:</Text>{" "}
-            {loading ? "..." : calories.totalCalories?.toFixed(1)} kcal
+            {loading
+              ? "..."
+              : isCustomWorkout && typeof customCalories === "number"
+              ? customCalories
+              : calories.totalCalories?.toFixed(1)}{" "}
+            kcal
           </Text>
-          <Text style={[styles.calorieText]}>
-            <Text style={styles.calorieLabel}>Duration:</Text> {duration} min
-          </Text>
+          {isCustomWorkout && (
+            <Text style={[styles.calorieText]}>
+              <Text style={styles.calorieLabel}>Duration:</Text> {duration} min
+            </Text>
+          )}
           <Text style={[styles.calorieText]}>
             <Text style={styles.calorieLabel}>Length:</Text> (coming soon)
-          </Text>
-          <Text style={[styles.calorieText]}>
-            <Text style={styles.calorieLabel}>Effort:</Text> {effort || "N/A"}
           </Text>
         </View>
         {error ? (
@@ -387,10 +398,11 @@ const ExerciseItem = ({
             flexDirection: "row",
             gap: 10,
             marginTop: 10,
-            flexWrap: "wrap",
+            flexWrap: "nowrap", // Prevent wrapping
+            alignItems: "center", // Align vertically
           }}
         >
-          {showDuration && (
+          {!hideEffortAndDuration && showDuration && (
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
             >
@@ -417,18 +429,21 @@ const ExerciseItem = ({
               />
             </View>
           )}
-          {showEffort && (
+          {!hideEffortAndDuration && showEffort && (
             <>
               <TouchableOpacity
                 style={styles.badgeContainer}
                 onPress={() => setEffortModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.badgeText}>{effort || "Effort level"}</Text>
+                <Text style={styles.badgeText}>
+                  <Text style={styles.calorieLabel}>Effort:</Text>{" "}
+                  {effort || "Effort level"}
+                </Text>
                 <MaterialIcons
                   name="arrow-drop-down"
                   size={20}
-                  color={Colors.darkGreen.color}
+                  color="#619819"
                   style={{ marginLeft: 2 }}
                 />
               </TouchableOpacity>
@@ -468,10 +483,7 @@ const ExerciseItem = ({
                         <Text
                           style={{
                             fontSize: 16,
-                            color:
-                              option === effort
-                                ? Colors.darkGreen.color
-                                : "#2d3436",
+                            color: option === effort ? "#619819" : "#2d3436",
                             fontWeight: option === effort ? "700" : "500",
                           }}
                         >
@@ -646,6 +658,19 @@ const TrackExerciseView = () => {
   const [favoriteActivityTypeIds, setFavoriteActivityTypeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exerciseMetaData, setExerciseMetaData] = useState([]); // NEW
+
+  useEffect(() => {
+    const fetchMetaData = async () => {
+      try {
+        const meta = await activityService.getExerciseMetaData();
+        setExerciseMetaData(meta);
+      } catch (err) {
+        // ignore for now
+      }
+    };
+    fetchMetaData();
+  }, []);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -700,6 +725,28 @@ const TrackExerciseView = () => {
       item.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
+
+  // Helper to get effortLevels and terrainTypes from meta
+  const getMetaForItem = (item) => {
+    return (
+      exerciseMetaData.find(
+        (meta) =>
+          meta.category === item.category && meta.subcategory === item.name
+      ) || {}
+    );
+  };
+
+  // Helper to determine if an item is a custom workout in the current tab
+  const isCustomOrFavoriteCustom = (item) => {
+    // In 'custom' tab, all are custom
+    if (activeTab === "custom") return true;
+    // In 'favorites' tab, check if item is custom (not public)
+    if (activeTab === "favorites" && item.isPublic === false) return true;
+    return false;
+  };
+
+  // Determine if the current tab is 'custom'
+  const isCustomTab = activeTab === "custom";
 
   return (
     <>
@@ -813,16 +860,25 @@ const TrackExerciseView = () => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.exercisesListContent}
           >
-            {filteredItems.map((item, index) => (
-              <ExerciseItem
-                key={item.id || index}
-                category={item.category}
-                subcategory={item.name}
-                activityTypeId={item.id}
-                favoriteActivityTypeIds={favoriteActivityTypeIds}
-                onFavoriteToggle={handleFavoriteToggle}
-              />
-            ))}
+            {filteredItems.map((item, index) => {
+              const meta = getMetaForItem(item);
+              const hideEffortAndDuration = isCustomOrFavoriteCustom(item);
+              return (
+                <ExerciseItem
+                  key={item.id || index}
+                  category={item.category}
+                  subcategory={item.name}
+                  activityTypeId={item.id}
+                  favoriteActivityTypeIds={favoriteActivityTypeIds}
+                  onFavoriteToggle={handleFavoriteToggle}
+                  effortLevels={meta.effortLevels || []}
+                  terrainTypes={meta.terrainTypes || []}
+                  hideEffortAndDuration={hideEffortAndDuration}
+                  isCustomWorkout={hideEffortAndDuration}
+                  customCalories={item.calories}
+                />
+              );
+            })}
           </ScrollView>
         )}
       </SafeAreaView>

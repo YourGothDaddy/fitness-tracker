@@ -182,10 +182,13 @@ const AddWorkoutView = () => {
         );
         activityCategoryId = found?.id || found?.Id || 1;
       }
-      await activityService.createCustomActivityType({
+      const payload = {
         name: subcategory,
         activityCategoryId,
-      });
+        calories: energy ? parseInt(energy) : null,
+      };
+      console.log("Creating custom activity type with:", payload);
+      await activityService.createCustomActivityType(payload);
       setSuccess("Custom workout created! It will appear in your Custom tab.");
       Alert.alert(
         "Success",
