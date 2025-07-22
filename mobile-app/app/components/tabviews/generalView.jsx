@@ -119,6 +119,12 @@ const GeneralView = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // Helper to format date as "MMM d" (e.g., "Jun 1")
+  const formatShortDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
   // Date picker handler
   const showDatePicker = () => {
     DateTimePickerAndroid.open({
@@ -252,11 +258,32 @@ const GeneralView = () => {
     ],
   };
 
+  let weightLabels, weightValues;
+  if (
+    selectedWeightTimeframe === "month" &&
+    weightProgress.dailyWeights.length > 2
+  ) {
+    const len = weightProgress.dailyWeights.length;
+    weightLabels = weightProgress.dailyWeights.map((day, idx) => {
+      if (idx === 0) return formatShortDate(day.date); // leftmost
+      if (idx === Math.floor(len / 2)) return formatShortDate(day.date); // middle
+      if (idx === len - 1) return formatShortDate(day.date); // rightmost
+      return "";
+    });
+    // Add a dummy label and value
+    weightLabels.push("");
+    weightValues = weightProgress.dailyWeights.map((day) => day.weight);
+    weightValues.push(weightValues[weightValues.length - 1]);
+  } else {
+    weightLabels = weightProgress.dailyWeights.map((day) => day.dayName);
+    weightValues = weightProgress.dailyWeights.map((day) => day.weight);
+  }
+
   const weightData = {
-    labels: weightProgress.dailyWeights.map((day) => day.dayName),
+    labels: weightLabels,
     datasets: [
       {
-        data: weightProgress.dailyWeights.map((day) => day.weight),
+        data: weightValues,
         color: () => Colors.green.color,
         strokeWidth: 2,
       },
