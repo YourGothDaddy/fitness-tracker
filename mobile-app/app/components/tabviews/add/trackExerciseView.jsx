@@ -374,23 +374,28 @@ const ExerciseItem = ({
       <View style={styles.exerciseItemLeft}>
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
-          <Text style={[styles.calorieText, styles.calTotalText]}>
-            <Text style={styles.calorieLabel}>Total:</Text>{" "}
-            {loading
-              ? "..."
-              : isCustomWorkout && typeof customCalories === "number"
-              ? customCalories
-              : calories.totalCalories?.toFixed(1)}{" "}
-            kcal
-          </Text>
+          <View style={styles.totalCaloriesBox}>
+            <MaterialIcons
+              name="local-fire-department"
+              size={22}
+              color="#ff7043"
+              style={{ marginRight: 6 }}
+            />
+            <Text style={styles.totalCaloriesLabel}>Burned</Text>
+            <Text style={styles.totalCaloriesValue}>
+              {loading
+                ? "..."
+                : isCustomWorkout && typeof customCalories === "number"
+                ? customCalories
+                : calories.totalCalories?.toFixed(1)}{" "}
+              kcal
+            </Text>
+          </View>
           {isCustomWorkout && (
             <Text style={[styles.calorieText]}>
               <Text style={styles.calorieLabel}>Duration:</Text> {duration} min
             </Text>
           )}
-          <Text style={[styles.calorieText]}>
-            <Text style={styles.calorieLabel}>Length:</Text> (coming soon)
-          </Text>
         </View>
         {error ? (
           <Text style={{ color: "red", fontSize: 12 }}>{error}</Text>
@@ -1098,6 +1103,34 @@ const styles = StyleSheet.create({
   calTotalText: {
     backgroundColor: "#F3E5F5",
     color: "#8E24AA",
+  },
+  totalCaloriesBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e6f9e6",
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    marginBottom: 6,
+    marginRight: 8,
+    shadowColor: "#619819",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  totalCaloriesLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#619819",
+    marginRight: 8,
+    letterSpacing: 0.5,
+  },
+  totalCaloriesValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2d3436",
+    letterSpacing: 0.5,
   },
 });
 
