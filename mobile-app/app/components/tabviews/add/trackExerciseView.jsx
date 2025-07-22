@@ -286,89 +286,91 @@ const ExerciseItem = ({
 
   return (
     <Animated.View style={styles.exerciseItemContainer}>
-      <TouchableOpacity
-        style={styles.heartButtonAbsolute}
-        onPress={handleFavoritePress}
-        activeOpacity={0.7}
-      >
-        {showParticles && (
-          <>
-            {particleAnims.map((anim, i) => {
-              const { angle, distance, rotation } = particleConfigs[i];
-              const translateX = anim.scale.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, Math.cos(angle) * distance],
-              });
-              const translateY = anim.scale.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, Math.sin(angle) * distance],
-              });
-              const rotateParticle = anim.scale.interpolate({
-                inputRange: [0, 1],
-                outputRange: ["0deg", `${rotation}deg`],
-              });
-              return (
-                <Animated.View
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: 16,
-                    top: 16,
-                    width: 12,
-                    height: 12,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: anim.opacity,
-                    transform: [
-                      { translateX },
-                      { translateY },
-                      { scale: anim.scale },
-                      { rotate: rotateParticle },
-                    ],
-                  }}
-                  pointerEvents="none"
-                >
-                  <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
-                </Animated.View>
-              );
-            })}
-          </>
-        )}
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: heartAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 0],
-            }),
-          }}
-          pointerEvents="none"
+      {!isCustomWorkout && (
+        <TouchableOpacity
+          style={styles.heartButtonAbsolute}
+          onPress={handleFavoritePress}
+          activeOpacity={0.7}
         >
-          <Ionicons name="heart-outline" size={26} color="#bbb" />
-        </Animated.View>
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: heartAnim,
-            transform: [{ scale: scaleAnim }, { rotate }],
-          }}
-          pointerEvents="none"
-        >
-          <Ionicons name="heart" size={26} color="#e74c3c" />
-        </Animated.View>
-      </TouchableOpacity>
+          {showParticles && (
+            <>
+              {particleAnims.map((anim, i) => {
+                const { angle, distance, rotation } = particleConfigs[i];
+                const translateX = anim.scale.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, Math.cos(angle) * distance],
+                });
+                const translateY = anim.scale.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, Math.sin(angle) * distance],
+                });
+                const rotateParticle = anim.scale.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ["0deg", `${rotation}deg`],
+                });
+                return (
+                  <Animated.View
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      left: 16,
+                      top: 16,
+                      width: 12,
+                      height: 12,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: anim.opacity,
+                      transform: [
+                        { translateX },
+                        { translateY },
+                        { scale: anim.scale },
+                        { rotate: rotateParticle },
+                      ],
+                    }}
+                    pointerEvents="none"
+                  >
+                    <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
+                  </Animated.View>
+                );
+              })}
+            </>
+          )}
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: heartAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1, 0],
+              }),
+            }}
+            pointerEvents="none"
+          >
+            <Ionicons name="heart-outline" size={26} color="#bbb" />
+          </Animated.View>
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: heartAnim,
+              transform: [{ scale: scaleAnim }, { rotate }],
+            }}
+            pointerEvents="none"
+          >
+            <Ionicons name="heart" size={26} color="#e74c3c" />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
       <View style={styles.exerciseItemLeft}>
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
@@ -869,14 +871,19 @@ const TrackExerciseView = () => {
             {filteredItems.map((item, index) => {
               const meta = getMetaForItem(item);
               const hideEffortAndDuration = isCustomOrFavoriteCustom(item);
+              const isCustomWorkout = activeTab === "custom";
               return (
                 <ExerciseItem
                   key={item.id || index}
                   category={item.category}
                   subcategory={item.name}
                   activityTypeId={item.id}
-                  favoriteActivityTypeIds={favoriteActivityTypeIds}
-                  onFavoriteToggle={handleFavoriteToggle}
+                  favoriteActivityTypeIds={
+                    isCustomWorkout ? [] : favoriteActivityTypeIds
+                  }
+                  onFavoriteToggle={
+                    isCustomWorkout ? undefined : handleFavoriteToggle
+                  }
                   effortLevels={meta.effortLevels || []}
                   terrainTypes={meta.terrainTypes || []}
                   hideEffortAndDuration={hideEffortAndDuration}
