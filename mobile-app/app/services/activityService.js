@@ -240,6 +240,41 @@ class ActivityService {
       throw error;
     }
   }
+
+  async createCustomWorkout({
+    name,
+    activityCategoryId,
+    activityTypeId,
+    durationInMinutes,
+    caloriesBurned,
+    notes,
+  }) {
+    try {
+      const url = `${API_URL}/api/activity/custom-workout`;
+      const payload = {
+        name,
+        activityCategoryId,
+        activityTypeId,
+        durationInMinutes,
+        caloriesBurned,
+        notes,
+      };
+      const response = await axiosInstance.post(url, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getUserCustomWorkouts() {
+    try {
+      const url = `${API_URL}/api/activity/custom-workouts`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const activityService = new ActivityService();

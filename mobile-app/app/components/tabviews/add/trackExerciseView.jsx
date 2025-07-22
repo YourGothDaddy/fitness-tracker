@@ -691,9 +691,15 @@ const TrackExerciseView = () => {
         if (activeTab === "all") {
           items = await activityService.getPublicActivityTypes();
         } else if (activeTab === "custom") {
-          items = await activityService.getUserCustomActivityTypes();
+          const customWorkouts = await activityService.getUserCustomWorkouts();
+          items = customWorkouts.map((cw) => ({
+            id: cw.id,
+            name: cw.name,
+            category: cw.activityCategoryId,
+            calories: cw.caloriesBurned,
+            isPublic: false,
+          }));
         } else if (activeTab === "favorites") {
-          // For favorites, fetch all public and custom, then filter by favorite ids
           const [publicTypes, customTypes] = await Promise.all([
             activityService.getPublicActivityTypes(),
             activityService.getUserCustomActivityTypes(),

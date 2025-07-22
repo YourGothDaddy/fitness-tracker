@@ -20,6 +20,7 @@
         public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Activity> Activities { get; set; }
         public DbSet<WeightRecord> WeightRecords { get; set; }
+        public DbSet<CustomWorkout> CustomWorkouts { get; set; }
 
         public DbSet<ActivityLevel> ActivityLevels { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }

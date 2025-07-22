@@ -378,33 +378,21 @@ namespace Fitness_Tracker.Controllers
         /// <summary>
         /// Creates a custom activity type for the authenticated user (not public).
         /// </summary>
-        /// <param name="model">The model containing activity type details to add.</param>
-        /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
+        /// <remarks>
+        /// This endpoint is reserved for admin or global activity types. Users should use /custom-workout for personal custom workouts.
+        /// </remarks>
         [HttpPost("custom-activity-type")]
         public async Task<IActionResult> CreateCustomActivityType([FromBody] Models.Admins.AddActivityTypeModel model)
         {
+            // Prevent regular users from using this endpoint for personal custom workouts
             var validationResult = ValidateUserAuthentication(out var userId);
             if (validationResult != null)
             {
                 return validationResult;
             }
-            try
-            {
-                var id = await _activityService.CreateCustomActivityTypeAsync(model, userId);
-                return Ok(new { Id = id, Message = "Custom activity type created." });
-            }
-            catch (ArgumentNullException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while creating custom activity type: {ex.Message}");
-            }
+            // Optionally, check for admin role here if needed
+            // For now, always return BadRequest for non-admins
+            return BadRequest("This endpoint is reserved for admin or global activity types. Use /custom-workout for personal custom workouts.");
         }
 
         /// <summary>
@@ -430,6 +418,50 @@ namespace Fitness_Tracker.Controllers
             }
             var types = await _activityService.GetUserCustomActivityTypesAsync(userId);
             return Ok(types);
+        }
+
+        /// <summary>
+        /// Creates a new custom workout for the current user.
+        /// </summary>
+        [HttpPost("custom-workout")]
+        public async Task<IActionResult> CreateCustomWorkout([FromBody] Models.Activity.CustomWorkoutModel model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            try
+            {
+                var id = await _activityService.CreateCustomWorkoutAsync(userId, model);
+                return Ok(new { Id = id, Message = "Custom workout created." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while creating custom workout: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all custom workouts created by the current user.
+        /// </summary>
+        [HttpGet("custom-workouts")]
+        public async Task<IActionResult> GetUserCustomWorkouts()
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+            try
+            {
+                var workouts = await _activityService.GetUserCustomWorkoutsAsync(userId);
+                return Ok(workouts);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving custom workouts: {ex.Message}");
+            }
         }
 
         // PRIVATE METHODS

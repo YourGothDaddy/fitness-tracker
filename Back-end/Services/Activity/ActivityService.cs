@@ -488,5 +488,42 @@ namespace Fitness_Tracker.Services.Activity
                 .ToListAsync();
             return result;
         }
+
+        public async Task<int> CreateCustomWorkoutAsync(string userId, Models.Activity.CustomWorkoutModel model)
+        {
+            if (model == null) throw new ArgumentNullException(nameof(model));
+            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            var customWorkout = new Data.Models.CustomWorkout
+            {
+                UserId = userId,
+                Name = model.Name,
+                ActivityCategoryId = model.ActivityCategoryId,
+                ActivityTypeId = model.ActivityTypeId,
+                DurationInMinutes = model.DurationInMinutes,
+                CaloriesBurned = model.CaloriesBurned,
+                Notes = model.Notes
+            };
+            _databaseContext.CustomWorkouts.Add(customWorkout);
+            await _databaseContext.SaveChangesAsync();
+            return customWorkout.Id;
+        }
+
+        public async Task<List<Models.Activity.CustomWorkoutModel>> GetUserCustomWorkoutsAsync(string userId)
+        {
+            return await _databaseContext.CustomWorkouts
+                .Where(cw => cw.UserId == userId)
+                .Select(cw => new Models.Activity.CustomWorkoutModel
+                {
+                    Id = cw.Id,
+                    Name = cw.Name,
+                    ActivityCategoryId = cw.ActivityCategoryId,
+                    ActivityTypeId = cw.ActivityTypeId,
+                    DurationInMinutes = cw.DurationInMinutes,
+                    CaloriesBurned = cw.CaloriesBurned,
+                    Notes = cw.Notes
+                })
+                .ToListAsync();
+        }
     }
 } 

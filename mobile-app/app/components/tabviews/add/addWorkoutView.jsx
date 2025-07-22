@@ -168,27 +168,44 @@ const AddWorkoutView = () => {
   const handleCustomCreate = async () => {
     setError("");
     setSuccess("");
-    if (!category || !subcategory) {
-      Alert.alert("Error", "Please select category and subcategory.");
+    if (!category || !subcategory || !duration || !energy) {
+      Alert.alert(
+        "Error",
+        "Please fill in all required fields for a custom workout."
+      );
       return;
     }
     setIsLoading(true);
     try {
-      // Find categoryId (simulate or map if needed)
+      // Find categoryId and activityTypeId
       let activityCategoryId = 1;
+      let activityTypeId = null;
       if (categories && categories.length > 0) {
         const found = categories.find(
           (c) => c.name === category || c.Name === category
         );
         activityCategoryId = found?.id || found?.Id || 1;
       }
+      if (activityTypes && activityTypes.length > 0) {
+        const foundType = activityTypes.find(
+          (t) => t.name === subcategory && t.category === category
+        );
+        activityTypeId = foundType?.id || null;
+      }
+      if (!activityTypeId) {
+        setError("Could not find a matching activity type for custom workout.");
+        setIsLoading(false);
+        return;
+      }
       const payload = {
         name: subcategory,
         activityCategoryId,
-        calories: energy ? parseInt(energy) : null,
+        activityTypeId,
+        durationInMinutes: parseInt(duration),
+        caloriesBurned: parseInt(energy),
+        notes,
       };
-      console.log("Creating custom activity type with:", payload);
-      await activityService.createCustomActivityType(payload);
+      await activityService.createCustomWorkout(payload);
       setSuccess("Custom workout created! It will appear in your Custom tab.");
       Alert.alert(
         "Success",

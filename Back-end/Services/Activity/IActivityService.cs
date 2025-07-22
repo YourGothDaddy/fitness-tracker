@@ -19,5 +19,7 @@ namespace Fitness_Tracker.Services.Activity
         Task<int> CreateCustomActivityTypeAsync(Models.Admins.AddActivityTypeModel model, string userId);
         Task<List<Models.Activity.ActivityTypeModel>> GetPublicActivityTypesAsync();
         Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId);
+        Task<int> CreateCustomWorkoutAsync(string userId, Models.Activity.CustomWorkoutModel model);
+        Task<List<Models.Activity.CustomWorkoutModel>> GetUserCustomWorkoutsAsync(string userId);
     }
 } 
