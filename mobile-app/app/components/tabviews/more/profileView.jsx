@@ -193,6 +193,8 @@ const ProfileView = () => {
     height: "",
     bmi: "",
     bodyFat: "",
+    activityLevelId: 1,
+    includeTef: false,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -220,6 +222,8 @@ const ProfileView = () => {
         height: profileData.height?.toString() || "",
         bmi: profileData.bmi?.toString() || "",
         bodyFat: profileData.bodyFat?.toString() || "",
+        activityLevelId: profileData.activityLevelId ?? 1,
+        includeTef: profileData.includeTef ?? false,
       });
     } catch (error) {
       if (error.response) {
@@ -283,6 +287,8 @@ const ProfileView = () => {
               sex: updatedValues.sex || "",
               weight: parseFloat(updatedValues.weight) || 0,
               height: parseFloat(updatedValues.height) || 0,
+              activityLevelId: updatedValues.activityLevelId ?? 1,
+              includeTef: updatedValues.includeTef ?? false,
             });
             await loadProfileData();
           } catch (error) {
