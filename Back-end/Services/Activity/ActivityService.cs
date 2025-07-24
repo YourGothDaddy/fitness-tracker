@@ -95,7 +95,6 @@ namespace Fitness_Tracker.Services.Activity
                     Name = a.ActivityType.Name,
                     DurationInMinutes = a.DurationInMinutes,
                     CaloriesBurned = a.CaloriesBurned,
-                    TimeOfDay = a.TimeOfTheDay,
                     Time = a.Date.TimeOfDay,
                     Category = a.ActivityType.ActivityCategory.Name
                 })
@@ -135,7 +134,6 @@ namespace Fitness_Tracker.Services.Activity
             var activity = new Data.Models.Activity
             {
                 DurationInMinutes = model.DurationInMinutes,
-                TimeOfTheDay = model.TimeOfTheDay,
                 CaloriesBurned = model.CaloriesBurned,
                 ActivityTypeId = model.ActivityTypeId,
                 Date = model.Date,

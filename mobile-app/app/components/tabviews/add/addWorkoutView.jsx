@@ -40,8 +40,6 @@ const workoutCategories = [
   },
 ];
 
-const timeOfDayOptions = ["Morning", "Afternoon", "Evening", "Night"];
-
 const AddWorkoutView = () => {
   const router = useRouter();
   const [category, setCategory] = useState(workoutCategories[0].name);
@@ -54,11 +52,9 @@ const AddWorkoutView = () => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
   });
-  const [timeOfDay, setTimeOfDay] = useState(timeOfDayOptions[0]);
   const [notes, setNotes] = useState("");
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [subcategoryModalVisible, setSubcategoryModalVisible] = useState(false);
-  const [timeOfDayModalVisible, setTimeOfDayModalVisible] = useState(false);
   const [dateError, setDateError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -110,14 +106,7 @@ const AddWorkoutView = () => {
     setDateError("");
     setError("");
     setSuccess("");
-    if (
-      !category ||
-      !subcategory ||
-      !duration ||
-      !energy ||
-      !date ||
-      !timeOfDay
-    ) {
+    if (!category || !subcategory || !duration || !energy || !date) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
@@ -141,7 +130,6 @@ const AddWorkoutView = () => {
       }
       const payload = {
         durationInMinutes: duration,
-        timeOfDay,
         caloriesBurned: energy,
         activityTypeId,
         date,
@@ -349,40 +337,6 @@ const AddWorkoutView = () => {
           {dateError ? (
             <Text style={{ color: "red", marginBottom: 10 }}>{dateError}</Text>
           ) : null}
-
-          {/* Time of Day Picker */}
-          <Text style={styles.label}>Time of Day</Text>
-          <Pressable
-            onPress={() => setTimeOfDayModalVisible(true)}
-            style={[styles.input, { justifyContent: "center" }]}
-          >
-            <Text style={styles.pickerValue}>{timeOfDay}</Text>
-          </Pressable>
-          <Modal
-            visible={timeOfDayModalVisible}
-            transparent
-            animationType="fade"
-          >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={() => setTimeOfDayModalVisible(false)}
-            >
-              <View style={styles.modalContent}>
-                {timeOfDayOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setTimeOfDay(option);
-                      setTimeOfDayModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Pressable>
-          </Modal>
 
           <Text style={styles.label}>Notes (optional):</Text>
           <TextInput

@@ -62,7 +62,6 @@ class ActivityService {
 
   async addActivity({
     durationInMinutes,
-    timeOfDay,
     caloriesBurned,
     activityTypeId,
     date,
@@ -71,16 +70,8 @@ class ActivityService {
   }) {
     try {
       const url = `${API_URL}/api/activity/add`;
-      const timeOfDayEnumMap = {
-        Morning: 0,
-        Afternoon: 1,
-        Evening: 2,
-        Night: 3,
-      };
-      const timeOfTheDayEnum = timeOfDayEnumMap[timeOfDay];
       const payload = {
         durationInMinutes: Number(durationInMinutes),
-        timeOfTheDay: timeOfTheDayEnum,
         caloriesBurned: Number(caloriesBurned),
         activityTypeId: Number(activityTypeId),
         date: date,

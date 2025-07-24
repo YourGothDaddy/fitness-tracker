@@ -284,7 +284,6 @@ namespace Fitness_Tracker.Controllers
                 var addModel = new Models.Activity.AddActivityModel
                 {
                     DurationInMinutes = model.DurationInMinutes,
-                    TimeOfTheDay = Data.Models.Enums.TimeOfTheDay.Morning, // default to Morning
                     CaloriesBurned = (int)Math.Round(caloriesResult.CaloriesPerMinute * model.DurationInMinutes),
                     ActivityTypeId = activityTypeId.Value,
                     Date = model.Date,

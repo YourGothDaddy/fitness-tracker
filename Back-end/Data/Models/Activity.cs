@@ -1,6 +1,5 @@
 ﻿namespace Fitness_Tracker.Data.Models
 {
-    using Fitness_Tracker.Data.Models.Enums;
     using System.ComponentModel.DataAnnotations;
 
     public class Activity
@@ -9,9 +8,6 @@
         
         [Required]
         public int DurationInMinutes { get; set; }
-        
-        [Required]
-        public TimeOfTheDay TimeOfTheDay { get; set; }
         
         [Required]
         public int CaloriesBurned { get; set; }

@@ -5,6 +5,10 @@
       "PackagePath": "staticwebassets\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_b902c4dd-bddc-44ea-853a-1db5262e2557.png"
     },
     {
+      "Id": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_e0867074-44c9-45c9-9bb6-7c92c9026291.jpeg",
+      "PackagePath": "staticwebassets\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_e0867074-44c9-45c9-9bb6-7c92c9026291.jpeg"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Fitness-Tracker.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

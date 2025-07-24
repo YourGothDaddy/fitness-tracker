@@ -116,7 +116,6 @@ GO
 CREATE TABLE [Activities] (
     [Id] int NOT NULL IDENTITY,
     [DurationInMinutes] int NOT NULL,
-    [TimeOfTheDay] int NOT NULL,
     [CaloriesBurned] int NOT NULL,
     [ActivityTypeId] int NOT NULL,
     [Date] datetime2 NOT NULL,
