@@ -352,7 +352,7 @@ const TargetsView = () => {
               <View style={styles.targetInfo}>
                 <Text style={styles.targetLabel}>{item.label}</Text>
                 <Text style={styles.targetValues}>
-                  {item.consumed}/{item.required}{" "}
+                  {Math.round(item.consumed)}/{Math.round(item.required)}{" "}
                   {item.label === "Energy" ? "kcal" : "g"}
                 </Text>
               </View>
