@@ -116,6 +116,25 @@
                 .WithMany()
                 .HasForeignKey(ci => ci.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Fix for multiple cascade paths on CustomWorkout (both Restrict)
+            builder.Entity<CustomWorkout>()
+                .HasOne(cw => cw.ActivityCategory)
+                .WithMany()
+                .HasForeignKey(cw => cw.ActivityCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CustomWorkout>()
+                .HasOne(cw => cw.ActivityType)
+                .WithMany()
+                .HasForeignKey(cw => cw.ActivityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<CustomWorkout>()
+                .HasOne(cw => cw.User)
+                .WithMany()
+                .HasForeignKey(cw => cw.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

@@ -26,3 +26,5 @@ yarn-error.log*
 # Ignore Visual Studio files and directories
 .vs/
 
+Back-end/consumableItem.json
+

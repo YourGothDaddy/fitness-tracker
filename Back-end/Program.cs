@@ -136,6 +136,7 @@ namespace Fitness_Tracker
                 DataSeeder.SeedTestUserAsync(services).Wait();
                 DataSeeder.SeedActivityTypesAsync(services).Wait();
                 DataSeeder.SeedNutrientsAsync(services).Wait();
+                DataSeeder.SeedConsumableItemsAsync(services).Wait();
             }
 
             app.UseCors("AllowReactApp");

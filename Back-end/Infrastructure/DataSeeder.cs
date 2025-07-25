@@ -5,6 +5,10 @@
     using Fitness_Tracker.Data.Models.Enums;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
+    using System.Text.Json;
+    using Fitness_Tracker.Models.Admins;
+    using Fitness_Tracker.Services.Consumables;
+    using Fitness_Tracker.Data.Models.Consumables;
 
     public static class DataSeeder
     {
@@ -240,6 +244,126 @@
 
             context.Nutrients.AddRange(nutrients);
             await context.SaveChangesAsync();
+        }
+
+        public static async Task SeedConsumableItemsAsync(IServiceProvider serviceProvider)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var consumableService = scope.ServiceProvider.GetRequiredService<IConsumableService>();
+
+            // First clear all Nutrients (to avoid FK issues), then ConsumableItems
+            var allNutrients = await context.Nutrients.ToListAsync();
+            if (allNutrients.Any())
+            {
+                context.Nutrients.RemoveRange(allNutrients);
+                await context.SaveChangesAsync();
+            }
+            var allConsumableItems = await context.ConsumableItems.ToListAsync();
+            if (allConsumableItems.Any())
+            {
+                context.ConsumableItems.RemoveRange(allConsumableItems);
+                await context.SaveChangesAsync();
+            }
+
+            var filePath = "consumableItem.json";
+            Console.WriteLine($"[Seeder] Looking for file at: {filePath}");
+            Console.WriteLine($"[Seeder] Current directory: {Directory.GetCurrentDirectory()}");
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[Seeder] File not found: {filePath}");
+                return;
+            }
+
+            using var stream = File.OpenRead(filePath);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var items = await JsonSerializer.DeserializeAsync<List<JsonElement>>(stream, options);
+            if (items == null)
+            {
+                Console.WriteLine("[Seeder] No items found in JSON file.");
+                return;
+            }
+
+            int total = items.Count;
+            int inserted = 0;
+            int skipped = 0;
+            int errors = 0;
+            Console.WriteLine($"[Seeder] Starting to seed {total} consumable items...");
+
+            foreach (var item in items)
+            {
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        Console.WriteLine("[Seeder] Skipped item with missing or null Title.");
+                        skipped++;
+                        continue;
+                    }
+                    var name = titleProp.GetString();
+                    var subTitle = item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String ? subTitleProp.GetString() : string.Empty;
+                    if (await context.ConsumableItems.AnyAsync(c => c.Name == name && c.SubTitle == subTitle))
+                    {
+                        skipped++;
+                        Console.WriteLine($"[Seeder] Skipped existing: {name} | {subTitle}");
+                        continue;
+                    }
+
+                    int calories = item.TryGetProperty("CaloriesPer100g", out var cal) && cal.ValueKind == JsonValueKind.Number ? cal.GetInt32() : 0;
+                    double protein = item.TryGetProperty("ProteinPer100g", out var prot) && prot.ValueKind == JsonValueKind.Number ? prot.GetDouble() : 0;
+                    double carbs = item.TryGetProperty("CarbohydratesPer100g", out var carb) && carb.ValueKind == JsonValueKind.Number ? carb.GetDouble() : 0;
+                    double fat = item.TryGetProperty("FatsPer100g", out var fatEl) && fatEl.ValueKind == JsonValueKind.Number ? fatEl.GetDouble() : 0;
+
+                    var model = new AddConsumableItemModel
+                    {
+                        Name = name,
+                        SubTitle = subTitle,
+                        CaloriesPer100g = calories,
+                        ProteinPer100g = protein,
+                        CarbohydratePer100g = carbs,
+                        FatPer100g = fat,
+                        Type = TypeOfConsumable.Food, // You may want to map this from MainCategory or another field
+                        NutritionalInformation = new List<Nutrient>(),
+                        IsPublic = true
+                    };
+
+                    void AddNutrients(string category, JsonElement? group)
+                    {
+                        if (group == null || group.Value.ValueKind != JsonValueKind.Object) return;
+                        foreach (var prop in group.Value.EnumerateObject())
+                        {
+                            if (prop.Value.ValueKind == JsonValueKind.Null) continue;
+                            if (double.TryParse(prop.Value.ToString(), out var val))
+                            {
+                                model.NutritionalInformation.Add(new Nutrient
+                                {
+                                    Category = category,
+                                    Name = prop.Name,
+                                    Amount = val
+                                });
+                            }
+                        }
+                    }
+                    AddNutrients("Carbohydrates", item.TryGetProperty("Carbohydrates", out var carbsGroup) ? carbsGroup : (JsonElement?)null);
+                    AddNutrients("AminoAcids", item.TryGetProperty("AminoAcids", out var aminos) ? aminos : (JsonElement?)null);
+                    AddNutrients("Fats", item.TryGetProperty("Fats", out var fats) ? fats : (JsonElement?)null);
+                    AddNutrients("Minerals", item.TryGetProperty("Minerals", out var minerals) ? minerals : (JsonElement?)null);
+                    AddNutrients("Other", item.TryGetProperty("Other", out var other) ? other : (JsonElement?)null);
+                    AddNutrients("Sterols", item.TryGetProperty("Sterols", out var sterols) ? sterols : (JsonElement?)null);
+                    AddNutrients("Vitamins", item.TryGetProperty("Vitamins", out var vitamins) ? vitamins : (JsonElement?)null);
+
+                    await consumableService.AddConsumableItemAsync(model);
+                    inserted++;
+                    Console.WriteLine($"[Seeder] Inserted: {name}");
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[Seeder] Error: {ex.Message}");
+                }
+            }
+            Console.WriteLine($"[Seeder] Done. Inserted: {inserted}, Skipped: {skipped}, Errors: {errors}");
         }
     }
 }

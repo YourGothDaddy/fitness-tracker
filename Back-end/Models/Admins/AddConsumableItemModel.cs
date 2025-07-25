@@ -27,5 +27,6 @@
         /// The user who created this food (for backend use; not required from client)
         /// </summary>
         public string? UserId { get; set; }
+        public string? SubTitle { get; set; } // Now nullable
     }
 }

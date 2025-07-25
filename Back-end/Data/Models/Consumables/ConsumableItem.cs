@@ -6,6 +6,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string? SubTitle { get; set; } // Now nullable
         public int CaloriesPer100g { get; set; }
         public double ProteinPer100g { get; set; }
         public double CarbohydratePer100g { get; set; }

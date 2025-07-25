@@ -155,6 +155,9 @@ namespace Fitness_Tracker.Migrations
                     b.Property<double>("ProteinPer100g")
                         .HasColumnType("float");
 
+                    b.Property<string>("SubTitle")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
@@ -744,13 +747,13 @@ namespace Fitness_Tracker.Migrations
                     b.HasOne("Fitness_Tracker.Data.Models.ActivityCategory", "ActivityCategory")
                         .WithMany()
                         .HasForeignKey("ActivityCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fitness_Tracker.Data.Models.ActivityType", "ActivityType")
                         .WithMany()
                         .HasForeignKey("ActivityTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Fitness_Tracker.Data.Models.User", "User")
