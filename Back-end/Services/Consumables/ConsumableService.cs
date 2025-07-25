@@ -33,6 +33,24 @@
                 .ToListAsync();
         }
 
+        public async Task<Models.PagedResult<ConsumableItem>> GetPublicConsumableItemsPagedAsync(int pageNumber, int pageSize)
+        {
+            var query = _databaseContext.ConsumableItems.Where(ci => ci.IsPublic);
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderBy(ci => ci.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return new Models.PagedResult<ConsumableItem>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+
         public async Task AddConsumableItemAsync(AddConsumableItemModel model, string? userId = null)
         {
             var newConsumableItem = new ConsumableItem

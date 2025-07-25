@@ -80,3 +80,17 @@ export async function getAllCustomConsumableItems() {
     throw new Error("Failed to fetch custom foods.");
   }
 }
+
+export async function getPublicConsumableItemsPaged(
+  pageNumber = 1,
+  pageSize = 20
+) {
+  try {
+    const response = await axiosInstance.get(`/api/consumable/paged`, {
+      params: { pageNumber, pageSize },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch paged foods.");
+  }
+}

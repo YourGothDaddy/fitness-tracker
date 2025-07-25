@@ -24,6 +24,7 @@ import {
   isFavoriteConsumable,
   getFavoriteConsumables,
   getAllCustomConsumableItems,
+  getPublicConsumableItemsPaged, // <-- add this
 } from "@/app/services/foodService";
 
 const FoodItem = ({
@@ -289,6 +290,98 @@ const FoodItem = ({
   );
 };
 
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  // Helper to generate page numbers for best UX
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers();
+
+  return (
+    <View style={styles.paginationContainer}>
+      {/* Left Arrow */}
+      <TouchableOpacity
+        style={styles.arrowButton}
+        onPress={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+      >
+        <Ionicons
+          name="chevron-back"
+          size={24}
+          color={currentPage === 1 ? "#ccc" : Colors.darkGreen.color}
+        />
+      </TouchableOpacity>
+      {/* Dynamic Page Buttons */}
+      {pageNumbers.map((page, idx) =>
+        page === "..." ? (
+          <Text key={"ellipsis-" + idx} style={styles.ellipsis}>
+            ...
+          </Text>
+        ) : (
+          <TouchableOpacity
+            key={page}
+            style={[
+              styles.pageButton,
+              currentPage === page && styles.activePageButton,
+            ]}
+            onPress={() => onPageChange(page)}
+            disabled={currentPage === page}
+          >
+            <Text
+              style={[
+                styles.pageButtonText,
+                currentPage === page && styles.activePageButtonText,
+              ]}
+            >
+              {page}
+            </Text>
+          </TouchableOpacity>
+        )
+      )}
+      {/* Right Arrow */}
+      <TouchableOpacity
+        style={styles.arrowButton}
+        onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+      >
+        <Ionicons
+          name="chevron-forward"
+          size={24}
+          color={currentPage === totalPages ? "#ccc" : Colors.darkGreen.color}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const TrackMealView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -299,24 +392,41 @@ const TrackMealView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [customFoods, setCustomFoods] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20); // You can adjust this as needed
+  const [totalPages, setTotalPages] = useState(5); // Will update from backend
 
   const fetchFoods = useCallback(async () => {
     try {
       setLoading(true);
-      const [data, favorites] = await Promise.all([
-        getAllPublicConsumableItems(),
-        getFavoriteConsumables(),
-      ]);
-      setFoods(data);
-      setFavoriteConsumableIds(favorites.map((f) => f.id));
-      setFilteredFoods(data);
+      if (activeTab === "all") {
+        // Use paginated fetch for 'all' tab
+        const pagedResult = await getPublicConsumableItemsPaged(
+          currentPage,
+          pageSize
+        );
+        setFoods(pagedResult.items);
+        setTotalPages(
+          Math.max(1, Math.ceil(pagedResult.totalCount / pageSize))
+        );
+        setFilteredFoods(pagedResult.items); // For search
+      } else {
+        // Old logic for other tabs
+        const [data, favorites] = await Promise.all([
+          getAllPublicConsumableItems(),
+          getFavoriteConsumables(),
+        ]);
+        setFoods(data);
+        setFavoriteConsumableIds(favorites.map((f) => f.id));
+        setFilteredFoods(data);
+      }
       setError(null);
     } catch (err) {
       setError("Failed to load foods. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab, currentPage, pageSize]);
 
   const fetchCustomFoods = useCallback(async () => {
     try {
@@ -338,6 +448,18 @@ const TrackMealView = () => {
       fetchFoods();
     }
   }, [activeTab, fetchFoods, fetchCustomFoods]);
+
+  // When page changes, fetch new foods (only for 'all' tab)
+  useEffect(() => {
+    if (activeTab === "all") {
+      fetchFoods();
+    }
+  }, [currentPage, activeTab, fetchFoods]);
+
+  // When tab changes, reset page to 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -522,6 +644,12 @@ const TrackMealView = () => {
             ))
           )}
         </ScrollView>
+        {/* Pagination below the list */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </SafeAreaView>
     </>
   );
@@ -736,6 +864,40 @@ const styles = StyleSheet.create({
     color: "#D81B60", // readable pink
     borderColor: "#F8BBD0",
     borderWidth: 1,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 16,
+    gap: 4,
+  },
+  arrowButton: {
+    padding: 8,
+  },
+  pageButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#f5f5f5",
+    marginHorizontal: 2,
+  },
+  activePageButton: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  pageButtonText: {
+    color: "#666",
+    fontSize: 16,
+  },
+  activePageButtonText: {
+    color: Colors.white.color,
+    fontWeight: "bold",
+  },
+  ellipsis: {
+    color: "#888",
+    fontSize: 18,
+    marginHorizontal: 4,
+    paddingHorizontal: 2,
   },
 });
 

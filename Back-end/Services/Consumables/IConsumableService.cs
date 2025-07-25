@@ -5,6 +5,7 @@
         public Task<List<string>> GetMatchingConsumableItemsAsync(string query);
         public Task AddConsumableItemAsync(Models.Admins.AddConsumableItemModel model, string? userId = null);
         public Task<List<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetAllPublicConsumableItemsAsync();
+        public Task<Models.PagedResult<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetPublicConsumableItemsPagedAsync(int pageNumber, int pageSize);
         Task AddFavoriteConsumableItemAsync(string userId, int consumableItemId);
         Task RemoveFavoriteConsumableItemAsync(string userId, int consumableItemId);
         Task<bool> IsFavoriteConsumableItemAsync(string userId, int consumableItemId);

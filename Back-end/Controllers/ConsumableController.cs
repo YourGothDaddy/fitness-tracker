@@ -104,5 +104,14 @@
             var isFavorite = await _consumableService.IsFavoriteConsumableItemAsync(userId, consumableItemId);
             return Ok(new { IsFavorite = isFavorite });
         }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPublicConsumableItemsPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+        {
+            if (pageNumber < 1 || pageSize < 1 || pageSize > 100)
+                return BadRequest(new { Message = "Invalid pagination parameters." });
+            var result = await _consumableService.GetPublicConsumableItemsPagedAsync(pageNumber, pageSize);
+            return Ok(result);
+        }
     }
 }

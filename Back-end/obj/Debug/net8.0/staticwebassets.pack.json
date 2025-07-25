@@ -9,6 +9,10 @@
       "PackagePath": "staticwebassets\\avatars\\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_e0867074-44c9-45c9-9bb6-7c92c9026291.jpeg"
     },
     {
+      "Id": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\5af01f08-db2e-4450-b40f-b7fa4bdd0937_658b4ac5-cc76-4bfb-b88e-0e65139a465c.png",
+      "PackagePath": "staticwebassets\\avatars\\5af01f08-db2e-4450-b40f-b7fa4bdd0937_658b4ac5-cc76-4bfb-b88e-0e65139a465c.png"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Fitness-Tracker.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

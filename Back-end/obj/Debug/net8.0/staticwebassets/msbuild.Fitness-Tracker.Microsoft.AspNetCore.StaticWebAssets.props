@@ -32,5 +32,21 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\50bfb6c8-5c3a-4d2e-9765-1cfbc73d5704_e0867074-44c9-45c9-9bb6-7c92c9026291.jpeg))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\5af01f08-db2e-4450-b40f-b7fa4bdd0937_658b4ac5-cc76-4bfb-b88e-0e65139a465c.png))">
+      <SourceType>Package</SourceType>
+      <SourceId>Fitness-Tracker</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/Fitness-Tracker</BasePath>
+      <RelativePath>avatars/5af01f08-db2e-4450-b40f-b7fa4bdd0937_658b4ac5-cc76-4bfb-b88e-0e65139a465c.png</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\5af01f08-db2e-4450-b40f-b7fa4bdd0937_658b4ac5-cc76-4bfb-b88e-0e65139a465c.png))</OriginalItemSpec>
+    </StaticWebAsset>
   </ItemGroup>
 </Project>
