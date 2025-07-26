@@ -21,6 +21,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 import axios from "axios";
+import { API_URL } from "@/constants/Config";
 
 const validateStage = (stage, data) => {
   switch (stage) {
@@ -471,7 +472,7 @@ const SignUp = () => {
 
         // Add explicit headers
         const response = await axios.post(
-          "http://172.16.1.233:7009/api/auth/register",
+          `${API_URL}/api/auth/register`,
           registrationData,
           {
             headers: {
