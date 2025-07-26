@@ -253,20 +253,6 @@
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var consumableService = scope.ServiceProvider.GetRequiredService<IConsumableService>();
 
-            // First clear all Nutrients (to avoid FK issues), then ConsumableItems
-            var allNutrients = await context.Nutrients.ToListAsync();
-            if (allNutrients.Any())
-            {
-                context.Nutrients.RemoveRange(allNutrients);
-                await context.SaveChangesAsync();
-            }
-            var allConsumableItems = await context.ConsumableItems.ToListAsync();
-            if (allConsumableItems.Any())
-            {
-                context.ConsumableItems.RemoveRange(allConsumableItems);
-                await context.SaveChangesAsync();
-            }
-
             var filePath = "consumableItem.json";
             Console.WriteLine($"[Seeder] Looking for file at: {filePath}");
             Console.WriteLine($"[Seeder] Current directory: {Directory.GetCurrentDirectory()}");
@@ -302,7 +288,14 @@
                         continue;
                     }
                     var name = titleProp.GetString();
-                    var subTitle = item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String ? subTitleProp.GetString() : string.Empty;
+                    // Fix SubTitle assignment
+                    string? subTitle = null;
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
                     if (await context.ConsumableItems.AnyAsync(c => c.Name == name && c.SubTitle == subTitle))
                     {
                         skipped++;

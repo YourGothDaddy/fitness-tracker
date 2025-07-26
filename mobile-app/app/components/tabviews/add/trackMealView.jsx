@@ -37,6 +37,7 @@ const FoodItem = ({
   consumableItemId,
   favoriteConsumableIds = [],
   onFavoriteToggle,
+  disableAnimations = false, // Add this prop
 }) => {
   // Heart animation state and logic (copied from trackExerciseView.jsx, local only)
   const [isFavorite, setIsFavorite] = React.useState(
@@ -63,12 +64,47 @@ const FoodItem = ({
     }))
   ).current;
 
+  // Cleanup function for animations
+  const cleanupAnimations = React.useCallback(() => {
+    heartAnim.stopAnimation();
+    scaleAnim.stopAnimation();
+    rotateAnim.stopAnimation();
+    particleAnims.forEach((anim) => {
+      anim.scale.stopAnimation();
+      anim.opacity.stopAnimation();
+    });
+  }, [heartAnim, scaleAnim, rotateAnim, particleAnims]);
+
+  // Cleanup on unmount
   React.useEffect(() => {
-    setIsFavorite(favoriteConsumableIds.includes(consumableItemId));
-  }, [favoriteConsumableIds, consumableItemId]);
+    return () => {
+      cleanupAnimations();
+    };
+  }, [cleanupAnimations]);
 
   React.useEffect(() => {
+    const wasFavorite = isFavorite;
+    const newIsFavorite = favoriteConsumableIds.includes(consumableItemId);
+
+    if (wasFavorite !== newIsFavorite) {
+      setIsFavorite(newIsFavorite);
+    }
+  }, [favoriteConsumableIds, consumableItemId]);
+
+  // Only run animations if not disabled
+  React.useEffect(() => {
+    if (disableAnimations) {
+      // Set static values without animations
+      heartAnim.setValue(isFavorite ? 1 : 0);
+      scaleAnim.setValue(1);
+      rotateAnim.setValue(0);
+      return;
+    }
+
     if (isFavorite) {
+      // Stop any ongoing animations first
+      cleanupAnimations();
+
       Animated.parallel([
         Animated.timing(heartAnim, {
           toValue: 1,
@@ -131,6 +167,9 @@ const FoodItem = ({
         });
       });
     } else {
+      // Stop any ongoing animations first
+      cleanupAnimations();
+
       Animated.parallel([
         Animated.timing(heartAnim, {
           toValue: 0,
@@ -149,9 +188,17 @@ const FoodItem = ({
         }),
       ]).start();
     }
-  }, [isFavorite, heartAnim, scaleAnim, rotateAnim, particleAnims]);
+  }, [
+    isFavorite,
+    heartAnim,
+    scaleAnim,
+    rotateAnim,
+    particleAnims,
+    cleanupAnimations,
+    disableAnimations,
+  ]);
 
-  const handleFavoritePress = async () => {
+  const handleFavoritePress = React.useCallback(async () => {
     try {
       if (isFavorite) {
         await removeFavoriteConsumable(consumableItemId);
@@ -170,7 +217,7 @@ const FoodItem = ({
           "Failed to update favorite"
       );
     }
-  };
+  }, [isFavorite, consumableItemId, onFavoriteToggle]);
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -185,8 +232,8 @@ const FoodItem = ({
         onPress={handleFavoritePress}
         activeOpacity={0.7}
       >
-        {/* Particle explosion */}
-        {showParticles && (
+        {/* Particle explosion - only show if animations are enabled */}
+        {!disableAnimations && showParticles && (
           <>
             {particleAnims.map((anim, i) => {
               const { angle, distance, rotation } = particleConfigs[i];
@@ -393,8 +440,10 @@ const TrackMealView = () => {
   const [error, setError] = useState(null);
   const [customFoods, setCustomFoods] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [favoritesPage, setFavoritesPage] = useState(1);
   const [pageSize] = useState(20); // You can adjust this as needed
-  const [totalPages, setTotalPages] = useState(5); // Will update from backend
+  const [totalPages, setTotalPages] = useState(5); // For 'all' tab
+  const [favoritesTotalPages, setFavoritesTotalPages] = useState(1); // For 'favorites' tab
 
   const fetchFoods = useCallback(async () => {
     try {
@@ -410,8 +459,17 @@ const TrackMealView = () => {
           Math.max(1, Math.ceil(pagedResult.totalCount / pageSize))
         );
         setFilteredFoods(pagedResult.items); // For search
+      } else if (activeTab === "favorites") {
+        // Only fetch favorite consumable items
+        const favorites = await getFavoriteConsumables();
+        setFoods(favorites);
+        setFavoriteConsumableIds(favorites.map((f) => f.id));
+        setFavoritesTotalPages(
+          Math.max(1, Math.ceil(favorites.length / pageSize))
+        );
+        setFilteredFoods(favorites);
       } else {
-        // Old logic for other tabs
+        // Old logic for custom tab
         const [data, favorites] = await Promise.all([
           getAllPublicConsumableItems(),
           getFavoriteConsumables(),
@@ -426,7 +484,7 @@ const TrackMealView = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, currentPage, pageSize]);
+  }, [activeTab, currentPage, pageSize, favoritesPage]);
 
   const fetchCustomFoods = useCallback(async () => {
     try {
@@ -456,9 +514,20 @@ const TrackMealView = () => {
     }
   }, [currentPage, activeTab, fetchFoods]);
 
+  // When favorites page changes, update displayed foods
+  useEffect(() => {
+    if (activeTab === "favorites") {
+      // No need to refetch, just update displayed foods
+      const start = (favoritesPage - 1) * pageSize;
+      const end = start + pageSize;
+      setFilteredFoods(foods.slice(start, end));
+    }
+  }, [favoritesPage, foods, activeTab, pageSize]);
+
   // When tab changes, reset page to 1
   useEffect(() => {
     setCurrentPage(1);
+    setFavoritesPage(1);
   }, [activeTab]);
 
   useEffect(() => {
@@ -509,6 +578,22 @@ const TrackMealView = () => {
       Alert.alert("Error", "Failed to add meal. Please try again.");
     }
   };
+
+  // Pagination controls logic
+  const paginationProps =
+    activeTab === "all"
+      ? {
+          currentPage,
+          totalPages,
+          onPageChange: setCurrentPage,
+        }
+      : activeTab === "favorites"
+      ? {
+          currentPage: favoritesPage,
+          totalPages: favoritesTotalPages,
+          onPageChange: setFavoritesPage,
+        }
+      : null;
 
   return (
     <>
@@ -630,7 +715,7 @@ const TrackMealView = () => {
           ) : (
             displayedFoods.map((food) => (
               <FoodItem
-                key={food.id}
+                key={`${food.id}-${currentPage}-${activeTab}`}
                 name={food.name}
                 calories={food.caloriesPer100g}
                 protein={food.proteinPer100g}
@@ -640,16 +725,15 @@ const TrackMealView = () => {
                 consumableItemId={food.id}
                 favoriteConsumableIds={favoriteConsumableIds}
                 onFavoriteToggle={handleFavoriteToggle}
+                disableAnimations={activeTab !== "all"}
               />
             ))
           )}
         </ScrollView>
         {/* Pagination below the list */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        {(activeTab === "all" || activeTab === "favorites") && (
+          <Pagination {...paginationProps} />
+        )}
       </SafeAreaView>
     </>
   );
