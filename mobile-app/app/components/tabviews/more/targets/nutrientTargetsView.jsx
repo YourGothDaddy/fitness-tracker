@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../../components/Icon";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import nutritionService from "@/app/services/nutritionService";
@@ -113,7 +113,7 @@ const CategoryTab = ({ title, count, onPress }) => (
   <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
     <View style={styles.tabContent}>
       <View style={styles.categoryIconContainer}>
-        <MaterialIcons
+        <Icon
           name={getCategoryIcon(title)}
           size={28}
           color={Colors.darkGreen.color}
@@ -123,11 +123,7 @@ const CategoryTab = ({ title, count, onPress }) => (
         <Text style={styles.tabTitle}>{title}</Text>
         <Text style={styles.itemCount}>{`${count} items`}</Text>
       </View>
-      <MaterialIcons
-        name="chevron-right"
-        size={24}
-        color={Colors.darkGreen.color}
-      />
+      <Icon name="chevron-right" size={24} color={Colors.darkGreen.color} />
     </View>
   </TouchableOpacity>
 );
@@ -222,7 +218,7 @@ const NutrientRow = ({ nutrient, onUpdate }) => {
             });
           }}
         >
-          <MaterialIcons
+          <Icon
             name={isVisible ? "visibility" : "visibility-off"}
             size={20}
             color={isVisible ? Colors.white.color : Colors.darkGreen.color}
@@ -380,7 +376,7 @@ const NutrientTargetsView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}
@@ -414,7 +410,7 @@ const NutrientTargetsView = () => {
               <View style={styles.nutrientsContainer}>
                 <View style={styles.categoryHeaderContainer}>
                   <View style={styles.categoryTitleWrapper}>
-                    <MaterialIcons
+                    <Icon
                       name={getCategoryIcon(category)}
                       size={28}
                       color={Colors.darkGreen.color}

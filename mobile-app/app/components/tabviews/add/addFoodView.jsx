@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Stack } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import CustomField from "../../CustomField";
 import CustomButton from "../../CustomButton";
 import { Colors } from "../../../../constants/Colors";
@@ -226,7 +226,7 @@ const AddFoodView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}
@@ -369,7 +369,7 @@ const AddFoodView = () => {
             activeOpacity={0.7}
           >
             <Text style={styles.nutritionToggleText}>Nutrition Details</Text>
-            <MaterialIcons
+            <Icon
               name={nutritionDetailsVisible ? "expand-less" : "expand-more"}
               size={24}
               color={Colors.darkGreen.color}

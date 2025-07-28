@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Stack } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import CustomField from "../../CustomField";
 import CustomButton from "../../CustomButton";
 import { Colors } from "../../../../constants/Colors";
@@ -228,7 +228,7 @@ const AddWorkoutView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}

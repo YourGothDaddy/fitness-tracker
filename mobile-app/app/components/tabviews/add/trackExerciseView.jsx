@@ -13,7 +13,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
@@ -329,7 +329,7 @@ const ExerciseItem = ({
                     }}
                     pointerEvents="none"
                   >
-                    <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
+                    <Icon name="heart" size={12} color={PARTICLE_COLOR} />
                   </Animated.View>
                 );
               })}
@@ -351,7 +351,7 @@ const ExerciseItem = ({
             }}
             pointerEvents="none"
           >
-            <Ionicons name="heart-outline" size={26} color="#bbb" />
+            <Icon name="heart-outline" size={26} color="#bbb" />
           </Animated.View>
           <Animated.View
             style={{
@@ -367,7 +367,7 @@ const ExerciseItem = ({
             }}
             pointerEvents="none"
           >
-            <Ionicons name="heart" size={26} color="#e74c3c" />
+            <Icon name="heart" size={26} color="#e74c3c" />
           </Animated.View>
         </TouchableOpacity>
       )}
@@ -375,7 +375,7 @@ const ExerciseItem = ({
         <Text style={styles.exerciseName}>{subcategory}</Text>
         <View style={styles.caloriesContainer}>
           <View style={styles.totalCaloriesBox}>
-            <MaterialIcons
+            <Icon
               name="local-fire-department"
               size={22}
               color="#ff7043"
@@ -447,7 +447,7 @@ const ExerciseItem = ({
                   <Text style={styles.calorieLabel}>Effort:</Text>{" "}
                   {effort || "Effort level"}
                 </Text>
-                <MaterialIcons
+                <Icon
                   name="arrow-drop-down"
                   size={20}
                   color="#619819"
@@ -513,7 +513,7 @@ const ExerciseItem = ({
                 <Text style={styles.badgeText}>
                   {terrain || "Terrain type"}
                 </Text>
-                <MaterialIcons
+                <Icon
                   name="arrow-drop-down"
                   size={20}
                   color={Colors.darkGreen.color}
@@ -580,11 +580,7 @@ const ExerciseItem = ({
           onPress={handleAddPress}
           disabled={loading}
         >
-          <Ionicons
-            name="add-circle"
-            size={28}
-            color={Colors.darkGreen.color}
-          />
+          <Icon name="add-circle" size={28} color={Colors.darkGreen.color} />
         </TouchableOpacity>
       </View>
       {Platform.OS === "ios" && showIOSPicker && (
@@ -779,17 +775,13 @@ const TrackExerciseView = () => {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <MaterialIcons
-              name="arrow-back"
-              size={36}
-              color={Colors.darkGreen.color}
-            />
+            <Icon name="arrow-back" size={36} color={Colors.darkGreen.color} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.searchSection}>
           <View style={styles.searchContainer}>
-            <Ionicons
+            <Icon
               name="search-outline"
               size={24}
               color="#666"
@@ -807,7 +799,7 @@ const TrackExerciseView = () => {
                 onPress={() => setSearchQuery("")}
                 style={styles.clearButton}
               >
-                <Ionicons name="close-circle" size={24} color="#666" />
+                <Icon name="close-circle" size={24} color="#666" />
               </TouchableOpacity>
             )}
           </View>

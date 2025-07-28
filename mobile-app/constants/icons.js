@@ -12,7 +12,7 @@ import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
 
-export default {
+const iconMap = {
   play,
   bookmark,
   home,
@@ -27,3 +27,6 @@ export default {
   eyeHide,
   eye,
 };
+
+export const getIcon = (iconName) => iconMap[iconName] || null;
+export default iconMap;

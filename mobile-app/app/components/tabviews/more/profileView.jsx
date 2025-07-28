@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
@@ -24,7 +24,7 @@ const Field = React.memo(({ title, value, onPress, icon, unit }) => (
     activeOpacity={0.7}
   >
     <View style={styles.fieldIconContainer}>
-      <MaterialIcons name={icon} size={24} color={Colors.darkGreen.color} />
+      <Icon name={icon} size={24} color={Colors.darkGreen.color} />
     </View>
     <View style={styles.fieldTextContainer}>
       <Text style={styles.fieldTitle}>{title}</Text>
@@ -33,7 +33,7 @@ const Field = React.memo(({ title, value, onPress, icon, unit }) => (
         {unit && <Text style={styles.unitText}>{unit}</Text>}
       </View>
     </View>
-    <MaterialIcons
+    <Icon
       name="chevron-right"
       size={24}
       color={Colors.darkGreen.color}
@@ -64,7 +64,7 @@ const ModalContent = React.memo(
               ]}
               onPress={() => onSave("Male")}
             >
-              <MaterialIcons
+              <Icon
                 name="male"
                 size={24}
                 color={
@@ -89,7 +89,7 @@ const ModalContent = React.memo(
               ]}
               onPress={() => onSave("Female")}
             >
-              <MaterialIcons
+              <Icon
                 name="female"
                 size={24}
                 color={
@@ -349,7 +349,7 @@ const ProfileView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}
@@ -385,7 +385,7 @@ const ProfileView = () => {
               </View>
 
               <View style={styles.sectionTitle}>
-                <MaterialIcons
+                <Icon
                   name="person-outline"
                   size={24}
                   color={Colors.darkGreen.color}
@@ -399,7 +399,7 @@ const ProfileView = () => {
               </View>
 
               <View style={styles.sectionTitle}>
-                <MaterialIcons
+                <Icon
                   name="straighten"
                   size={24}
                   color={Colors.darkGreen.color}

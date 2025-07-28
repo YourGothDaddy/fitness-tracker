@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import goalsService from "@/app/services/goalsService";
@@ -25,17 +25,13 @@ const TargetCard = ({ title, description, icon, onPress }) => {
       activeOpacity={0.7}
     >
       <View style={styles.menuIconContainer}>
-        <MaterialIcons name={icon} size={32} color={Colors.darkGreen.color} />
+        <Icon name={icon} size={32} color={Colors.darkGreen.color} />
       </View>
       <View style={styles.menuTextContainer}>
         <Text style={styles.menuTitle}>{title}</Text>
         <Text style={styles.menuDescription}>{description}</Text>
       </View>
-      <MaterialIcons
-        name="chevron-right"
-        size={24}
-        color={Colors.darkGreen.color}
-      />
+      <Icon name="chevron-right" size={24} color={Colors.darkGreen.color} />
     </TouchableOpacity>
   );
 };
@@ -307,7 +303,7 @@ const TargetsView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}
@@ -323,7 +319,7 @@ const TargetsView = () => {
             onPress={() => setWeightGoalModal(true)}
             activeOpacity={0.8}
           >
-            <MaterialIcons name="flag" size={24} color={Colors.white.color} />
+            <Icon name="flag" size={24} color={Colors.white.color} />
             <Text style={styles.setWeightGoalButtonText}>Set Weight Goal</Text>
           </TouchableOpacity>
           {/* Existing profile preview and badges */}
@@ -338,7 +334,7 @@ const TargetsView = () => {
           </View>
 
           <View style={styles.sectionTitle}>
-            <MaterialIcons
+            <Icon
               name="track-changes"
               size={24}
               color={Colors.darkGreen.color}

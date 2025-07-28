@@ -11,7 +11,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
@@ -365,7 +365,7 @@ const GeneralView = () => {
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
-            <MaterialIcons
+            <Icon
               name="local-fire-department"
               size={24}
               color="#619819"
@@ -385,7 +385,7 @@ const GeneralView = () => {
               {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label ||
                 "This Week"}
             </Text>
-            <MaterialIcons
+            <Icon
               name="arrow-drop-down"
               size={20}
               color="#619819"
@@ -518,7 +518,7 @@ const GeneralView = () => {
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
-            <MaterialIcons
+            <Icon
               name="monitor-weight"
               size={24}
               color="#619819"
@@ -538,7 +538,7 @@ const GeneralView = () => {
               {TIMEFRAMES.find((t) => t.value === selectedWeightTimeframe)
                 ?.label || "This Week"}
             </Text>
-            <MaterialIcons
+            <Icon
               name="arrow-drop-down"
               size={20}
               color="#619819"
@@ -663,7 +663,7 @@ const GeneralView = () => {
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
-            <MaterialIcons
+            <Icon
               name="event-note"
               size={24}
               color="#619819"
@@ -679,7 +679,7 @@ const GeneralView = () => {
             activeOpacity={0.8}
           >
             <Text style={styles.badgeText}>{formatDate(activityDate)}</Text>
-            <MaterialIcons
+            <Icon
               name="calendar-today"
               size={20}
               color="#619819"
@@ -709,7 +709,7 @@ const GeneralView = () => {
                     <View key={`meal-${index}`} style={styles.tableRow}>
                       <View style={styles.mainContent}>
                         <View style={styles.titleContainer}>
-                          <MaterialIcons
+                          <Icon
                             name={getMealTypeIcon(meal.mealType)}
                             size={20}
                             color="#619819"
@@ -721,18 +721,14 @@ const GeneralView = () => {
                         <View style={styles.detailsContainer}>
                           {meal.weight > 0 && (
                             <View style={styles.detailRow}>
-                              <MaterialIcons
-                                name="scale"
-                                size={16}
-                                color="#636e72"
-                              />
+                              <Icon name="scale" size={16} color="#636e72" />
                               <Text style={styles.detailText}>
                                 {meal.weight}g
                               </Text>
                             </View>
                           )}
                           <View style={styles.detailRow}>
-                            <MaterialIcons
+                            <Icon
                               name="local-fire-department"
                               size={16}
                               color="#636e72"
@@ -744,7 +740,7 @@ const GeneralView = () => {
                         </View>
                       </View>
                       <View style={styles.timeContainer}>
-                        <MaterialIcons
+                        <Icon
                           name="schedule"
                           size={14}
                           color="#619819"
@@ -784,7 +780,7 @@ const GeneralView = () => {
                     <View key={`exercise-${index}`} style={styles.tableRow}>
                       <View style={styles.mainContent}>
                         <View style={styles.titleContainer}>
-                          <MaterialIcons
+                          <Icon
                             name={getExerciseIcon(
                               exercise.name,
                               exercise.category
@@ -798,17 +794,13 @@ const GeneralView = () => {
                         </View>
                         <View style={styles.detailsContainer}>
                           <View style={styles.detailRow}>
-                            <MaterialIcons
-                              name="timer"
-                              size={16}
-                              color="#636e72"
-                            />
+                            <Icon name="timer" size={16} color="#636e72" />
                             <Text style={styles.detailText}>
                               {exercise.durationInMinutes} min
                             </Text>
                           </View>
                           <View style={styles.detailRow}>
-                            <MaterialIcons
+                            <Icon
                               name="local-fire-department"
                               size={16}
                               color="#636e72"
@@ -820,7 +812,7 @@ const GeneralView = () => {
                         </View>
                       </View>
                       <View style={styles.timeContainer}>
-                        <MaterialIcons
+                        <Icon
                           name="schedule"
                           size={14}
                           color="#619819"

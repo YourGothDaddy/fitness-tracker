@@ -6,7 +6,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import { Colors } from "../../../constants/Colors";
@@ -316,7 +316,7 @@ const TargetsView = () => {
       {/* Main Targets Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.mainCard}>
         <View style={styles.cardHeader}>
-          <MaterialIcons name="stars" size={24} color="#619819" />
+          <Icon name="stars" size={24} color="#619819" />
           <Text style={styles.cardTitle}>Main Targets</Text>
         </View>
 
@@ -334,7 +334,7 @@ const TargetsView = () => {
                   colors={[item.color, shadeColor(item.color, 20)]}
                   style={styles.targetIconGradient}
                 >
-                  <MaterialIcons
+                  <Icon
                     name={
                       item.label === "Energy"
                         ? "local-fire-department"
@@ -370,7 +370,7 @@ const TargetsView = () => {
           style={styles.categoryCard}
         >
           <View style={styles.cardHeader}>
-            <MaterialIcons
+            <Icon
               name={
                 category === "Carbohydrates"
                   ? "grain"

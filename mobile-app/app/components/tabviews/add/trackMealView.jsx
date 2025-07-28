@@ -12,7 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
@@ -270,7 +270,7 @@ const FoodItem = ({
                   }}
                   pointerEvents="none"
                 >
-                  <Ionicons name="heart" size={12} color={PARTICLE_COLOR} />
+                  <Icon name="heart" size={12} color={PARTICLE_COLOR} />
                 </Animated.View>
               );
             })}
@@ -293,7 +293,7 @@ const FoodItem = ({
           }}
           pointerEvents="none"
         >
-          <Ionicons name="heart-outline" size={26} color="#bbb" />
+          <Icon name="heart-outline" size={26} color="#bbb" />
         </Animated.View>
         {/* Filled heart (red), opacity, scale, and rotation animated, always above outline */}
         <Animated.View
@@ -310,7 +310,7 @@ const FoodItem = ({
           }}
           pointerEvents="none"
         >
-          <Ionicons name="heart" size={26} color="#e74c3c" />
+          <Icon name="heart" size={26} color="#e74c3c" />
         </Animated.View>
       </TouchableOpacity>
       <View style={styles.foodItemLeft}>
@@ -331,7 +331,7 @@ const FoodItem = ({
         </View>
       </View>
       <TouchableOpacity style={styles.addFoodButton} onPress={onAdd}>
-        <Ionicons name="add-circle" size={28} color={Colors.darkGreen.color} />
+        <Icon name="add-circle" size={28} color={Colors.darkGreen.color} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -380,7 +380,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         onPress={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
       >
-        <Ionicons
+        <Icon
           name="chevron-back"
           size={24}
           color={currentPage === 1 ? "#ccc" : Colors.darkGreen.color}
@@ -419,7 +419,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         onPress={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
       >
-        <Ionicons
+        <Icon
           name="chevron-forward"
           size={24}
           color={currentPage === totalPages ? "#ccc" : Colors.darkGreen.color}
@@ -613,18 +613,14 @@ const TrackMealView = () => {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <MaterialIcons
-              name="arrow-back"
-              size={36}
-              color={Colors.darkGreen.color}
-            />
+            <Icon name="arrow-back" size={36} color={Colors.darkGreen.color} />
           </TouchableOpacity>
         </View>
 
         {/* Search Section */}
         <View style={styles.searchSection}>
           <View style={styles.searchContainer}>
-            <Ionicons
+            <Icon
               name="search-outline"
               size={24}
               color="#666"
@@ -642,7 +638,7 @@ const TrackMealView = () => {
                 onPress={() => setSearchQuery("")}
                 style={styles.clearButton}
               >
-                <Ionicons name="close-circle" size={24} color="#666" />
+                <Icon name="close-circle" size={24} color="#666" />
               </TouchableOpacity>
             )}
           </View>

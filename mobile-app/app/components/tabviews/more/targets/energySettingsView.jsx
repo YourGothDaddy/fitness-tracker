@@ -26,6 +26,49 @@ import nutritionService from "@/app/services/nutritionService";
 import userService from "@/app/services/userService";
 import { useFocusEffect } from "@react-navigation/native";
 
+// Helper to filter and format profile payload for backend
+function buildProfileUpdatePayload(profile, overrides = {}) {
+  // Always use string for phoneNumber
+  let phoneNumber = profile.phoneNumber;
+  if (phoneNumber === null || phoneNumber === undefined) phoneNumber = "";
+  else phoneNumber = String(phoneNumber);
+
+  // Always "Female" or "Male" (capitalize first letter, rest lowercase)
+  let sex = profile.sex;
+  if (typeof sex === "string" && sex.length > 0) {
+    sex = sex.charAt(0).toUpperCase() + sex.slice(1).toLowerCase();
+    if (sex !== "Male" && sex !== "Female") sex = "Female"; // fallback
+  } else {
+    sex = "Female";
+  }
+
+  // Only include allowed fields
+  const allowed = [
+    "activityLevelId",
+    "age",
+    "email",
+    "fullName",
+    "height",
+    "includeTef",
+    "phoneNumber",
+    "sex",
+    "weight",
+  ];
+  const base = { ...profile, ...overrides, phoneNumber, sex };
+  const filtered = {};
+  for (const key of allowed) {
+    filtered[key] =
+      base[key] !== undefined && base[key] !== null
+        ? base[key]
+        : key === "phoneNumber"
+        ? ""
+        : key === "sex"
+        ? "Female"
+        : base[key];
+  }
+  return filtered;
+}
+
 const EnergySettingsView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
@@ -148,8 +191,10 @@ const EnergySettingsView = () => {
     try {
       // Get current profile data
       const profile = await userService.getProfileData();
-      // Update with new activity level
-      const updatedProfile = { ...profile, activityLevelId: level.id };
+      // Update with new activity level, filter/format payload
+      const updatedProfile = buildProfileUpdatePayload(profile, {
+        activityLevelId: level.id,
+      });
       await userService.updateProfileData(updatedProfile);
       // Optionally, fetch again to ensure state is in sync
       const refreshedProfile = await userService.getProfileData();
@@ -172,7 +217,9 @@ const EnergySettingsView = () => {
     setError(null);
     try {
       const profile = await userService.getProfileData();
-      const updatedProfile = { ...profile, includeTef: newTef };
+      const updatedProfile = buildProfileUpdatePayload(profile, {
+        includeTef: newTef,
+      });
       await userService.updateProfileData(updatedProfile);
     } catch (err) {
       setError("Failed to save TEF setting. Please try again.");

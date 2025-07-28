@@ -13,7 +13,7 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
@@ -26,13 +26,13 @@ const Field = React.memo(({ title, value, onPress, icon }) => (
     activeOpacity={0.7}
   >
     <View style={styles.fieldIconContainer}>
-      <MaterialIcons name={icon} size={24} color={Colors.darkGreen.color} />
+      <Icon name={icon} size={24} color={Colors.darkGreen.color} />
     </View>
     <View style={styles.fieldTextContainer}>
       <Text style={styles.fieldTitle}>{title}</Text>
       <Text style={styles.fieldValue}>{value}</Text>
     </View>
-    <MaterialIcons
+    <Icon
       name="chevron-right"
       size={24}
       color={Colors.darkGreen.color}
@@ -333,7 +333,7 @@ const AccountView = () => {
               style={styles.backButton}
               onPress={() => router.back()}
             >
-              <MaterialIcons
+              <Icon
                 name="arrow-back"
                 size={36}
                 color={Colors.darkGreen.color}
