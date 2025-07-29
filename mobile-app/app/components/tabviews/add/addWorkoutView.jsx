@@ -76,8 +76,7 @@ const AddWorkoutView = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Try to fetch categories from backend if available
-        const res = await activityService.getActivityLevels(); // Replace with getActivityCategories if available
+        const res = await activityService.getActivityLevels();
         setCategories(res);
       } catch {
         setCategories(workoutCategories);
@@ -110,7 +109,6 @@ const AddWorkoutView = () => {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
-    // Validate date (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(date)) {
       setDateError("Invalid date format. Use YYYY-MM-DD.");
@@ -118,7 +116,6 @@ const AddWorkoutView = () => {
     }
     setIsLoading(true);
     try {
-      // Find the correct activityTypeId from the fetched types
       const foundType = activityTypes.find(
         (t) => t.name === subcategory && t.category === category
       );
@@ -128,11 +125,22 @@ const AddWorkoutView = () => {
         setIsLoading(false);
         return;
       }
+      const now = new Date();
+      const selectedDate = new Date(date);
+      const dateWithCurrentTime = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
       const payload = {
         durationInMinutes: duration,
         caloriesBurned: energy,
         activityTypeId,
-        date,
+        date: dateWithCurrentTime,
         notes,
         isPublic: true,
       };

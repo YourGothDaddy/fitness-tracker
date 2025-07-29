@@ -274,7 +274,18 @@ const ExerciseItem = ({
         onChange: (event, selectedDate) => {
           if (event.type === "set" && selectedDate) {
             setDate(selectedDate);
-            trackExercise(selectedDate);
+            // Use current time but with the selected date
+            const now = new Date();
+            const dateWithCurrentTime = new Date(
+              selectedDate.getFullYear(),
+              selectedDate.getMonth(),
+              selectedDate.getDate(),
+              now.getHours(),
+              now.getMinutes(),
+              now.getSeconds(),
+              now.getMilliseconds()
+            );
+            trackExercise(dateWithCurrentTime);
           }
         },
         maximumDate: new Date(),
@@ -622,7 +633,18 @@ const ExerciseItem = ({
                     if (event.type === "set" && selectedDate) {
                       setDate(selectedDate);
                       setShowIOSPicker(false);
-                      trackExercise(selectedDate);
+                      // Use current time but with the selected date
+                      const now = new Date();
+                      const dateWithCurrentTime = new Date(
+                        selectedDate.getFullYear(),
+                        selectedDate.getMonth(),
+                        selectedDate.getDate(),
+                        now.getHours(),
+                        now.getMinutes(),
+                        now.getSeconds(),
+                        now.getMilliseconds()
+                      );
+                      trackExercise(dateWithCurrentTime);
                     } else if (event.type === "dismissed") {
                       setShowIOSPicker(false);
                     }
@@ -661,7 +683,7 @@ const TrackExerciseView = () => {
   const [favoriteActivityTypeIds, setFavoriteActivityTypeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [exerciseMetaData, setExerciseMetaData] = useState([]); // NEW
+  const [exerciseMetaData, setExerciseMetaData] = useState([]);
 
   useEffect(() => {
     const fetchMetaData = async () => {
