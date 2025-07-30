@@ -43,7 +43,9 @@ const FoodItem = ({
   const [isFavorite, setIsFavorite] = React.useState(
     favoriteConsumableIds.includes(consumableItemId)
   );
-  const heartAnim = React.useRef(new Animated.Value(0)).current;
+  const heartAnim = React.useRef(
+    new Animated.Value(favoriteConsumableIds.includes(consumableItemId) ? 1 : 0)
+  ).current;
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const rotateAnim = React.useRef(new Animated.Value(0)).current;
   const PARTICLE_COUNT = 10;
@@ -89,7 +91,12 @@ const FoodItem = ({
     if (wasFavorite !== newIsFavorite) {
       setIsFavorite(newIsFavorite);
     }
-  }, [favoriteConsumableIds, consumableItemId]);
+
+    // Initialize heart animation value based on favorite status
+    if (disableAnimations) {
+      heartAnim.setValue(newIsFavorite ? 1 : 0);
+    }
+  }, [favoriteConsumableIds, consumableItemId, disableAnimations, heartAnim]);
 
   // Only run animations if not disabled
   React.useEffect(() => {
@@ -448,6 +455,11 @@ const TrackMealView = () => {
   const fetchFoods = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Always fetch favorite IDs regardless of tab
+      const favoriteItems = await getFavoriteConsumables();
+      setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
+
       if (activeTab === "all") {
         // Use paginated fetch for 'all' tab
         const pagedResult = await getPublicConsumableItemsPaged(
@@ -460,22 +472,16 @@ const TrackMealView = () => {
         );
         setFilteredFoods(pagedResult.items); // For search
       } else if (activeTab === "favorites") {
-        // Only fetch favorite consumable items
-        const favorites = await getFavoriteConsumables();
-        setFoods(favorites);
-        setFavoriteConsumableIds(favorites.map((f) => f.id));
+        // Use the already fetched favorite items
+        setFoods(favoriteItems);
         setFavoritesTotalPages(
-          Math.max(1, Math.ceil(favorites.length / pageSize))
+          Math.max(1, Math.ceil(favoriteItems.length / pageSize))
         );
-        setFilteredFoods(favorites);
+        setFilteredFoods(favoriteItems);
       } else {
         // Old logic for custom tab
-        const [data, favorites] = await Promise.all([
-          getAllPublicConsumableItems(),
-          getFavoriteConsumables(),
-        ]);
+        const data = await getAllPublicConsumableItems();
         setFoods(data);
-        setFavoriteConsumableIds(favorites.map((f) => f.id));
         setFilteredFoods(data);
       }
       setError(null);
@@ -489,6 +495,11 @@ const TrackMealView = () => {
   const fetchCustomFoods = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Always fetch favorite IDs regardless of tab
+      const favoriteItems = await getFavoriteConsumables();
+      setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
+
       const data = await getAllCustomConsumableItems();
       setCustomFoods(data);
       setError(null);
@@ -497,6 +508,20 @@ const TrackMealView = () => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Fetch favorite IDs on component mount
+  useEffect(() => {
+    const fetchFavoriteIds = async () => {
+      try {
+        const favoriteItems = await getFavoriteConsumables();
+        setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
+      } catch (err) {
+        console.error("Failed to fetch favorite IDs:", err);
+      }
+    };
+
+    fetchFavoriteIds();
   }, []);
 
   useEffect(() => {
@@ -548,8 +573,15 @@ const TrackMealView = () => {
 
   const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
     setFavoriteConsumableIds((prev) => {
-      if (isNowFavorite) return [...prev, consumableItemId];
-      return prev.filter((id) => id !== consumableItemId);
+      if (isNowFavorite) {
+        // Add to favorites if not already present
+        return prev.includes(consumableItemId)
+          ? prev
+          : [...prev, consumableItemId];
+      } else {
+        // Remove from favorites
+        return prev.filter((id) => id !== consumableItemId);
+      }
     });
   };
 
