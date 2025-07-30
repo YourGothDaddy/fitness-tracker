@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -82,27 +82,40 @@ const EnergySettingsView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Track if initial data has been loaded to prevent duplicate fetches
+  const hasInitialDataLoaded = useRef(false);
+
   // Fetch activity levels and user info on mount and on focus
   const fetchInitialData = useCallback(async () => {
+    // Prevent duplicate fetches if already loading
+    if (loading && hasInitialDataLoaded.current) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
+
     try {
       const [levels, profile] = await Promise.all([
         activityService.getActivityLevels(),
         userService.getProfileData(),
       ]);
+
       setActivityLevels(levels);
+
       // Find user's current activity level
       const userLevel =
-        levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
+        levels.find((lvl) => l.id === profile.activityLevelId) || levels[0];
       setSelectedActivityLevel(userLevel);
-      setIsTefEnabled(!!profile.includeTef); // <-- Initialize TEF toggle from profile
+      setIsTefEnabled(!!profile.includeTef);
+
       // Fetch initial energy settings
       const settings = await nutritionService.getEnergySettings({
         customBmr: undefined,
         activityLevelId: userLevel.id,
         includeTef: !!profile.includeTef,
       });
+
       // Ensure we have a valid settings object with the expected properties
       if (settings && typeof settings === "object") {
         setEnergySettings({
@@ -116,29 +129,30 @@ const EnergySettingsView = () => {
       } else {
         setError("Invalid response from server");
       }
+
+      hasInitialDataLoaded.current = true;
     } catch (err) {
+      console.error("Failed to fetch initial data:", err);
       setError("Failed to load energy settings. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loading]);
 
+  // Use only useFocusEffect to handle both initial mount and focus events
   useFocusEffect(
     useCallback(() => {
       fetchInitialData();
     }, [fetchInitialData])
   );
 
-  useEffect(() => {
-    fetchInitialData(); // initial mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Refetch energy settings when dependencies change
   useEffect(() => {
     if (!selectedActivityLevel) return;
+
     let customBmrValue =
       selectedBmrType === "Custom" ? parseFloat(customBMR) : undefined;
+
     if (
       selectedBmrType === "Custom" &&
       (!customBmrValue || isNaN(customBmrValue))
@@ -148,8 +162,10 @@ const EnergySettingsView = () => {
       );
       return;
     }
+
     setLoading(true);
     setError(null);
+
     nutritionService
       .getEnergySettings({
         customBmr: customBmrValue,
@@ -172,6 +188,7 @@ const EnergySettingsView = () => {
         }
       })
       .catch((error) => {
+        console.error("Failed to update energy settings:", error);
         setError("Failed to update energy settings.");
       })
       .finally(() => setLoading(false));
