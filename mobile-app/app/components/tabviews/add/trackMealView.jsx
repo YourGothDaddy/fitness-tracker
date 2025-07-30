@@ -18,13 +18,10 @@ import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
 import {
-  getAllPublicConsumableItems,
   addFavoriteConsumable,
   removeFavoriteConsumable,
-  isFavoriteConsumable,
   getFavoriteConsumables,
-  getAllCustomConsumableItems,
-  getPublicConsumableItemsPaged, // <-- add this
+  searchConsumableItems,
 } from "@/app/services/foodService";
 
 const FoodItem = ({
@@ -453,44 +450,101 @@ const TrackMealView = () => {
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(1); // For 'favorites' tab
 
   const fetchFoods = useCallback(async () => {
+    console.log("[TrackMealView] Starting fetchFoods:", {
+      activeTab,
+      currentPage,
+      pageSize,
+      searchQuery,
+    });
+
     try {
       setLoading(true);
+      setError(null);
 
       // Always fetch favorite IDs regardless of tab
+      console.log("[TrackMealView] Fetching favorite items");
       const favoriteItems = await getFavoriteConsumables();
+      console.log(
+        `[TrackMealView] Received ${favoriteItems.length} favorite items`
+      );
       setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
 
-      if (activeTab === "all") {
-        // Use paginated fetch for 'all' tab
-        const pagedResult = await getPublicConsumableItemsPaged(
-          currentPage,
-          pageSize
+      // Use the new search endpoint for all cases
+      const filter =
+        activeTab === "all"
+          ? "All"
+          : activeTab === "favorites"
+          ? "Favorites"
+          : activeTab === "custom"
+          ? "Custom"
+          : "All";
+
+      // Ensure searchQuery is never undefined
+      const query = searchQuery || "";
+
+      console.log("[TrackMealView] Executing search:", {
+        filter,
+        query,
+        currentPage,
+        pageSize,
+      });
+
+      const searchResult = await searchConsumableItems(
+        query,
+        currentPage,
+        pageSize,
+        filter
+      );
+
+      console.log("[TrackMealView] Search completed:", {
+        itemsReceived: searchResult.items?.length || 0,
+        totalCount: searchResult.totalCount,
+        currentPage: searchResult.pageNumber,
+      });
+
+      if (!searchResult.items) {
+        console.warn(
+          "[TrackMealView] No items array in search result:",
+          searchResult
         );
-        setFoods(pagedResult.items);
-        setTotalPages(
-          Math.max(1, Math.ceil(pagedResult.totalCount / pageSize))
-        );
-        setFilteredFoods(pagedResult.items); // For search
-      } else if (activeTab === "favorites") {
-        // Use the already fetched favorite items
-        setFoods(favoriteItems);
-        setFavoritesTotalPages(
-          Math.max(1, Math.ceil(favoriteItems.length / pageSize))
-        );
-        setFilteredFoods(favoriteItems);
-      } else {
-        // Old logic for custom tab
-        const data = await getAllPublicConsumableItems();
-        setFoods(data);
-        setFilteredFoods(data);
+        throw new Error("Invalid response format from server");
       }
-      setError(null);
+
+      setFoods(searchResult.items);
+      setFilteredFoods(searchResult.items);
+      setTotalPages(Math.max(1, Math.ceil(searchResult.totalCount / pageSize)));
+
+      if (activeTab === "favorites") {
+        setFavoritesTotalPages(
+          Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
+        );
+      }
     } catch (err) {
-      setError("Failed to load foods. Please try again.");
+      console.error("[TrackMealView] Error in fetchFoods:", {
+        error: err,
+        message: err.message,
+        stack: err.stack,
+        activeTab,
+        searchQuery,
+      });
+
+      let errorMessage = "Failed to load foods. Please try again.";
+
+      if (err.message.includes("Authentication required")) {
+        errorMessage = "Please log in to view foods.";
+      } else if (err.message.includes("No response from server")) {
+        errorMessage =
+          "Cannot connect to server. Please check your internet connection.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
+      console.log("[TrackMealView] fetchFoods completed");
     }
-  }, [activeTab, currentPage, pageSize, favoritesPage]);
+  }, [activeTab, currentPage, pageSize, searchQuery]);
 
   const fetchCustomFoods = useCallback(async () => {
     try {
@@ -555,21 +609,10 @@ const TrackMealView = () => {
     setFavoritesPage(1);
   }, [activeTab]);
 
+  // Search is now handled by the server
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      if (activeTab === "custom") {
-        setFilteredFoods(customFoods);
-      } else {
-        setFilteredFoods(foods);
-      }
-    } else {
-      const baseFoods = activeTab === "custom" ? customFoods : foods;
-      const filtered = baseFoods.filter((food) =>
-        food.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredFoods(filtered);
-    }
-  }, [searchQuery, foods, customFoods, activeTab]);
+    fetchFoods();
+  }, [searchQuery, fetchFoods]);
 
   const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
     setFavoriteConsumableIds((prev) => {

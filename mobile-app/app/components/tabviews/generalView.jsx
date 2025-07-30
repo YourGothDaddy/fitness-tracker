@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -22,22 +22,19 @@ import { useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 
-// Helper function to format numbers with commas
 const formatNumber = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
-// Helper function to get start and end dates for a week
 const getWeekDates = () => {
   const today = new Date();
   const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 6); // Last 7 days including today
-  startDate.setHours(0, 0, 0, 0); // Set start date to beginning of day
-  today.setHours(23, 59, 59, 999); // Set end date to end of day
+  startDate.setDate(today.getDate() - 6);
+  startDate.setHours(0, 0, 0, 0);
+  today.setHours(23, 59, 59, 999);
   return { startDate, endDate: today };
 };
 
-// Helper function to format date to day name
 const getDayName = (date) => {
   return new Date(date).toLocaleDateString("en-US", { weekday: "short" });
 };
@@ -77,6 +74,7 @@ const getTimeframeDates = (timeframe) => {
 
 const GeneralView = () => {
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [calorieOverview, setCalorieOverview] = useState({
     dailyAverage: 0,
     target: 0,
@@ -97,7 +95,6 @@ const GeneralView = () => {
   });
   const [isWeightLoading, setIsWeightLoading] = useState(true);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
-  const router = useRouter();
   const [selectedTimeframe, setSelectedTimeframe] = useState("week");
   const [isTimeframeModalVisible, setIsTimeframeModalVisible] = useState(false);
   const [selectedWeightTimeframe, setSelectedWeightTimeframe] =
@@ -110,7 +107,10 @@ const GeneralView = () => {
     return today;
   });
 
-  // Helper to format date as YYYY-MM-DD
+  const isMounted = useRef(true);
+  const pendingRequests = useRef(new Set());
+  const router = useRouter();
+
   const formatDate = (date) => {
     if (!date) return "";
     const year = date.getFullYear();
@@ -119,32 +119,32 @@ const GeneralView = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Helper to format date as "MMM d" (e.g., "Jun 1")
   const formatShortDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // Date picker handler
-  const showDatePicker = () => {
-    DateTimePickerAndroid.open({
-      value: activityDate,
-      mode: "date",
-      is24Hour: true,
-      onChange: (event, selectedDate) => {
-        if (event.type === "set" && selectedDate) {
-          // Set to midnight local time to avoid timezone issues
-          selectedDate.setHours(0, 0, 0, 0);
-          setActivityDate(selectedDate);
-        }
-      },
-      maximumDate: new Date(),
-    });
-  };
+  const showDatePicker = useCallback(() => {
+    try {
+      DateTimePickerAndroid.open({
+        value: activityDate,
+        mode: "date",
+        is24Hour: true,
+        onChange: (event, selectedDate) => {
+          if (event.type === "set" && selectedDate) {
+            selectedDate.setHours(0, 0, 0, 0);
+            setActivityDate(selectedDate);
+          }
+        },
+        maximumDate: new Date(),
+      });
+    } catch (error) {
+      console.error("DatePicker error:", error);
+      setError("Failed to open date picker. Please try again.");
+    }
+  }, [activityDate]);
 
-  // Helper to get a date object at midnight local, but send as UTC midnight for the selected local day
   const getLocalDateAtMidnightUTC = (date) => {
-    // Create a new date at midnight local
     const localMidnight = new Date(
       date.getFullYear(),
       date.getMonth(),
@@ -154,7 +154,6 @@ const GeneralView = () => {
       0,
       0
     );
-    // Get the UTC equivalent of that local midnight
     return new Date(
       Date.UTC(
         localMidnight.getFullYear(),
@@ -164,84 +163,136 @@ const GeneralView = () => {
     );
   };
 
-  const fetchCalorieOverview = async (timeframe = selectedTimeframe) => {
-    try {
-      const data = await nutritionService.getCalorieOverview(
-        null,
-        null,
-        timeframe
-      );
-      setCalorieOverview(data);
-      setError("");
-    } catch (err) {
-      setError("Failed to fetch calorie data");
-      if (err.logout) {
-        router.replace("/");
-      }
-    }
-  };
+  const cleanup = useCallback(() => {
+    return () => {
+      isMounted.current = false;
+      pendingRequests.current.clear();
+    };
+  }, []);
 
-  const fetchWeightProgress = async (timeframe = selectedWeightTimeframe) => {
-    try {
-      // Use the same getTimeframeDates helper as for calories
-      const { startDate, endDate } = getTimeframeDates(timeframe);
-      const data = await weightService.getWeightProgress(startDate, endDate);
-      setWeightProgress(data);
-      setError("");
-    } catch (err) {
-      setError("Failed to fetch weight data");
-      if (err.logout) {
-        router.replace("/");
-      }
-    } finally {
-      setIsWeightLoading(false);
-    }
-  };
+  const handleError = useCallback(
+    (error, context) => {
+      console.error(`Error in GeneralView (${context}):`, error);
+      if (!isMounted.current) return;
 
-  // Fetch activity overview for the selected date
-  const fetchActivityOverview = async (date = activityDate) => {
-    try {
+      if (error.logout) {
+        router.replace("/");
+        return;
+      }
+
+      setError(`Failed to fetch ${context} data. Please try again.`);
+    },
+    [router]
+  );
+
+  const fetchCalorieOverview = useCallback(
+    async (timeframe = selectedTimeframe) => {
+      const requestId = "calories-" + Date.now();
+      pendingRequests.current.add(requestId);
+
+      try {
+        const data = await nutritionService.getCalorieOverview(
+          null,
+          null,
+          timeframe
+        );
+        if (!isMounted.current) return;
+
+        setCalorieOverview(data);
+        setError("");
+      } catch (err) {
+        handleError(err, "calorie");
+      } finally {
+        if (isMounted.current) {
+          pendingRequests.current.delete(requestId);
+          if (pendingRequests.current.size === 0) {
+            setIsLoading(false);
+          }
+        }
+      }
+    },
+    [selectedTimeframe, handleError]
+  );
+
+  const fetchWeightProgress = useCallback(
+    async (timeframe = selectedWeightTimeframe) => {
+      const requestId = "weight-" + Date.now();
+      pendingRequests.current.add(requestId);
+      setIsWeightLoading(true);
+
+      try {
+        const { startDate, endDate } = getTimeframeDates(timeframe);
+        const data = await weightService.getWeightProgress(startDate, endDate);
+        if (!isMounted.current) return;
+
+        setWeightProgress(data);
+        setError("");
+      } catch (err) {
+        handleError(err, "weight");
+      } finally {
+        if (isMounted.current) {
+          setIsWeightLoading(false);
+          pendingRequests.current.delete(requestId);
+        }
+      }
+    },
+    [selectedWeightTimeframe, handleError]
+  );
+
+  const fetchActivityOverview = useCallback(
+    async (date = activityDate) => {
+      const requestId = "activity-" + Date.now();
+      pendingRequests.current.add(requestId);
       setIsActivityLoading(true);
-      // Always send the local day as UTC midnight for that local day
-      const dateToSend = getLocalDateAtMidnightUTC(date);
-      const data = await activityService.getActivityOverview(dateToSend);
-      setActivityOverview(data);
-      setError("");
-    } catch (err) {
-      setError("Failed to fetch activity data");
-      if (err.logout) {
-        router.replace("/");
+
+      try {
+        const dateToSend = getLocalDateAtMidnightUTC(date);
+        const data = await activityService.getActivityOverview(dateToSend);
+        if (!isMounted.current) return;
+
+        setActivityOverview(data);
+        setError("");
+      } catch (err) {
+        handleError(err, "activity");
+      } finally {
+        if (isMounted.current) {
+          setIsActivityLoading(false);
+          pendingRequests.current.delete(requestId);
+        }
       }
-    } finally {
-      setIsActivityLoading(false);
-    }
-  };
+    },
+    [activityDate, handleError]
+  );
 
-  // Fetch calorie overview when selectedTimeframe changes
-  useEffect(() => {
-    fetchCalorieOverview(selectedTimeframe);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTimeframe]);
-
-  // Fetch weight progress when selectedWeightTimeframe changes
-  useEffect(() => {
-    fetchWeightProgress(selectedWeightTimeframe);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedWeightTimeframe]);
-
-  // Fetch activity overview when activityDate changes
-  useEffect(() => {
-    fetchActivityOverview(activityDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activityDate]);
-
-  // Refresh all data when the screen regains focus
   useFocusEffect(
-    React.useCallback(() => {
-      fetchCalorieOverview(selectedTimeframe);
-      fetchWeightProgress(selectedWeightTimeframe);
-      fetchActivityOverview(activityDate);
-    }, [selectedTimeframe, selectedWeightTimeframe, activityDate])
+    useCallback(() => {
+      isMounted.current = true;
+      setIsLoading(true);
+
+      const fetchData = async () => {
+        try {
+          await Promise.all([
+            fetchCalorieOverview(selectedTimeframe),
+            fetchWeightProgress(selectedWeightTimeframe),
+            fetchActivityOverview(activityDate),
+          ]);
+        } catch (error) {
+          handleError(error, "data");
+        }
+      };
+
+      fetchData();
+      return cleanup;
+    }, [
+      selectedTimeframe,
+      selectedWeightTimeframe,
+      activityDate,
+      fetchCalorieOverview,
+      fetchWeightProgress,
+      fetchActivityOverview,
+      handleError,
+      cleanup,
+    ])
   );
 
   const totalHorizontalPadding = 48;
@@ -265,12 +316,11 @@ const GeneralView = () => {
   ) {
     const len = weightProgress.dailyWeights.length;
     weightLabels = weightProgress.dailyWeights.map((day, idx) => {
-      if (idx === 0) return formatShortDate(day.date); // leftmost
-      if (idx === Math.floor(len / 2)) return formatShortDate(day.date); // middle
-      if (idx === len - 1) return formatShortDate(day.date); // rightmost
+      if (idx === 0) return formatShortDate(day.date);
+      if (idx === Math.floor(len / 2)) return formatShortDate(day.date);
+      if (idx === len - 1) return formatShortDate(day.date);
       return "";
     });
-    // Add a dummy label and value
     weightLabels.push("");
     weightValues = weightProgress.dailyWeights.map((day) => day.weight);
     weightValues.push(weightValues[weightValues.length - 1]);
@@ -320,23 +370,21 @@ const GeneralView = () => {
     },
   };
 
-  // Helper function to get meal type icon
   const getMealTypeIcon = (mealType) => {
     switch (mealType) {
-      case 0: // Breakfast
+      case 0:
         return "free-breakfast";
-      case 1: // Lunch
+      case 1:
         return "lunch-dining";
-      case 2: // Dinner
+      case 2:
         return "dinner-dining";
-      case 3: // Snack
+      case 3:
         return "icecream";
       default:
         return "restaurant";
     }
   };
 
-  // Add this helper function near getMealTypeIcon
   const getExerciseIcon = (activityTypeName, activityCategoryName) => {
     if (activityCategoryName === "Cardio") {
       if (activityTypeName === "Cycling") return "directions-bike";
@@ -374,7 +422,6 @@ const GeneralView = () => {
             <Text style={styles.cardTitle}>Calorie Overview</Text>
           </View>
         </View>
-        {/* Timeframe Badge - moved below title and centered */}
         <View style={styles.timeframeBadgeWrapper}>
           <TouchableOpacity
             style={styles.badgeContainer}
@@ -527,7 +574,6 @@ const GeneralView = () => {
             <Text style={styles.cardTitle}>Weight Progress</Text>
           </View>
         </View>
-        {/* Timeframe Badge - moved below title and centered */}
         <View style={styles.timeframeBadgeWrapper}>
           <TouchableOpacity
             style={styles.badgeContainer}
@@ -694,7 +740,6 @@ const GeneralView = () => {
           </View>
         ) : (
           <>
-            {/* Meals Section */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Meals</Text>
               <View style={styles.tableContainer}>
@@ -762,7 +807,6 @@ const GeneralView = () => {
               </View>
             </View>
 
-            {/* Exercises Section */}
             <View style={[styles.sectionContainer, { marginTop: 20 }]}>
               <Text style={styles.sectionTitle}>Exercises</Text>
               <View style={styles.tableContainer}>
@@ -990,7 +1034,7 @@ const styles = StyleSheet.create({
   },
   detailsContainer: {
     gap: 4,
-    paddingLeft: 28, // Aligns with title text
+    paddingLeft: 28,
   },
   detailRow: {
     flexDirection: "row",
@@ -1039,7 +1083,7 @@ const styles = StyleSheet.create({
   timeframeBadgeWrapper: {
     alignItems: "center",
     marginBottom: 16,
-    marginTop: -8, // pulls it a bit closer to the title, adjust as needed
+    marginTop: -8,
   },
   badgeContainer: {
     flexDirection: "row",

@@ -1,15 +1,18 @@
-﻿namespace Fitness_Tracker.Services.Consumables
+﻿using Fitness_Tracker.Models.Nutrition;
+using Fitness_Tracker.Data.Models.Consumables;
+
+namespace Fitness_Tracker.Services.Consumables
 {
     public interface IConsumableService
     {
-        public Task<List<string>> GetMatchingConsumableItemsAsync(string query);
-        public Task AddConsumableItemAsync(Models.Admins.AddConsumableItemModel model, string? userId = null);
-        public Task<List<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetAllPublicConsumableItemsAsync();
-        public Task<Models.PagedResult<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetPublicConsumableItemsPagedAsync(int pageNumber, int pageSize);
+        Task<Models.PagedResult<ConsumableItem>> SearchConsumableItemsAsync(string query, int pageNumber, int pageSize, ConsumableSearchFilter filter, string? userId = null);
+        Task AddConsumableItemAsync(Models.Admins.AddConsumableItemModel model, string? userId = null);
+        Task<List<ConsumableItem>> GetAllPublicConsumableItemsAsync();
+        Task<Models.PagedResult<ConsumableItem>> GetPublicConsumableItemsPagedAsync(int pageNumber, int pageSize);
         Task AddFavoriteConsumableItemAsync(string userId, int consumableItemId);
         Task RemoveFavoriteConsumableItemAsync(string userId, int consumableItemId);
         Task<bool> IsFavoriteConsumableItemAsync(string userId, int consumableItemId);
-        Task<List<Data.Models.Consumables.ConsumableItem>> GetFavoriteConsumableItemsAsync(string userId);
-        Task<List<Fitness_Tracker.Data.Models.Consumables.ConsumableItem>> GetAllUserCustomConsumableItemsAsync(string userId);
+        Task<List<ConsumableItem>> GetFavoriteConsumableItemsAsync(string userId);
+        Task<List<ConsumableItem>> GetAllUserCustomConsumableItemsAsync(string userId);
     }
 }

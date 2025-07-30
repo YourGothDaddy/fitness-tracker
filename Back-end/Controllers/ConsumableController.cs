@@ -3,24 +3,78 @@
     using Fitness_Tracker.Services.Consumables;
     using Microsoft.AspNetCore.Mvc;
     using Fitness_Tracker.Models.Admins;
+    using Fitness_Tracker.Models.Nutrition;
 
     using static Constants.ConsumableController;
 
     public class ConsumableController : BaseApiController
     {
         private readonly IConsumableService _consumableService;
+        private readonly ILogger<ConsumableController> _logger;
 
-        public ConsumableController(IConsumableService consumableService)
+        public ConsumableController(IConsumableService consumableService, ILogger<ConsumableController> logger)
         {
-            this._consumableService = consumableService;
+            _consumableService = consumableService;
+            _logger = logger;
         }
 
-        [HttpGet(SearchConsumableItemHttpAttributeName)]
-        public async Task<IActionResult> SearchConsumables([FromQuery] string query)
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchConsumables([FromQuery] ConsumableSearchModel searchModel)
         {
-            var results = await _consumableService.GetMatchingConsumableItemsAsync(query);
+            try
+            {
+                _logger.LogInformation(
+                    "Search request received. Query: {SearchQuery}, Page: {PageNumber}, Size: {PageSize}, Filter: {Filter}",
+                    searchModel.SearchQuery ?? "(empty)", searchModel.PageNumber, searchModel.PageSize, searchModel.Filter);
 
-            return Ok(results);
+                // Initialize searchModel.SearchQuery if it's null
+                searchModel.SearchQuery ??= string.Empty;
+
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    
+                    _logger.LogWarning("Invalid search model state: {Errors}", 
+                        string.Join("; ", errors));
+                    
+                    return BadRequest(new { 
+                        Message = "Invalid search parameters.",
+                        Errors = errors
+                    });
+                }
+
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                _logger.LogInformation("Executing search for user {UserId}", userId ?? "anonymous");
+
+                var results = await _consumableService.SearchConsumableItemsAsync(
+                    searchModel.SearchQuery,
+                    searchModel.PageNumber,
+                    searchModel.PageSize,
+                    searchModel.Filter,
+                    userId
+                );
+
+                _logger.LogInformation(
+                    "Search completed successfully. Found {ItemCount} items out of {TotalCount} total",
+                    results.Items.Count, results.TotalCount);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error occurred while searching foods. Query: {SearchQuery}, Filter: {Filter}", 
+                    searchModel.SearchQuery, searchModel.Filter);
+                
+                return StatusCode(500, new { 
+                    Message = "An error occurred while searching food items.", 
+                    Details = ex.Message,
+                    StackTrace = ex.StackTrace // Only in development
+                });
+            }
         }
 
         /// <summary>
