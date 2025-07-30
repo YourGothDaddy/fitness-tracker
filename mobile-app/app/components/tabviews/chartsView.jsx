@@ -178,68 +178,124 @@ const ChartsView = () => {
     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   };
 
-  const macroData = [
+  // Helper functions to check if data has values
+  const hasMacroData = () => {
+    return (
+      macronutrients.protein > 0 ||
+      macronutrients.carbs > 0 ||
+      macronutrients.fat > 0
+    );
+  };
+
+  const hasEnergyExpenditureData = () => {
+    return (
+      energyExpenditure.bmr > 0 ||
+      energyExpenditure.exerciseCalories > 0 ||
+      energyExpenditure.baselineActivityCalories > 0 ||
+      energyExpenditure.tefCalories > 0
+    );
+  };
+
+  const hasEnergyBudgetData = () => {
+    return energyBudget.consumed > 0 || energyBudget.remaining > 0;
+  };
+
+  // Default grey chart data
+  const getDefaultMacroData = () => [
     {
-      name: "Protein",
-      population: macronutrients.protein,
-      color: Colors.green.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "Carbs",
-      population: macronutrients.carbs,
-      color: Colors.blue.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "Fat",
-      population: macronutrients.fat,
-      color: Colors.brightRed.color,
-      legendFontColor: "#7F7F7F",
+      name: "",
+      population: 1,
+      color: "#E0E0E0",
+      legendFontColor: "#FFFFFF",
     },
   ];
 
-  const burnedChartData = [
+  const getDefaultEnergyExpenditureData = () => [
     {
-      name: "BMR",
-      population: energyExpenditure.bmr,
-      color: Colors.green.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "Exercise",
-      population: energyExpenditure.exerciseCalories,
-      color: Colors.blue.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "Baseline",
-      population: energyExpenditure.baselineActivityCalories,
-      color: Colors.brightRed.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "TEF",
-      population: energyExpenditure.tefCalories,
-      color: Colors.red.color,
-      legendFontColor: "#7F7F7F",
+      name: "",
+      population: 1,
+      color: "#E0E0E0",
+      legendFontColor: "#FFFFFF",
     },
   ];
 
-  const budgetData = [
+  const getDefaultEnergyBudgetData = () => [
     {
-      name: "Consumed",
-      population: energyBudget.consumed,
-      color: Colors.green.color,
-      legendFontColor: "#7F7F7F",
-    },
-    {
-      name: "Remaining",
-      population: energyBudget.remaining,
-      color: Colors.blue.color,
-      legendFontColor: "#7F7F7F",
+      name: "",
+      population: 1,
+      color: "#E0E0E0",
+      legendFontColor: "#FFFFFF",
     },
   ];
+
+  const macroData = hasMacroData()
+    ? [
+        {
+          name: "Protein",
+          population: macronutrients.protein,
+          color: Colors.green.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "Carbs",
+          population: macronutrients.carbs,
+          color: Colors.blue.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "Fat",
+          population: macronutrients.fat,
+          color: Colors.brightRed.color,
+          legendFontColor: "#7F7F7F",
+        },
+      ]
+    : getDefaultMacroData();
+
+  const burnedChartData = hasEnergyExpenditureData()
+    ? [
+        {
+          name: "BMR",
+          population: energyExpenditure.bmr,
+          color: Colors.green.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "Exercise",
+          population: energyExpenditure.exerciseCalories,
+          color: Colors.blue.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "Baseline",
+          population: energyExpenditure.baselineActivityCalories,
+          color: Colors.brightRed.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "TEF",
+          population: energyExpenditure.tefCalories,
+          color: Colors.red.color,
+          legendFontColor: "#7F7F7F",
+        },
+      ]
+    : getDefaultEnergyExpenditureData();
+
+  const budgetData = hasEnergyBudgetData()
+    ? [
+        {
+          name: "Consumed",
+          population: energyBudget.consumed,
+          color: Colors.green.color,
+          legendFontColor: "#7F7F7F",
+        },
+        {
+          name: "Remaining",
+          population: energyBudget.remaining,
+          color: Colors.blue.color,
+          legendFontColor: "#7F7F7F",
+        },
+      ]
+    : getDefaultEnergyBudgetData();
 
   return (
     <View style={styles.container}>
@@ -273,16 +329,23 @@ const ChartsView = () => {
         ) : (
           <>
             <View style={styles.chartSection}>
-              <PieChart
-                data={macroData}
-                width={screenWidth * 0.85}
-                height={180}
-                chartConfig={chartConfig}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                absolute
-              />
+              <View style={styles.chartContainer}>
+                <PieChart
+                  data={macroData}
+                  width={screenWidth * 0.85}
+                  height={180}
+                  chartConfig={chartConfig}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="0"
+                  absolute
+                />
+                {!hasMacroData() && (
+                  <View style={styles.noDataOverlay}>
+                    <Text style={styles.noDataText}>No Data</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
             <View style={styles.macroDetailsContainer}>
@@ -369,16 +432,23 @@ const ChartsView = () => {
           </View>
         </View>
         <View style={styles.chartSection}>
-          <PieChart
-            data={burnedChartData}
-            width={screenWidth * 0.85}
-            height={180}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="0"
-            absolute
-          />
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={burnedChartData}
+              width={screenWidth * 0.85}
+              height={180}
+              chartConfig={chartConfig}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="0"
+              absolute
+            />
+            {!hasEnergyExpenditureData() && (
+              <View style={styles.noDataOverlay}>
+                <Text style={styles.noDataText}>No Data</Text>
+              </View>
+            )}
+          </View>
         </View>
         <View style={styles.energyDetailsContainer}>
           {[
@@ -458,16 +528,23 @@ const ChartsView = () => {
         </View>
 
         <View style={styles.chartSection}>
-          <PieChart
-            data={budgetData}
-            width={screenWidth * 0.85}
-            height={180}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="0"
-            absolute
-          />
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={budgetData}
+              width={screenWidth * 0.85}
+              height={180}
+              chartConfig={chartConfig}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="0"
+              absolute
+            />
+            {!hasEnergyBudgetData() && (
+              <View style={styles.noDataOverlay}>
+                <Text style={styles.noDataText}>No Data</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.budgetDetailsContainer}>
@@ -559,6 +636,27 @@ const styles = StyleSheet.create({
   chartSection: {
     alignItems: "center",
     marginBottom: 20,
+  },
+  chartContainer: {
+    position: "relative",
+    alignItems: "center",
+  },
+  noDataOverlay: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -15 }],
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 1,
+  },
+  noDataText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
   macroDetailsContainer: {
     gap: 12,
