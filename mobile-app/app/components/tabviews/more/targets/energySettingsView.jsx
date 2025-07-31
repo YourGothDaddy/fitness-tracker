@@ -26,48 +26,64 @@ import nutritionService from "@/app/services/nutritionService";
 import userService from "@/app/services/userService";
 import { useFocusEffect } from "@react-navigation/native";
 
-// Helper to filter and format profile payload for backend
-function buildProfileUpdatePayload(profile, overrides = {}) {
-  // Always use string for phoneNumber
-  let phoneNumber = profile.phoneNumber;
-  if (phoneNumber === null || phoneNumber === undefined) phoneNumber = "";
-  else phoneNumber = String(phoneNumber);
+// Helper to filter and format profile payload for backend (memoized for performance)
+const buildProfileUpdatePayload = (() => {
+  const cache = new WeakMap();
 
-  // Always "Female" or "Male" (capitalize first letter, rest lowercase)
-  let sex = profile.sex;
-  if (typeof sex === "string" && sex.length > 0) {
-    sex = sex.charAt(0).toUpperCase() + sex.slice(1).toLowerCase();
-    if (sex !== "Male" && sex !== "Female") sex = "Female"; // fallback
-  } else {
-    sex = "Female";
-  }
+  return function buildProfileUpdatePayload(profile, overrides = {}) {
+    // Check cache for performance optimization
+    const cacheKey = { profile, overrides };
+    if (
+      cache.has(profile) &&
+      JSON.stringify(overrides) === JSON.stringify(cache.get(profile).overrides)
+    ) {
+      return cache.get(profile).result;
+    }
 
-  // Only include allowed fields
-  const allowed = [
-    "activityLevelId",
-    "age",
-    "email",
-    "fullName",
-    "height",
-    "includeTef",
-    "phoneNumber",
-    "sex",
-    "weight",
-  ];
-  const base = { ...profile, ...overrides, phoneNumber, sex };
-  const filtered = {};
-  for (const key of allowed) {
-    filtered[key] =
-      base[key] !== undefined && base[key] !== null
-        ? base[key]
-        : key === "phoneNumber"
-        ? ""
-        : key === "sex"
-        ? "Female"
-        : base[key];
-  }
-  return filtered;
-}
+    // Always use string for phoneNumber
+    let phoneNumber = profile.phoneNumber;
+    if (phoneNumber === null || phoneNumber === undefined) phoneNumber = "";
+    else phoneNumber = String(phoneNumber);
+
+    // Always "Female" or "Male" (capitalize first letter, rest lowercase)
+    let sex = profile.sex;
+    if (typeof sex === "string" && sex.length > 0) {
+      sex = sex.charAt(0).toUpperCase() + sex.slice(1).toLowerCase();
+      if (sex !== "Male" && sex !== "Female") sex = "Female"; // fallback
+    } else {
+      sex = "Female";
+    }
+
+    // Only include allowed fields
+    const allowed = [
+      "activityLevelId",
+      "age",
+      "email",
+      "fullName",
+      "height",
+      "includeTef",
+      "phoneNumber",
+      "sex",
+      "weight",
+    ];
+    const base = { ...profile, ...overrides, phoneNumber, sex };
+    const filtered = {};
+    for (const key of allowed) {
+      filtered[key] =
+        base[key] !== undefined && base[key] !== null
+          ? base[key]
+          : key === "phoneNumber"
+          ? ""
+          : key === "sex"
+          ? "Female"
+          : base[key];
+    }
+
+    // Cache the result for performance
+    cache.set(profile, { overrides: { ...overrides }, result: filtered });
+    return filtered;
+  };
+})();
 
 const EnergySettingsView = () => {
   const router = useRouter();
@@ -79,20 +95,24 @@ const EnergySettingsView = () => {
   const [selectedActivityLevel, setSelectedActivityLevel] = useState(null);
   const [isTefEnabled, setIsTefEnabled] = useState(false);
   const [energySettings, setEnergySettings] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [energyLoading, setEnergyLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Track if initial data has been loaded to prevent duplicate fetches
   const hasInitialDataLoaded = useRef(false);
+  const fetchInProgress = useRef(false);
+  const isUpdatingActivityLevel = useRef(false);
 
   // Fetch activity levels and user info on mount and on focus
   const fetchInitialData = useCallback(async () => {
-    // Prevent duplicate fetches if already loading
-    if (loading && hasInitialDataLoaded.current) {
+    // Prevent duplicate fetches if already loading or already loaded
+    if (fetchInProgress.current || hasInitialDataLoaded.current) {
       return;
     }
 
-    setLoading(true);
+    fetchInProgress.current = true;
+    setInitialLoading(true);
     setError(null);
 
     try {
@@ -103,9 +123,9 @@ const EnergySettingsView = () => {
 
       setActivityLevels(levels);
 
-      // Find user's current activity level
+      // Find user's current activity level - Fixed typo: l.id -> lvl.id
       const userLevel =
-        levels.find((lvl) => l.id === profile.activityLevelId) || levels[0];
+        levels.find((lvl) => lvl.id === profile.activityLevelId) || levels[0];
       setSelectedActivityLevel(userLevel);
       setIsTefEnabled(!!profile.includeTef);
 
@@ -135,9 +155,10 @@ const EnergySettingsView = () => {
       console.error("Failed to fetch initial data:", err);
       setError("Failed to load energy settings. Please try again.");
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      fetchInProgress.current = false;
     }
-  }, [loading]);
+  }, []); // No dependencies to prevent unnecessary re-renders
 
   // Use only useFocusEffect to handle both initial mount and focus events
   useFocusEffect(
@@ -146,13 +167,23 @@ const EnergySettingsView = () => {
     }, [fetchInitialData])
   );
 
-  // Refetch energy settings when dependencies change
+  // Debounced energy settings update to prevent excessive API calls
   useEffect(() => {
-    if (!selectedActivityLevel) return;
+    // Don't make API calls if initial data hasn't loaded yet or if initial load is in progress
+    // Also skip if we're currently updating activity level (handled separately)
+    if (
+      !selectedActivityLevel ||
+      !hasInitialDataLoaded.current ||
+      fetchInProgress.current ||
+      isUpdatingActivityLevel.current
+    ) {
+      return;
+    }
 
     let customBmrValue =
       selectedBmrType === "Custom" ? parseFloat(customBMR) : undefined;
 
+    // Handle invalid custom BMR input without API call
     if (
       selectedBmrType === "Custom" &&
       (!customBmrValue || isNaN(customBmrValue))
@@ -163,35 +194,41 @@ const EnergySettingsView = () => {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    // Debounce API calls to prevent rapid successive requests
+    const timeoutId = setTimeout(() => {
+      setEnergyLoading(true);
+      setError(null);
 
-    nutritionService
-      .getEnergySettings({
-        customBmr: customBmrValue,
-        activityLevelId: selectedActivityLevel.id,
-        includeTef: isTefEnabled,
-      })
-      .then((settings) => {
-        // Ensure we have a valid settings object with the expected properties
-        if (settings && typeof settings === "object") {
-          setEnergySettings({
-            BMR: settings.bmr || 0,
-            MaintenanceCalories: settings.maintenanceCalories || 0,
-            ActivityLevelId: settings.activityLevelId,
-            ActivityLevelName: settings.activityLevelName,
-            ActivityMultiplier: settings.activityMultiplier,
-            TEFIncluded: settings.tefIncluded,
-          });
-        } else {
-          setError("Invalid response from server");
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to update energy settings:", error);
-        setError("Failed to update energy settings.");
-      })
-      .finally(() => setLoading(false));
+      nutritionService
+        .getEnergySettings({
+          customBmr: customBmrValue,
+          activityLevelId: selectedActivityLevel.id,
+          includeTef: isTefEnabled,
+        })
+        .then((settings) => {
+          // Ensure we have a valid settings object with the expected properties
+          if (settings && typeof settings === "object") {
+            setEnergySettings({
+              BMR: settings.bmr || 0,
+              MaintenanceCalories: settings.maintenanceCalories || 0,
+              ActivityLevelId: settings.activityLevelId,
+              ActivityLevelName: settings.activityLevelName,
+              ActivityMultiplier: settings.activityMultiplier,
+              TEFIncluded: settings.tefIncluded,
+            });
+          } else {
+            setError("Invalid response from server");
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to update energy settings:", error);
+          setError("Failed to update energy settings.");
+        })
+        .finally(() => setEnergyLoading(false));
+    }, 300); // 300ms debounce delay
+
+    // Cleanup timeout on dependency change or unmount
+    return () => clearTimeout(timeoutId);
   }, [selectedBmrType, customBMR, selectedActivityLevel, isTefEnabled]);
 
   const handleBmrTypeSelect = (option) => {
@@ -201,10 +238,21 @@ const EnergySettingsView = () => {
   };
 
   const handleActivityLevelSelect = async (level) => {
-    setSelectedActivityLevel(level);
+    // Prevent duplicate selections or actions during loading
+    if (
+      (selectedActivityLevel && selectedActivityLevel.id === level.id) ||
+      energyLoading ||
+      initialLoading
+    ) {
+      setActiveDropdown(null);
+      return;
+    }
+
     setActiveDropdown(null);
-    setLoading(true);
+    setEnergyLoading(true);
     setError(null);
+    isUpdatingActivityLevel.current = true;
+
     try {
       // Get current profile data
       const profile = await userService.getProfileData();
@@ -213,25 +261,54 @@ const EnergySettingsView = () => {
         activityLevelId: level.id,
       });
       await userService.updateProfileData(updatedProfile);
-      // Optionally, fetch again to ensure state is in sync
-      const refreshedProfile = await userService.getProfileData();
-      setSelectedActivityLevel(
-        activityLevels.find((l) => l.id === refreshedProfile.activityLevelId) ||
-          level
-      );
+
+      // Fetch new energy settings directly here to avoid double API calls
+      const settings = await nutritionService.getEnergySettings({
+        customBmr:
+          selectedBmrType === "Custom" ? parseFloat(customBMR) : undefined,
+        activityLevelId: level.id,
+        includeTef: isTefEnabled,
+      });
+
+      // Update both activity level and energy settings atomically
+      if (settings && typeof settings === "object") {
+        setEnergySettings({
+          BMR: settings.bmr || 0,
+          MaintenanceCalories: settings.maintenanceCalories || 0,
+          ActivityLevelId: settings.activityLevelId,
+          ActivityLevelName: settings.activityLevelName,
+          ActivityMultiplier: settings.activityMultiplier,
+          TEFIncluded: settings.tefIncluded,
+        });
+      } else {
+        setError("Invalid response from server");
+      }
+
+      // Update local state only after successful API call
+      setSelectedActivityLevel(level);
     } catch (err) {
+      console.error("Failed to save activity level:", err);
       setError("Failed to save activity level. Please try again.");
+      // Keep the previous selection on error
     } finally {
-      setLoading(false);
+      setEnergyLoading(false);
+      isUpdatingActivityLevel.current = false;
     }
   };
 
   // Persist TEF toggle change
   const handleTefToggle = async () => {
+    // Prevent toggle during loading state
+    if (energyLoading || initialLoading) return;
+
     const newTef = !isTefEnabled;
+    const previousTef = isTefEnabled;
+
+    // Optimistic update
     setIsTefEnabled(newTef);
-    setLoading(true);
+    setEnergyLoading(true);
     setError(null);
+
     try {
       const profile = await userService.getProfileData();
       const updatedProfile = buildProfileUpdatePayload(profile, {
@@ -239,20 +316,23 @@ const EnergySettingsView = () => {
       });
       await userService.updateProfileData(updatedProfile);
     } catch (err) {
+      console.error("Failed to save TEF setting:", err);
       setError("Failed to save TEF setting. Please try again.");
+      // Revert to previous state on error
+      setIsTefEnabled(previousTef);
     } finally {
-      setLoading(false);
+      setEnergyLoading(false);
     }
   };
 
-  // Helper function to safely format numbers
-  const formatNumber = (value) => {
+  // Memoized helper function to safely format numbers
+  const formatNumber = useCallback((value) => {
     if (value === null || value === undefined || isNaN(value)) {
       return "-";
     }
     const num = typeof value === "string" ? parseFloat(value) : value;
     return isNaN(num) ? "-" : Math.round(num);
-  };
+  }, []);
 
   return (
     <>
@@ -286,7 +366,7 @@ const EnergySettingsView = () => {
         >
           {/* Energy Display Card */}
           <View style={styles.energyCard}>
-            {loading ? (
+            {initialLoading || energyLoading ? (
               <ActivityIndicator size="large" color={Colors.darkGreen.color} />
             ) : error ? (
               <Text style={{ color: "red" }}>{error}</Text>
