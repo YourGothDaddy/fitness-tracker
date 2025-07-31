@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -437,170 +443,193 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 const TrackMealView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [foods, setFoods] = useState([]);
   const [filteredFoods, setFilteredFoods] = useState([]);
   const [favoriteConsumableIds, setFavoriteConsumableIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [customFoods, setCustomFoods] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [favoritesPage, setFavoritesPage] = useState(1);
-  const [pageSize] = useState(20); // You can adjust this as needed
-  const [totalPages, setTotalPages] = useState(5); // For 'all' tab
-  const [favoritesTotalPages, setFavoritesTotalPages] = useState(1); // For 'favorites' tab
+  const [pageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(5);
+  const [favoritesTotalPages, setFavoritesTotalPages] = useState(1);
 
-  const fetchFoods = useCallback(async () => {
-    console.log("[TrackMealView] Starting fetchFoods:", {
-      activeTab,
-      currentPage,
-      pageSize,
-      searchQuery,
-    });
+  // Refs for request deduplication and cleanup
+  const requestIdRef = useRef(0);
+  const searchTimeoutRef = useRef(null);
 
+  // Debounce search query changes
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Separate function to fetch only favorites (called once on mount)
+  const fetchFavorites = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // Always fetch favorite IDs regardless of tab
       console.log("[TrackMealView] Fetching favorite items");
       const favoriteItems = await getFavoriteConsumables();
       console.log(
         `[TrackMealView] Received ${favoriteItems.length} favorite items`
       );
       setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
-
-      // Use the new search endpoint for all cases
-      const filter =
-        activeTab === "all"
-          ? "All"
-          : activeTab === "favorites"
-          ? "Favorites"
-          : activeTab === "custom"
-          ? "Custom"
-          : "All";
-
-      // Ensure searchQuery is never undefined
-      const query = searchQuery || "";
-
-      console.log("[TrackMealView] Executing search:", {
-        filter,
-        query,
-        currentPage,
-        pageSize,
-      });
-
-      const searchResult = await searchConsumableItems(
-        query,
-        currentPage,
-        pageSize,
-        filter
-      );
-
-      console.log("[TrackMealView] Search completed:", {
-        itemsReceived: searchResult.items?.length || 0,
-        totalCount: searchResult.totalCount,
-        currentPage: searchResult.pageNumber,
-      });
-
-      if (!searchResult.items) {
-        console.warn(
-          "[TrackMealView] No items array in search result:",
-          searchResult
-        );
-        throw new Error("Invalid response format from server");
-      }
-
-      setFoods(searchResult.items);
-      setFilteredFoods(searchResult.items);
-      setTotalPages(Math.max(1, Math.ceil(searchResult.totalCount / pageSize)));
-
-      if (activeTab === "favorites") {
-        setFavoritesTotalPages(
-          Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
-        );
-      }
     } catch (err) {
-      console.error("[TrackMealView] Error in fetchFoods:", {
-        error: err,
-        message: err.message,
-        stack: err.stack,
-        activeTab,
-        searchQuery,
-      });
-
-      let errorMessage = "Failed to load foods. Please try again.";
-
-      if (err.message.includes("Authentication required")) {
-        errorMessage = "Please log in to view foods.";
-      } else if (err.message.includes("No response from server")) {
-        errorMessage =
-          "Cannot connect to server. Please check your internet connection.";
-      } else if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      // Add specific error handling for custom foods
-      if (activeTab === "custom" && err.response?.status === 404) {
-        errorMessage = "No custom foods found. Try adding some first!";
-      }
-
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-      console.log("[TrackMealView] fetchFoods completed");
+      console.error("[TrackMealView] Failed to fetch favorite IDs:", err);
     }
-  }, [activeTab, currentPage, pageSize, searchQuery]);
-
-  // Custom foods are now handled through the main fetchFoods function using the search endpoint
-
-  // Fetch favorite IDs on component mount
-  useEffect(() => {
-    const fetchFavoriteIds = async () => {
-      try {
-        const favoriteItems = await getFavoriteConsumables();
-        setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
-      } catch (err) {
-        console.error("Failed to fetch favorite IDs:", err);
-      }
-    };
-
-    fetchFavoriteIds();
   }, []);
 
-  useEffect(() => {
-    fetchFoods();
-  }, [activeTab, fetchFoods]);
+  // Optimized fetchFoods without favorites fetching
+  const fetchFoods = useCallback(
+    async (requestId) => {
+      console.log("[TrackMealView] Starting fetchFoods:", {
+        activeTab,
+        currentPage,
+        pageSize,
+        searchQuery: debouncedSearchQuery,
+        requestId,
+      });
 
-  // When page changes, fetch new foods (only for 'all' tab)
-  useEffect(() => {
-    if (activeTab === "all") {
-      fetchFoods();
-    }
-  }, [currentPage, activeTab, fetchFoods]);
+      try {
+        setLoading(true);
+        setError(null);
 
-  // When favorites page changes, update displayed foods
-  useEffect(() => {
-    if (activeTab === "favorites") {
-      // No need to refetch, just update displayed foods
-      const start = (favoritesPage - 1) * pageSize;
-      const end = start + pageSize;
-      setFilteredFoods(foods.slice(start, end));
-    }
-  }, [favoritesPage, foods, activeTab, pageSize]);
+        const filter =
+          activeTab === "all"
+            ? "All"
+            : activeTab === "favorites"
+            ? "Favorites"
+            : activeTab === "custom"
+            ? "Custom"
+            : "All";
 
-  // When tab changes, reset page to 1
+        const query = debouncedSearchQuery || "";
+
+        console.log("[TrackMealView] Executing search:", {
+          filter,
+          query,
+          currentPage,
+          pageSize,
+        });
+
+        const searchResult = await searchConsumableItems(
+          query,
+          currentPage,
+          pageSize,
+          filter
+        );
+
+        // Check if this request is still the latest one
+        if (requestId !== requestIdRef.current) {
+          console.log(
+            "[TrackMealView] Request cancelled (newer request in progress)"
+          );
+          return;
+        }
+
+        console.log("[TrackMealView] Search completed:", {
+          itemsReceived: searchResult.items?.length || 0,
+          totalCount: searchResult.totalCount,
+          currentPage: searchResult.pageNumber,
+        });
+
+        if (!searchResult.items) {
+          console.warn(
+            "[TrackMealView] No items array in search result:",
+            searchResult
+          );
+          throw new Error("Invalid response format from server");
+        }
+
+        setFoods(searchResult.items);
+        setFilteredFoods(searchResult.items);
+        setTotalPages(
+          Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
+        );
+
+        if (activeTab === "favorites") {
+          setFavoritesTotalPages(
+            Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
+          );
+        }
+      } catch (err) {
+        // Only set error if this is still the latest request
+        if (requestId === requestIdRef.current) {
+          console.error("[TrackMealView] Error in fetchFoods:", {
+            error: err,
+            message: err.message,
+            activeTab,
+            searchQuery: debouncedSearchQuery,
+          });
+
+          let errorMessage = "Failed to load foods. Please try again.";
+
+          if (err.message.includes("Authentication required")) {
+            errorMessage = "Please log in to view foods.";
+          } else if (err.message.includes("No response from server")) {
+            errorMessage =
+              "Cannot connect to server. Please check your internet connection.";
+          } else if (err.response?.data?.message) {
+            errorMessage = err.response.data.message;
+          } else if (err.message) {
+            errorMessage = err.message;
+          }
+
+          if (activeTab === "custom" && err.response?.status === 404) {
+            errorMessage = "No custom foods found. Try adding some first!";
+          }
+
+          setError(errorMessage);
+        }
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+          console.log("[TrackMealView] fetchFoods completed");
+        }
+      }
+    },
+    [activeTab, currentPage, pageSize, debouncedSearchQuery]
+  );
+
+  // Fetch favorites only once on component mount
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
+
+  // Main effect for fetching foods - consolidated from multiple useEffects
+  useEffect(() => {
+    requestIdRef.current += 1;
+    const currentRequestId = requestIdRef.current;
+
+    fetchFoods(currentRequestId);
+  }, [fetchFoods]);
+
+  // Reset pages when tab changes
   useEffect(() => {
     setCurrentPage(1);
     setFavoritesPage(1);
   }, [activeTab]);
 
-  // Search is now handled by the server
+  // Handle favorites pagination (client-side for now)
   useEffect(() => {
-    fetchFoods();
-  }, [searchQuery, fetchFoods]);
+    if (activeTab === "favorites") {
+      const start = (favoritesPage - 1) * pageSize;
+      const end = start + pageSize;
+      setFilteredFoods(foods.slice(start, end));
+    }
+  }, [favoritesPage, foods, activeTab, pageSize]);
 
   const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
     setFavoriteConsumableIds((prev) => {
