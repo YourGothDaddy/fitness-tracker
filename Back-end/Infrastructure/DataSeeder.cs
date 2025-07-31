@@ -212,11 +212,11 @@
             if (context.Nutrients.Any())
                 return;
 
-            var nutrients = new List<Data.Models.Consumables.Nutrient>();
+            var nutrients = new List<Nutrient>();
 
             // Carbohydrates
             var carbs = new[] { "Fiber", "Starch", "Sugars", "Galactose", "Glucose", "Sucrose", "Lactose", "Maltose", "Fructose" };
-            nutrients.AddRange(carbs.Select(n => new Data.Models.Consumables.Nutrient { Category = "Carbohydrates", Name = n, Amount = 0 }));
+            nutrients.AddRange(carbs.Select(n => new Nutrient { Category = "Carbohydrates", Name = n, Amount = 0 }));
 
             // Amino Acids
             var aminoAcids = new[] { "Alanine", "Arginine", "AsparticAcid", "Valine", "Glycine", "Glutamine", "Isoleucine", "Leucine", "Lysine", "Methionine", "Proline", "Serine", "Tyrosine", "Threonine", "Tryptophan", "Phenylalanine", "Hydroxyproline", "Histidine", "Cystine" };
@@ -252,6 +252,13 @@
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var consumableService = scope.ServiceProvider.GetRequiredService<IConsumableService>();
+
+            // Check if data already exists - if so, skip seeding entirely
+            if (context.ConsumableItems.Any())
+            {
+                Console.WriteLine("[Seeder] Consumable items already exist in database. Skipping seeding.");
+                return;
+            }
 
             var filePath = "consumableItem.json";
             Console.WriteLine($"[Seeder] Looking for file at: {filePath}");
@@ -316,7 +323,7 @@
                         ProteinPer100g = protein,
                         CarbohydratePer100g = carbs,
                         FatPer100g = fat,
-                        Type = TypeOfConsumable.Food, // You may want to map this from MainCategory or another field
+                        Type = TypeOfConsumable.Food,
                         NutritionalInformation = new List<Nutrient>(),
                         IsPublic = true
                     };
