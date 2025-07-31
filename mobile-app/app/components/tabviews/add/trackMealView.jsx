@@ -22,6 +22,7 @@ import {
   removeFavoriteConsumable,
   getFavoriteConsumables,
   searchConsumableItems,
+  getAllCustomConsumableItems,
 } from "@/app/services/foodService";
 
 const FoodItem = ({
@@ -535,8 +536,15 @@ const TrackMealView = () => {
       } else if (err.message.includes("No response from server")) {
         errorMessage =
           "Cannot connect to server. Please check your internet connection.";
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
       } else if (err.message) {
         errorMessage = err.message;
+      }
+
+      // Add specific error handling for custom foods
+      if (activeTab === "custom" && err.response?.status === 404) {
+        errorMessage = "No custom foods found. Try adding some first!";
       }
 
       setError(errorMessage);
@@ -546,23 +554,7 @@ const TrackMealView = () => {
     }
   }, [activeTab, currentPage, pageSize, searchQuery]);
 
-  const fetchCustomFoods = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // Always fetch favorite IDs regardless of tab
-      const favoriteItems = await getFavoriteConsumables();
-      setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
-
-      const data = await getAllCustomConsumableItems();
-      setCustomFoods(data);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load custom foods. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Custom foods are now handled through the main fetchFoods function using the search endpoint
 
   // Fetch favorite IDs on component mount
   useEffect(() => {
@@ -579,12 +571,8 @@ const TrackMealView = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "custom") {
-      fetchCustomFoods();
-    } else {
-      fetchFoods();
-    }
-  }, [activeTab, fetchFoods, fetchCustomFoods]);
+    fetchFoods();
+  }, [activeTab, fetchFoods]);
 
   // When page changes, fetch new foods (only for 'all' tab)
   useEffect(() => {
