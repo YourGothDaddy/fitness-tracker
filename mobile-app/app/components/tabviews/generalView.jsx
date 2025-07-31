@@ -745,8 +745,16 @@ const GeneralView = () => {
               <View style={styles.tableContainer}>
                 {/* Table Header */}
                 <View style={styles.tableHeader}>
-                  <Text style={styles.tableHeaderText}>Meal & Calories</Text>
-                  <Text style={styles.tableHeaderText}>Time</Text>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>
+                    Meal & Calories
+                  </Text>
+                  <View style={styles.timeHeaderContainer}>
+                    <Text
+                      style={[styles.tableHeaderText, { textAlign: "center" }]}
+                    >
+                      Time
+                    </Text>
+                  </View>
                 </View>
 
                 {activityOverview.meals && activityOverview.meals.length > 0 ? (
@@ -812,10 +820,16 @@ const GeneralView = () => {
               <View style={styles.tableContainer}>
                 {/* Table Header */}
                 <View style={styles.tableHeader}>
-                  <Text style={styles.tableHeaderText}>
+                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>
                     Exercise & Calories
                   </Text>
-                  <Text style={styles.tableHeaderText}>Time</Text>
+                  <View style={styles.timeHeaderContainer}>
+                    <Text
+                      style={[styles.tableHeaderText, { textAlign: "center" }]}
+                    >
+                      Time
+                    </Text>
+                  </View>
                 </View>
 
                 {activityOverview.exercises &&
@@ -1045,14 +1059,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#636e72",
   },
+  timeHeaderContainer: {
+    minWidth: 85,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   timeContainer: {
     backgroundColor: "rgba(97, 152, 25, 0.1)",
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    minWidth: 85,
+    justifyContent: "center",
   },
   timeText: {
     fontSize: 13,
@@ -1063,7 +1084,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#2d3436",
-    flex: 1,
   },
   loadingContainer: {
     padding: 40,
