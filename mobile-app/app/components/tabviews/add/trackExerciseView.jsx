@@ -221,7 +221,7 @@ const ExerciseItem = ({
     setLoading(true);
     setError("");
     try {
-      await activityService.trackExercise({
+      const requestData = {
         category,
         subcategory,
         effortLevel: effort,
@@ -230,21 +230,19 @@ const ExerciseItem = ({
         date: selectedDate,
         isPublic: true,
         notes: "",
-      });
+      };
+
+      await activityService.trackExercise(requestData);
+
       Alert.alert("Success", "Exercise tracked successfully!");
       setDuration(30);
     } catch (err) {
-      setError(
+      const errorMessage =
         err?.response?.data?.message ||
-          err.message ||
-          "Failed to track exercise"
-      );
-      Alert.alert(
-        "Error",
-        err?.response?.data?.message ||
-          err.message ||
-          "Failed to track exercise"
-      );
+        err?.message ||
+        "Failed to track exercise";
+      setError(errorMessage);
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -720,7 +718,7 @@ const TrackExerciseView = () => {
           items = customWorkouts.map((cw) => ({
             id: cw.id,
             name: cw.name,
-            category: cw.activityCategoryId,
+            category: cw.activityCategoryName || cw.activityCategoryId,
             calories: cw.caloriesBurned,
             isPublic: false,
           }));

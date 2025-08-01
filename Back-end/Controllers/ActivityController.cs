@@ -263,14 +263,12 @@ namespace Fitness_Tracker.Controllers
 
             try
             {
-                // Get ActivityTypeId
                 var activityTypeId = await _activityService.GetActivityTypeIdByCategoryAndSubcategoryAsync(model.Category, model.Subcategory);
                 if (activityTypeId == null)
                 {
                     return BadRequest("Invalid category or subcategory");
                 }
 
-                // Calculate calories
                 var caloriesResult = await _activityService.CalculateExerciseCaloriesAsync(userId, new Models.Activity.CalculateExerciseCaloriesRequest
                 {
                     Category = model.Category,
@@ -280,7 +278,6 @@ namespace Fitness_Tracker.Controllers
                     TerrainType = model.TerrainType
                 });
 
-                // Add activity
                 var addModel = new Models.Activity.AddActivityModel
                 {
                     DurationInMinutes = model.DurationInMinutes,

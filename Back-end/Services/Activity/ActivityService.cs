@@ -380,6 +380,7 @@ namespace Fitness_Tracker.Services.Activity
             var activityType = await _databaseContext.ActivityTypes
                 .Include(at => at.ActivityCategory)
                 .FirstOrDefaultAsync(at => at.Name == subcategory && at.ActivityCategory.Name == category);
+                
             return activityType?.Id;
         }
 
@@ -510,12 +511,14 @@ namespace Fitness_Tracker.Services.Activity
         public async Task<List<Models.Activity.CustomWorkoutModel>> GetUserCustomWorkoutsAsync(string userId)
         {
             return await _databaseContext.CustomWorkouts
+                .Include(cw => cw.ActivityCategory)
                 .Where(cw => cw.UserId == userId)
                 .Select(cw => new Models.Activity.CustomWorkoutModel
                 {
                     Id = cw.Id,
                     Name = cw.Name,
                     ActivityCategoryId = cw.ActivityCategoryId,
+                    ActivityCategoryName = cw.ActivityCategory.Name,
                     ActivityTypeId = cw.ActivityTypeId,
                     DurationInMinutes = cw.DurationInMinutes,
                     CaloriesBurned = cw.CaloriesBurned,

@@ -143,6 +143,7 @@ class ActivityService {
         isPublic,
         notes,
       };
+
       const response = await axiosInstance.post(url, payload);
       return response.data;
     } catch (error) {
