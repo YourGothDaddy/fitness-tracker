@@ -1,12 +1,13 @@
 ﻿namespace Fitness_Tracker.Services.Users
 {
     using Fitness_Tracker.Data;
-    using Fitness_Tracker.Data.Models;
-    using Fitness_Tracker.Models.Users;
-    using Microsoft.AspNetCore.Identity;
-    using System.Threading.Tasks;
-    using System;
-    using Fitness_Tracker.Data.Models.Enums;
+using Fitness_Tracker.Data.Models;
+using Fitness_Tracker.Models.Users;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using System;
+using Fitness_Tracker.Data.Models.Enums;
 
     public class UserService : IUserService
     {
@@ -245,6 +246,121 @@
             }
             user.AvatarUrl = avatarUrl;
             await _userManager.UpdateAsync(user);
+        }
+
+        public async Task<WeightGoalResponseModel> CalculateWeightGoalAsync(string userId, WeightGoalModel model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            var totalWeightChange = model.GoalWeight - model.CurrentWeight;
+            var weeksToGoal = Math.Ceiling(Math.Abs(totalWeightChange) / Math.Abs(model.WeightChangePerWeek));
+            
+            if (weeksToGoal <= 0 || !double.IsFinite(weeksToGoal))
+            {
+                throw new InvalidOperationException("Invalid weight goal parameters");
+            }
+
+            var forecastDate = DateTime.Now.AddDays(weeksToGoal * 7);
+            
+            var calorieDeficit = (int)(model.WeightChangePerWeek * 7700 / 7);
+            
+            var currentMaintenanceCalories = await CalculateMaintenanceCaloriesAsync(user);
+            var adjustedCalorieTarget = currentMaintenanceCalories + calorieDeficit;
+
+            return new WeightGoalResponseModel
+            {
+                CurrentWeight = model.CurrentWeight,
+                GoalWeight = model.GoalWeight,
+                WeightChangePerWeek = model.WeightChangePerWeek,
+                ForecastDate = forecastDate,
+                AdjustedCalorieTarget = adjustedCalorieTarget,
+                WeeksToGoal = (int)weeksToGoal,
+                TotalWeightChange = totalWeightChange,
+                CalorieDeficit = calorieDeficit
+            };
+        }
+
+        public async Task<IdentityResult> SetWeightGoalAsync(string userId, WeightGoalModel model)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            var weightGoalResponse = await CalculateWeightGoalAsync(userId, model);
+            
+            user.Weight = model.CurrentWeight;
+            user.GoalWeight = model.GoalWeight;
+            user.WeeklyWeightChangeGoal = model.WeightChangePerWeek;
+            user.DailyCaloriesGoal = weightGoalResponse.AdjustedCalorieTarget;
+
+            return await _userManager.UpdateAsync(user);
+        }
+
+        public async Task<WeightGoalResponseModel> GetUserWeightGoalAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            var totalWeightChange = user.GoalWeight - user.Weight;
+            var weeksToGoal = Math.Ceiling(Math.Abs(totalWeightChange) / Math.Abs(user.WeeklyWeightChangeGoal));
+            
+            if (weeksToGoal <= 0 || !double.IsFinite(weeksToGoal))
+            {
+                weeksToGoal = 0;
+            }
+
+            var forecastDate = DateTime.Now.AddDays(weeksToGoal * 7);
+            var calorieDeficit = (int)(user.WeeklyWeightChangeGoal * 7700 / 7);
+
+            return new WeightGoalResponseModel
+            {
+                CurrentWeight = user.Weight,
+                GoalWeight = user.GoalWeight,
+                WeightChangePerWeek = user.WeeklyWeightChangeGoal,
+                ForecastDate = forecastDate,
+                AdjustedCalorieTarget = user.DailyCaloriesGoal,
+                WeeksToGoal = (int)weeksToGoal,
+                TotalWeightChange = totalWeightChange,
+                CalorieDeficit = calorieDeficit
+            };
+        }
+
+        private async Task<int> CalculateMaintenanceCaloriesAsync(User user)
+        {
+            if (user.Weight <= 0 || user.Height <= 0 || user.Age <= 0)
+            {
+                return 2000;
+            }
+
+            double bmr;
+            if (user.Gender == Data.Models.Enums.Gender.Male)
+            {
+                bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) + 5;
+            }
+            else
+            {
+                bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) - 161;
+            }
+
+            var activityLevel = await _databaseContext.ActivityLevels.FirstOrDefaultAsync(al => al.Id == user.ActivityLevelId);
+            var multiplier = activityLevel?.Multiplier ?? 1.2;
+            
+            var maintenance = bmr * multiplier;
+            if (user.IncludeTef)
+            {
+                maintenance *= 1.1;
+            }
+
+            return (int)Math.Round(maintenance);
         }
     }
 }

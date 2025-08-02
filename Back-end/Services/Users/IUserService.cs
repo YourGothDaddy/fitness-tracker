@@ -30,5 +30,9 @@
         public Task<MacroSettingsModel> GetMacroSettingsAsync(string userId);
         public Task UpdateMacroSettingsAsync(string userId, MacroSettingsModel model);
         public Task UpdateUserAvatarAsync(string userId, string avatarUrl);
+        
+        public Task<WeightGoalResponseModel> CalculateWeightGoalAsync(string userId, WeightGoalModel model);
+        public Task<IdentityResult> SetWeightGoalAsync(string userId, WeightGoalModel model);
+        public Task<WeightGoalResponseModel> GetUserWeightGoalAsync(string userId);
     }
 }

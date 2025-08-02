@@ -25,6 +25,48 @@ class GoalsService {
       throw error;
     }
   }
+
+  async calculateWeightGoal(weightGoalData) {
+    try {
+      const response = await axiosInstance.post(`${API_URL}/api/goals/calculate-weight-goal`, weightGoalData);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.message || "Invalid weight goal data");
+      }
+      throw error;
+    }
+  }
+
+  async setWeightGoal(weightGoalData) {
+    try {
+      const response = await axiosInstance.post(`${API_URL}/api/goals/set-weight-goal`, weightGoalData);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.message || "Invalid weight goal data");
+      }
+      throw error;
+    }
+  }
+
+  async getUserWeightGoal() {
+    try {
+      const response = await axiosInstance.get(`${API_URL}/api/goals/weight-goal`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      throw error;
+    }
+  }
 }
 
 export default new GoalsService();

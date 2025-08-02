@@ -107,6 +107,8 @@ const SetWeightGoalModal = ({
   onChange,
   onSave,
   forecastDate,
+  isCalculating,
+  error,
 }) => {
   // Determine if losing or gaining
   const curr = parseFloat(currentWeight);
@@ -164,21 +166,27 @@ const SetWeightGoalModal = ({
             }}
           />
           <Text style={styles.forecastText}>
-            Forecast: <Text style={{ fontWeight: "bold" }}>{forecastDate}</Text>
+            Forecast:{" "}
+            <Text style={{ fontWeight: "bold" }}>
+              {isCalculating ? "Calculating..." : forecastDate}
+            </Text>
           </Text>
+          {error && <Text style={styles.errorText}>{error}</Text>}
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={[styles.modalButton, styles.cancelButton]}
               onPress={onClose}
+              disabled={isCalculating}
             >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalButton, styles.saveButton]}
               onPress={onSave}
+              disabled={isCalculating}
             >
               <Text style={[styles.buttonText, styles.saveButtonText]}>
-                Save
+                {isCalculating ? "Saving..." : "Save"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -201,44 +209,123 @@ const TargetsView = () => {
     value: 0,
   });
 
-  // Hardcoded values for demo
   const [weightGoalModal, setWeightGoalModal] = useState(false);
   const [weightGoalInputs, setWeightGoalInputs] = useState({
-    currentWeight: "80", // autofilled, hardcoded
-    goalWeight: "72", // autofilled, hardcoded
-    weightChangePerWeek: -0.5, // default, negative for loss
+    currentWeight: "80",
+    goalWeight: "72",
+    weightChangePerWeek: -0.5,
   });
-  // Calculate kcal/day from weightChangePerWeek
-  const getKcalPerDay = () => {
-    const wc = parseFloat(weightGoalInputs.weightChangePerWeek);
-    if (isNaN(wc) || wc === 0) return 0;
-    return Math.round((wc * 7700) / 7);
+  const [forecastDate, setForecastDate] = useState("-");
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchUserWeightGoal = useCallback(async () => {
+    try {
+      const weightGoalData = await goalsService.getUserWeightGoal();
+      const newInputs = {
+        currentWeight: weightGoalData.currentWeight.toString(),
+        goalWeight: weightGoalData.goalWeight.toString(),
+        weightChangePerWeek: weightGoalData.weightChangePerWeek,
+      };
+      setWeightGoalInputs(newInputs);
+
+      // Calculate forecast with the fetched data
+      setTimeout(() => {
+        calculateForecast(newInputs);
+      }, 100);
+    } catch (error) {
+      console.log("No existing weight goal found, using defaults");
+      // Calculate forecast with default values
+      setTimeout(() => {
+        calculateForecast(weightGoalInputs);
+      }, 100);
+    }
+  }, [calculateForecast]);
+
+  const calculateForecast = useCallback(async (inputs = weightGoalInputs) => {
+    const curr = parseFloat(inputs.currentWeight);
+    const goal = parseFloat(inputs.goalWeight);
+    const wc = parseFloat(inputs.weightChangePerWeek);
+
+    if (isNaN(curr) || isNaN(goal) || isNaN(wc) || wc === 0) {
+      setForecastDate("-");
+      return;
+    }
+
+    try {
+      setIsCalculating(true);
+      setError(null);
+
+      const response = await goalsService.calculateWeightGoal({
+        currentWeight: curr,
+        goalWeight: goal,
+        weightChangePerWeek: wc,
+      });
+
+      const forecastDate = new Date(response.forecastDate);
+      setForecastDate(forecastDate.toLocaleDateString());
+    } catch (err) {
+      setError(err.message || "Failed to calculate forecast");
+      setForecastDate("-");
+    } finally {
+      setIsCalculating(false);
+    }
+  }, []);
+
+  const handleWeightGoalChange = (field, value) => {
+    setWeightGoalInputs((prev) => {
+      const newInputs = { ...prev };
+      if (field === "weightChangePerWeek") {
+        newInputs[field] = value;
+      } else {
+        newInputs[field] = value.replace(/[^0-9.-]/g, "");
+      }
+
+      // Calculate forecast with the new inputs
+      setTimeout(() => {
+        calculateForecast(newInputs);
+      }, 100);
+
+      return newInputs;
+    });
   };
-  // Calculate forecast date (hardcoded logic: 7700 kcal per kg)
-  const getForecastDate = () => {
+
+  const handleWeightGoalSave = async () => {
     const curr = parseFloat(weightGoalInputs.currentWeight);
     const goal = parseFloat(weightGoalInputs.goalWeight);
     const wc = parseFloat(weightGoalInputs.weightChangePerWeek);
-    if (isNaN(curr) || isNaN(goal) || isNaN(wc) || wc === 0) return "-";
-    const kgDiff = Math.abs(curr - goal);
-    const weeks = Math.ceil(kgDiff / Math.abs(wc));
-    if (!isFinite(weeks) || weeks <= 0) return "-";
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + weeks * 7);
-    return targetDate.toLocaleDateString();
+
+    if (isNaN(curr) || isNaN(goal) || isNaN(wc)) {
+      setError("Please enter valid numbers");
+      return;
+    }
+
+    try {
+      setIsCalculating(true);
+      setError(null);
+
+      await goalsService.setWeightGoal({
+        currentWeight: curr,
+        goalWeight: goal,
+        weightChangePerWeek: wc,
+      });
+
+      setWeightGoalModal(false);
+
+      // Refresh both goals and weight goal data immediately
+      await Promise.all([fetchGoals(), fetchUserWeightGoal()]);
+    } catch (err) {
+      setError(err.message || "Failed to set weight goal");
+    } finally {
+      setIsCalculating(false);
+    }
   };
-  const handleWeightGoalChange = (field, value) => {
-    setWeightGoalInputs((prev) => {
-      if (field === "weightChangePerWeek") {
-        return { ...prev, [field]: value };
-      }
-      return { ...prev, [field]: value.replace(/[^0-9.-]/g, "") };
-    });
-  };
-  const handleWeightGoalSave = () => {
-    setWeightGoalModal(false);
-    // Would save to backend here
-  };
+
+  useEffect(() => {
+    if (weightGoalModal) {
+      fetchUserWeightGoal();
+    }
+  }, [weightGoalModal, fetchUserWeightGoal]);
 
   const fetchGoals = useCallback(async () => {
     try {
@@ -385,7 +472,9 @@ const TargetsView = () => {
           weightChangePerWeek={weightGoalInputs.weightChangePerWeek}
           onChange={handleWeightGoalChange}
           onSave={handleWeightGoalSave}
-          forecastDate={getForecastDate()}
+          forecastDate={forecastDate}
+          isCalculating={isCalculating}
+          error={error}
         />
         <EditGoalModal
           visible={editModal.visible}
@@ -597,5 +686,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
     fontWeight: "600",
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#e74c3c",
+    textAlign: "center",
+    marginBottom: 16,
+    marginTop: 8,
   },
 });
