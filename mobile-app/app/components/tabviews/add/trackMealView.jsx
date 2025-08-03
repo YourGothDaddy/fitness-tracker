@@ -16,6 +16,8 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
@@ -30,6 +32,7 @@ import {
   searchConsumableItems,
   getAllCustomConsumableItems,
 } from "@/app/services/foodService";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
 const FoodItem = ({
   name,
@@ -440,6 +443,213 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
+const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
+  const [grams, setGrams] = useState("100");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isLogging, setIsLogging] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setGrams("100");
+      setSelectedDate(new Date());
+      setIsLogging(false);
+    }
+  }, [visible]);
+
+  const showDatePickerModal = useCallback(() => {
+    try {
+      DateTimePickerAndroid.open({
+        value: selectedDate,
+        mode: "date",
+        is24Hour: true,
+        onChange: (event, date) => {
+          if (event.type === "set" && date) {
+            date.setHours(0, 0, 0, 0);
+            setSelectedDate(date);
+          }
+        },
+        maximumDate: new Date(),
+      });
+    } catch (error) {
+      console.error("DatePicker error:", error);
+      Alert.alert("Error", "Failed to open date picker. Please try again.");
+    }
+  }, [selectedDate]);
+
+  const handleLogFood = async () => {
+    const gramsValue = parseFloat(grams);
+    if (!gramsValue || gramsValue <= 0) {
+      Alert.alert("Error", "Please enter a valid amount of grams.");
+      return;
+    }
+
+    setIsLogging(true);
+
+    try {
+      const multiplier = gramsValue / 100;
+      const mealData = {
+        name: food.name,
+        calories: Math.round(food.caloriesPer100g * multiplier),
+        protein: Math.round(food.proteinPer100g * multiplier * 10) / 10,
+        carbs: Math.round(food.carbohydratePer100g * multiplier * 10) / 10,
+        fat: Math.round(food.fatPer100g * multiplier * 10) / 10,
+        date: selectedDate,
+        mealOfTheDay: 0,
+      };
+
+      await onLogFood(mealData);
+      onClose();
+      setGrams("100");
+      setSelectedDate(new Date());
+    } catch (error) {
+      console.error("Error logging food:", error);
+    } finally {
+      setIsLogging(false);
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  if (!food) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Log Food</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.foodInfoContainer}>
+            <Text style={styles.modalFoodName}>{food.name}</Text>
+            <Text style={styles.modalFoodSubtitle}>Per 100g</Text>
+
+            <View style={styles.macrosGrid}>
+              <View style={styles.macroItem}>
+                <Text style={styles.macroLabel}>Calories</Text>
+                <Text style={styles.macroValue}>
+                  {food.caloriesPer100g} kcal
+                </Text>
+              </View>
+              <View style={styles.macroItem}>
+                <Text style={styles.macroLabel}>Protein</Text>
+                <Text style={styles.macroValue}>{food.proteinPer100g}g</Text>
+              </View>
+              <View style={styles.macroItem}>
+                <Text style={styles.macroLabel}>Carbs</Text>
+                <Text style={styles.macroValue}>
+                  {food.carbohydratePer100g}g
+                </Text>
+              </View>
+              <View style={styles.macroItem}>
+                <Text style={styles.macroLabel}>Fat</Text>
+                <Text style={styles.macroValue}>{food.fatPer100g}g</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Amount (grams)</Text>
+            <TextInput
+              style={styles.textInput}
+              value={grams}
+              onChangeText={setGrams}
+              placeholder="Enter grams consumed"
+              keyboardType="numeric"
+              placeholderTextColor="#999"
+            />
+            {grams && parseFloat(grams) > 0 && (
+              <View style={styles.previewContainer}>
+                <Text style={styles.previewTitle}>Preview:</Text>
+                <View style={styles.previewMacros}>
+                  <Text style={styles.previewText}>
+                    Calories:{" "}
+                    {Math.round(
+                      (food.caloriesPer100g * parseFloat(grams)) / 100
+                    )}{" "}
+                    kcal
+                  </Text>
+                  <Text style={styles.previewText}>
+                    Protein:{" "}
+                    {Math.round(
+                      ((food.proteinPer100g * parseFloat(grams)) / 100) * 10
+                    ) / 10}
+                    g
+                  </Text>
+                  <Text style={styles.previewText}>
+                    Carbs:{" "}
+                    {Math.round(
+                      ((food.carbohydratePer100g * parseFloat(grams)) / 100) *
+                        10
+                    ) / 10}
+                    g
+                  </Text>
+                  <Text style={styles.previewText}>
+                    Fat:{" "}
+                    {Math.round(
+                      ((food.fatPer100g * parseFloat(grams)) / 100) * 10
+                    ) / 10}
+                    g
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Date</Text>
+            <TouchableOpacity
+              style={styles.badgeContainer}
+              onPress={showDatePickerModal}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
+              <Icon
+                name="calendar-today"
+                size={20}
+                color="#619819"
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.logButton, isLogging && styles.logButtonDisabled]}
+              onPress={handleLogFood}
+              disabled={isLogging}
+            >
+              {isLogging ? (
+                <ActivityIndicator size="small" color={Colors.white.color} />
+              ) : (
+                <Text style={styles.logButtonText}>Log Food</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+};
+
 const TrackMealView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
@@ -455,6 +665,8 @@ const TrackMealView = () => {
   const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(5);
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(1);
+  const [logFoodModalVisible, setLogFoodModalVisible] = useState(false);
+  const [foodToLog, setFoodToLog] = useState(null);
 
   // Refs for request deduplication and cleanup
   const requestIdRef = useRef(0);
@@ -480,11 +692,7 @@ const TrackMealView = () => {
   // Separate function to fetch only favorites (called once on mount)
   const fetchFavorites = useCallback(async () => {
     try {
-      console.log("[TrackMealView] Fetching favorite items");
       const favoriteItems = await getFavoriteConsumables();
-      console.log(
-        `[TrackMealView] Received ${favoriteItems.length} favorite items`
-      );
       setFavoriteConsumableIds(favoriteItems.map((f) => f.id));
     } catch (err) {
       console.error("[TrackMealView] Failed to fetch favorite IDs:", err);
@@ -494,14 +702,6 @@ const TrackMealView = () => {
   // Optimized fetchFoods without favorites fetching
   const fetchFoods = useCallback(
     async (requestId) => {
-      console.log("[TrackMealView] Starting fetchFoods:", {
-        activeTab,
-        currentPage,
-        pageSize,
-        searchQuery: debouncedSearchQuery,
-        requestId,
-      });
-
       try {
         setLoading(true);
         setError(null);
@@ -517,13 +717,6 @@ const TrackMealView = () => {
 
         const query = debouncedSearchQuery || "";
 
-        console.log("[TrackMealView] Executing search:", {
-          filter,
-          query,
-          currentPage,
-          pageSize,
-        });
-
         const searchResult = await searchConsumableItems(
           query,
           currentPage,
@@ -533,17 +726,8 @@ const TrackMealView = () => {
 
         // Check if this request is still the latest one
         if (requestId !== requestIdRef.current) {
-          console.log(
-            "[TrackMealView] Request cancelled (newer request in progress)"
-          );
           return;
         }
-
-        console.log("[TrackMealView] Search completed:", {
-          itemsReceived: searchResult.items?.length || 0,
-          totalCount: searchResult.totalCount,
-          currentPage: searchResult.pageNumber,
-        });
 
         if (!searchResult.items) {
           console.warn(
@@ -596,7 +780,6 @@ const TrackMealView = () => {
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false);
-          console.log("[TrackMealView] fetchFoods completed");
         }
       }
     },
@@ -654,20 +837,19 @@ const TrackMealView = () => {
   });
 
   const handleAddMeal = async (food) => {
+    setFoodToLog(food);
+    setLogFoodModalVisible(true);
+  };
+
+  const handleLogFood = async (mealData) => {
     try {
-      const now = new Date();
-      await mealService.addMeal({
-        name: food.name,
-        calories: food.caloriesPer100g,
-        protein: food.proteinPer100g,
-        carbs: food.carbohydratePer100g,
-        fat: food.fatPer100g,
-        date: now,
-        mealOfTheDay: 0, // Default to breakfast, can be changed later
-      });
-      Alert.alert("Success", "Meal added successfully!");
+      await mealService.addMeal(mealData);
+      Alert.alert("Success", "Meal logged successfully!");
+      setLogFoodModalVisible(false);
+      setFoodToLog(null);
     } catch (err) {
-      Alert.alert("Error", "Failed to add meal. Please try again.");
+      Alert.alert("Error", "Failed to log meal. Please try again.");
+      console.error("Error logging meal:", err);
     }
   };
 
@@ -823,6 +1005,12 @@ const TrackMealView = () => {
           <Pagination {...paginationProps} />
         )}
       </SafeAreaView>
+      <LogFoodModal
+        visible={logFoodModalVisible}
+        food={foodToLog}
+        onClose={() => setLogFoodModalVisible(false)}
+        onLogFood={handleLogFood}
+      />
     </>
   );
 };
@@ -1070,6 +1258,174 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginHorizontal: 4,
     paddingHorizontal: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: Colors.white.color,
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+    marginVertical: 80,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+  },
+  closeButton: {
+    padding: 5,
+  },
+  foodInfoContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+    width: "100%",
+  },
+  modalFoodName: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalFoodSubtitle: {
+    fontSize: 14,
+    color: "#999",
+    marginBottom: 15,
+    fontWeight: "400",
+    textAlign: "center",
+  },
+  macrosGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  macroItem: {
+    alignItems: "center",
+    marginVertical: 10,
+    width: "45%", // Adjust as needed for two columns
+  },
+  macroLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+  },
+  macroValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+  },
+  inputContainer: {
+    width: "100%",
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 18,
+    color: "#333",
+    backgroundColor: "#f9f9f9",
+  },
+  badgeContainer: {
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#619819",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: "#e0e0e0",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "35%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonText: {
+    color: "#333",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  logButton: {
+    backgroundColor: Colors.darkGreen.color,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    width: "35%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logButtonText: {
+    color: Colors.white.color,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  logButtonDisabled: {
+    backgroundColor: "#ccc",
+  },
+  previewContainer: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: "#f0f8f0",
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.darkGreen.color,
+  },
+  previewTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+    marginBottom: 5,
+  },
+  previewMacros: {
+    gap: 2,
+  },
+  previewText: {
+    fontSize: 12,
+    color: "#666",
   },
 });
 

@@ -81,13 +81,6 @@ export async function getAllCustomConsumableItems() {
   }
 }
 
-// Helper function to format request details for logging
-const formatRequestDetails = (params) => {
-  return Object.entries(params)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join(", ");
-};
-
 export async function searchConsumableItems(
   searchQuery = "",
   pageNumber = 1,
@@ -101,41 +94,17 @@ export async function searchConsumableItems(
     pageSize,
     filter,
   };
-  console.log(
-    "[Food Service] Starting search request:",
-    formatRequestDetails(requestParams)
-  );
 
   try {
     const response = await axiosInstance.get(`/api/consumable/search`, {
       params: requestParams,
     });
 
-    console.log(
-      `[Food Service] Search successful. Received ${
-        response.data.items?.length || 0
-      } items`,
-      `(Total: ${response.data.totalCount || 0})`
-    );
-
     return response.data;
   } catch (error) {
-    console.error("[Food Service] Search failed:", {
-      params: requestParams,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-      stack: error.stack,
-    });
-
     // Check for specific error types
     if (error.response) {
       // Server responded with error
-      console.error("[Food Service] Server error response:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
 
       if (error.response.status === 401) {
         throw new Error("Authentication required. Please log in.");
@@ -156,12 +125,12 @@ export async function searchConsumableItems(
 
     if (error.request) {
       // Request made but no response
-      console.error("[Food Service] No response received from server");
+
       throw new Error("No response from server. Please check your connection.");
     }
 
     // Something else went wrong
-    console.error("[Food Service] Request setup error:", error.message);
+
     throw new Error("Failed to initiate search request.");
   }
 }
