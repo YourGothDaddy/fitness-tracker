@@ -257,14 +257,14 @@ using Fitness_Tracker.Data.Models.Enums;
             }
 
             var totalWeightChange = model.GoalWeight - model.CurrentWeight;
-            var weeksToGoal = Math.Ceiling(Math.Abs(totalWeightChange) / Math.Abs(model.WeightChangePerWeek));
+            var exactWeeksToGoal = Math.Abs(totalWeightChange) / Math.Abs(model.WeightChangePerWeek);
             
-            if (weeksToGoal <= 0 || !double.IsFinite(weeksToGoal))
+            if (exactWeeksToGoal <= 0 || !double.IsFinite(exactWeeksToGoal))
             {
                 throw new InvalidOperationException("Invalid weight goal parameters");
             }
 
-            var forecastDate = DateTime.Now.AddDays(weeksToGoal * 7);
+            var forecastDate = DateTime.Now.AddDays(exactWeeksToGoal * 7);
             
             var calorieDeficit = (int)(model.WeightChangePerWeek * 7700 / 7);
             
@@ -278,7 +278,7 @@ using Fitness_Tracker.Data.Models.Enums;
                 WeightChangePerWeek = model.WeightChangePerWeek,
                 ForecastDate = forecastDate,
                 AdjustedCalorieTarget = adjustedCalorieTarget,
-                WeeksToGoal = (int)weeksToGoal,
+                WeeksToGoal = (int)Math.Ceiling(exactWeeksToGoal),
                 TotalWeightChange = totalWeightChange,
                 CalorieDeficit = calorieDeficit
             };
@@ -311,14 +311,14 @@ using Fitness_Tracker.Data.Models.Enums;
             }
 
             var totalWeightChange = user.GoalWeight - user.Weight;
-            var weeksToGoal = Math.Ceiling(Math.Abs(totalWeightChange) / Math.Abs(user.WeeklyWeightChangeGoal));
+            var exactWeeksToGoal = Math.Abs(totalWeightChange) / Math.Abs(user.WeeklyWeightChangeGoal);
             
-            if (weeksToGoal <= 0 || !double.IsFinite(weeksToGoal))
+            if (exactWeeksToGoal <= 0 || !double.IsFinite(exactWeeksToGoal))
             {
-                weeksToGoal = 0;
+                exactWeeksToGoal = 0;
             }
 
-            var forecastDate = DateTime.Now.AddDays(weeksToGoal * 7);
+            var forecastDate = DateTime.Now.AddDays(exactWeeksToGoal * 7);
             var calorieDeficit = (int)(user.WeeklyWeightChangeGoal * 7700 / 7);
 
             return new WeightGoalResponseModel
@@ -328,7 +328,7 @@ using Fitness_Tracker.Data.Models.Enums;
                 WeightChangePerWeek = user.WeeklyWeightChangeGoal,
                 ForecastDate = forecastDate,
                 AdjustedCalorieTarget = user.DailyCaloriesGoal,
-                WeeksToGoal = (int)weeksToGoal,
+                WeeksToGoal = (int)Math.Ceiling(exactWeeksToGoal),
                 TotalWeightChange = totalWeightChange,
                 CalorieDeficit = calorieDeficit
             };
