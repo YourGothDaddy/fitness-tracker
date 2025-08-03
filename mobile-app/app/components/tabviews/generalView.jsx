@@ -309,31 +309,35 @@ const GeneralView = () => {
     ],
   };
 
-  let weightLabels, weightValues;
-  if (
-    selectedWeightTimeframe === "month" &&
-    weightProgress.dailyWeights.length > 2
-  ) {
-    const len = weightProgress.dailyWeights.length;
-    weightLabels = weightProgress.dailyWeights.map((day, idx) => {
-      if (idx === 0) return formatShortDate(day.date);
-      if (idx === Math.floor(len / 2)) return formatShortDate(day.date);
-      if (idx === len - 1) return formatShortDate(day.date);
-      return "";
-    });
-    weightLabels.push("");
-    weightValues = weightProgress.dailyWeights.map((day) => day.weight);
-    weightValues.push(weightValues[weightValues.length - 1]);
-  } else {
-    weightLabels = weightProgress.dailyWeights.map((day) => day.dayName);
-    weightValues = weightProgress.dailyWeights.map((day) => day.weight);
+  let weightLabels = [],
+    weightValues = [];
+
+  if (weightProgress.dailyWeights && weightProgress.dailyWeights.length > 0) {
+    if (
+      selectedWeightTimeframe === "month" &&
+      weightProgress.dailyWeights.length > 2
+    ) {
+      const len = weightProgress.dailyWeights.length;
+      weightLabels = weightProgress.dailyWeights.map((day, idx) => {
+        if (idx === 0) return formatShortDate(day.date);
+        if (idx === Math.floor(len / 2)) return formatShortDate(day.date);
+        if (idx === len - 1) return formatShortDate(day.date);
+        return "";
+      });
+      weightLabels.push("");
+      weightValues = weightProgress.dailyWeights.map((day) => day.weight);
+      weightValues.push(weightValues[weightValues.length - 1]);
+    } else {
+      weightLabels = weightProgress.dailyWeights.map((day) => day.dayName);
+      weightValues = weightProgress.dailyWeights.map((day) => day.weight);
+    }
   }
 
   const weightData = {
-    labels: weightLabels,
+    labels: weightLabels.length > 0 ? weightLabels : ["No Data"],
     datasets: [
       {
-        data: weightValues,
+        data: weightValues.length > 0 ? weightValues : [0],
         color: () => Colors.green.color,
         strokeWidth: 2,
       },
@@ -367,6 +371,10 @@ const GeneralView = () => {
     formatYLabel: (value) => {
       if (value === undefined || value === null) return "";
       return Number(value).toFixed(1);
+    },
+    formatXLabel: (value) => {
+      if (!value || value === "") return "";
+      return value;
     },
   };
 
@@ -686,7 +694,12 @@ const GeneralView = () => {
 
         <View style={styles.chartContainer}>
           <View style={styles.chartWrapper}>
-            {weightProgress.dailyWeights.length > 0 && (
+            {isWeightLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#619819" />
+              </View>
+            ) : weightProgress.dailyWeights &&
+              weightProgress.dailyWeights.length > 0 ? (
               <LineChart
                 data={weightData}
                 width={screenWidth}
@@ -700,6 +713,12 @@ const GeneralView = () => {
                 yAxisLabel=""
                 yAxisSuffix=""
               />
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <Text style={styles.emptyStateText}>
+                  No weight data available for this period
+                </Text>
+              </View>
             )}
           </View>
         </View>
@@ -994,10 +1013,12 @@ const styles = StyleSheet.create({
   chartContainer: {
     marginHorizontal: -20,
     paddingHorizontal: 10,
+    minHeight: 200,
   },
   chartWrapper: {
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 200,
   },
   chart: {
     borderRadius: 16,

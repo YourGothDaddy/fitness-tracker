@@ -294,12 +294,39 @@ using Fitness_Tracker.Data.Models.Enums;
 
             var weightGoalResponse = await CalculateWeightGoalAsync(userId, model);
             
+            var previousWeight = user.Weight;
             user.Weight = model.CurrentWeight;
             user.GoalWeight = model.GoalWeight;
             user.WeeklyWeightChangeGoal = model.WeightChangePerWeek;
             user.DailyCaloriesGoal = weightGoalResponse.AdjustedCalorieTarget;
 
-            return await _userManager.UpdateAsync(user);
+            var result = await _userManager.UpdateAsync(user);
+            
+            if (result.Succeeded && model.CurrentWeight != previousWeight)
+            {
+                var existingRecord = await _databaseContext.WeightRecords
+                    .FirstOrDefaultAsync(wr => wr.UserId == userId && wr.Date.Date == DateTime.Now.Date);
+
+                if (existingRecord != null)
+                {
+                    existingRecord.Weight = model.CurrentWeight;
+                    existingRecord.Notes = "Updated via weight goal setting";
+                }
+                else
+                {
+                    _databaseContext.WeightRecords.Add(new WeightRecord
+                    {
+                        UserId = userId,
+                        Date = DateTime.Now.Date,
+                        Weight = model.CurrentWeight,
+                        Notes = "Set via weight goal"
+                    });
+                }
+                
+                await _databaseContext.SaveChangesAsync();
+            }
+
+            return result;
         }
 
         public async Task<WeightGoalResponseModel> GetUserWeightGoalAsync(string userId)
