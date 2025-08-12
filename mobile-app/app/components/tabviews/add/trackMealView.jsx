@@ -527,17 +527,13 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable
-          style={[styles.modalContent, { flexDirection: "column" }]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Log Food</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Icon name="close" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
+      <View style={styles.modalOverlay}>
+        <Pressable style={styles.modalBackdrop} onPress={onClose} />
+        <View style={[styles.modalContent, { flexDirection: "column" }]}>
+          <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+            <Icon name="close" size={24} color="#666" />
+          </TouchableOpacity>
+          <View style={styles.modalHandle} />
 
           <View style={styles.modalBody}>
             <ScrollView
@@ -555,44 +551,51 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
                 <Text style={styles.modalFoodSubtitle}>
                   {food.subTitle || food.SubTitle || food.subtitle || ""}
                 </Text>
-                <Text style={styles.per100gLabel}>Per 100g</Text>
+                <View style={styles.per100gBadge}>
+                  <Text style={styles.per100gBadgeText}>Per 100g</Text>
+                </View>
 
                 <View style={styles.macrosGrid}>
-                  <View style={styles.macroItem}>
+                  <View style={[styles.macroItem, styles.macroItemCalories]}>
                     <Text style={styles.macroLabel}>Calories</Text>
                     <Text style={styles.macroValue}>
                       {food.caloriesPer100g} kcal
                     </Text>
                   </View>
-                  <View style={styles.macroItem}>
+                  <View style={[styles.macroItem, styles.macroItemProtein]}>
                     <Text style={styles.macroLabel}>Protein</Text>
                     <Text style={styles.macroValue}>
-                      {food.proteinPer100g}g
+                      {food.proteinPer100g} g
                     </Text>
                   </View>
-                  <View style={styles.macroItem}>
+                  <View style={[styles.macroItem, styles.macroItemCarbs]}>
                     <Text style={styles.macroLabel}>Carbs</Text>
                     <Text style={styles.macroValue}>
-                      {food.carbohydratePer100g}g
+                      {food.carbohydratePer100g} g
                     </Text>
                   </View>
-                  <View style={styles.macroItem}>
+                  <View style={[styles.macroItem, styles.macroItemFat]}>
                     <Text style={styles.macroLabel}>Fat</Text>
-                    <Text style={styles.macroValue}>{food.fatPer100g}g</Text>
+                    <Text style={styles.macroValue}>{food.fatPer100g} g</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Amount (grams)</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={grams}
-                  onChangeText={setGrams}
-                  placeholder="Enter grams consumed"
-                  keyboardType="numeric"
-                  placeholderTextColor="#999"
-                />
+                <View style={styles.inputWithUnit}>
+                  <TextInput
+                    style={[styles.textInput, styles.textInputElevated]}
+                    value={grams}
+                    onChangeText={setGrams}
+                    placeholder="Enter grams consumed"
+                    keyboardType="numeric"
+                    placeholderTextColor="#999"
+                  />
+                  <View style={styles.unitBadge}>
+                    <Text style={styles.unitBadgeText}>g</Text>
+                  </View>
+                </View>
                 {grams && parseFloat(grams) > 0 && (
                   <View style={styles.previewContainer}>
                     <Text style={styles.previewTitle}>Preview:</Text>
@@ -669,8 +672,8 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
               )}
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 };
@@ -1289,6 +1292,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
+    position: "relative",
+  },
+  modalBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContent: {
     width: "90%",
@@ -1301,68 +1312,141 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    overflow: "hidden",
   },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    padding: 20,
-    paddingBottom: 15,
+  modalHandle: {
+    alignSelf: "center",
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#e5e5e5",
+    marginTop: 6,
+    marginBottom: 2,
   },
+  // header removed; close button is absolute to save space
   modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "800",
     color: Colors.darkGreen.color,
   },
   closeButton: {
     padding: 5,
   },
+  modalCloseButton: {
+    position: "absolute",
+    right: 10,
+    top: 10,
+    zIndex: 20,
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
   foodInfoContainer: {
     alignItems: "center",
     marginBottom: 20,
     width: "100%",
+    padding: 16,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
+  // foodAvatar removed in headerless design
   modalFoodName: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "800",
     color: Colors.darkGreen.color,
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: "center",
   },
   modalFoodSubtitle: {
-    fontSize: 14,
-    color: "#999",
-    marginBottom: 5,
-    fontWeight: "400",
+    fontSize: 13,
+    color: "#8a8a8a",
+    marginBottom: 10,
+    fontWeight: "500",
     textAlign: "center",
   },
-  per100gLabel: {
-    fontSize: 14,
-    color: "#999",
-    marginBottom: 15,
-    fontWeight: "400",
-    textAlign: "center",
+  per100gBadge: {
+    alignSelf: "center",
+    backgroundColor: "#f7faf3",
+    borderWidth: 1,
+    borderColor: "#e2efd4",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginBottom: 8,
+  },
+  per100gBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.darkGreen.color,
+    letterSpacing: 0.2,
   },
   macrosGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     width: "100%",
   },
   macroItem: {
     alignItems: "center",
-    marginVertical: 10,
-    width: "45%", // Adjust as needed for two columns
+    justifyContent: "center",
+    marginVertical: 8,
+    width: "48%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    paddingVertical: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
+  macroItemCalories: {
+    borderColor: "#FFE0B2",
+    backgroundColor: "#FFF9F0",
+  },
+  macroItemProtein: {
+    borderColor: "#C8E6C9",
+    backgroundColor: "#F4FBF4",
+  },
+  macroItemCarbs: {
+    borderColor: "#BBDEFB",
+    backgroundColor: "#F6FAFF",
+  },
+  macroItemFat: {
+    borderColor: "#F8BBD0",
+    backgroundColor: "#FFF5F9",
+  },
+  // icon badges removed; rely on colored card accents instead
   macroLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
+    fontSize: 12,
+    color: "#777",
+    marginBottom: 2,
+    fontWeight: "600",
   },
   macroValue: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "800",
     color: Colors.darkGreen.color,
   },
   inputContainer: {
@@ -1370,10 +1454,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
     marginBottom: 8,
-    fontWeight: "500",
+    fontWeight: "700",
+    letterSpacing: 0.2,
+  },
+  inputWithUnit: {
+    position: "relative",
+    justifyContent: "center",
   },
   textInput: {
     borderWidth: 1,
@@ -1384,6 +1473,37 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
     backgroundColor: "#f9f9f9",
+  },
+  textInputElevated: {
+    backgroundColor: "#fff",
+    borderColor: "#e9e9e9",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  unitBadge: {
+    position: "absolute",
+    right: 10,
+    top: 10,
+    backgroundColor: "#f2f6ec",
+    borderWidth: 1,
+    borderColor: "#e0ecd3",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  unitBadgeText: {
+    color: Colors.darkGreen.color,
+    fontWeight: "700",
+    fontSize: 12,
   },
   badgeContainer: {
     backgroundColor: "rgba(97, 152, 25, 0.1)",
@@ -1403,75 +1523,103 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     minHeight: 0,
+    backgroundColor: "#fafafa",
   },
   modalScrollView: {
     flex: 1,
     width: "100%",
-    backgroundColor: Colors.white.color,
+    backgroundColor: "transparent",
   },
   modalScrollContentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 12,
   },
   modalActions: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
+    alignItems: "center",
     width: "100%",
-    padding: 20,
-    paddingTop: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: "#eee",
-    backgroundColor: Colors.white.color,
+    backgroundColor: "#fff",
   },
   cancelButton: {
-    backgroundColor: "#e0e0e0",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    width: "35%",
+    backgroundColor: "#f3f3f3",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9e9e9",
+    width: "48%",
     alignItems: "center",
     justifyContent: "center",
   },
   cancelButtonText: {
     color: "#333",
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     textAlign: "center",
   },
   logButton: {
     backgroundColor: Colors.darkGreen.color,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    width: "35%",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    width: "48%",
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.darkGreen.color,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   logButtonText: {
     color: Colors.white.color,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "800",
     textAlign: "center",
+    letterSpacing: 0.3,
   },
   logButtonDisabled: {
     backgroundColor: "#ccc",
   },
   previewContainer: {
     marginTop: 10,
-    padding: 10,
-    backgroundColor: "#f0f8f0",
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.darkGreen.color,
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eaeaea",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   previewTitle: {
-    fontSize: 14,
-    fontWeight: "bold",
+    fontSize: 13,
+    fontWeight: "800",
     color: Colors.darkGreen.color,
-    marginBottom: 5,
+    marginBottom: 6,
   },
   previewMacros: {
-    gap: 2,
+    gap: 4,
   },
   previewText: {
     fontSize: 12,
