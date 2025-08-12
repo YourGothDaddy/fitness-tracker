@@ -3,7 +3,11 @@ import React, { useEffect, useState } from "react";
 import { AuthProvider } from "./context/AuthContext";
 import FontService from "../services/fontService";
 import * as Font from "expo-font";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import {
+  MaterialIcons,
+  Ionicons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,6 +24,7 @@ const RootLayout = () => {
           Font.loadAsync({
             ...MaterialIcons.font,
             ...Ionicons.font,
+            ...MaterialCommunityIcons.font,
           }),
         ]);
         setFontsLoaded(true);
