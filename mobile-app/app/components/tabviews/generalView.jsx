@@ -172,10 +172,15 @@ const GeneralView = () => {
 
   const handleError = useCallback(
     (error, context) => {
-      console.error(`Error in GeneralView (${context}):`, error);
       if (!isMounted.current) return;
 
       if (error.logout) {
+        router.replace("/");
+        return;
+      }
+
+      const status = error?.response?.status;
+      if (status === 401) {
         router.replace("/");
         return;
       }

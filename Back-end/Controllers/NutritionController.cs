@@ -58,8 +58,23 @@ namespace Fitness_Tracker.Controllers
                 return BadRequest("Either timeframe or both startDate and endDate must be provided.");
             }
 
-            var result = await _nutritionService.GetCalorieOverviewAsync(userId, sDate, eDate);
-            return Ok(result);
+            try
+            {
+                var result = await _nutritionService.GetCalorieOverviewAsync(userId, sDate, eDate);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while retrieving calorie overview: {ex.Message}");
+            }
         }
 
         [HttpGet(DailyCaloriesHttpAttributeName)]

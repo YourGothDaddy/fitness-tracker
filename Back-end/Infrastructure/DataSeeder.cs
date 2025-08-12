@@ -365,5 +365,95 @@
             }
             Console.WriteLine($"[Seeder] Done. Inserted: {inserted}, Skipped: {skipped}, Errors: {errors}");
         }
+
+        public static async Task SeedConsumableItemSubtitlesAsync(IServiceProvider serviceProvider)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var filePath = "consumableItem.json";
+            Console.WriteLine($"[SubTitle Seeder] Looking for file at: {filePath}");
+            
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[SubTitle Seeder] File not found: {filePath}");
+                return;
+            }
+
+            using var stream = File.OpenRead(filePath);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var items = await JsonSerializer.DeserializeAsync<List<JsonElement>>(stream, options);
+            
+            if (items == null)
+            {
+                Console.WriteLine("[SubTitle Seeder] No items found in JSON file.");
+                return;
+            }
+
+            int updated = 0;
+            int skipped = 0;
+            int errors = 0;
+            Console.WriteLine($"[SubTitle Seeder] Starting to update subtitles for {items.Count} items...");
+
+            foreach (var item in items)
+            {
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var name = titleProp.GetString();
+                    string? subTitle = null;
+                    
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(subTitle))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var existingItem = await context.ConsumableItems.FirstOrDefaultAsync(c => c.Name == name);
+                    if (existingItem != null && string.IsNullOrEmpty(existingItem.SubTitle))
+                    {
+                        existingItem.SubTitle = subTitle;
+                        updated++;
+                        Console.WriteLine($"[SubTitle Seeder] Updated: {name} | {subTitle}");
+                    }
+                    else if (existingItem != null && !string.IsNullOrEmpty(existingItem.SubTitle))
+                    {
+                        skipped++;
+                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                    }
+                    else
+                    {
+                        skipped++;
+                        Console.WriteLine($"[SubTitle Seeder] Skipped (not found in DB): {name}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[SubTitle Seeder] Error: {ex.Message}");
+                }
+            }
+
+            if (updated > 0)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[SubTitle Seeder] Saved {updated} updates to database.");
+            }
+
+            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+        }
     }
 }

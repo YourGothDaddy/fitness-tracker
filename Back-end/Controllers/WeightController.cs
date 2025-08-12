@@ -22,9 +22,10 @@ namespace Fitness_Tracker.Controllers
         [HttpGet("weight-progress")]
         public async Task<IActionResult> GetWeightProgress([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
+            string? userId = null;
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized();
@@ -39,6 +40,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
@@ -50,9 +55,10 @@ namespace Fitness_Tracker.Controllers
         [HttpPost("record")]
         public async Task<IActionResult> AddWeightRecord([FromBody] AddWeightRecordRequest request)
         {
+            string? userId = null;
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized();
@@ -63,6 +69,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
@@ -74,9 +84,10 @@ namespace Fitness_Tracker.Controllers
         [HttpPut("record/{id}")]
         public async Task<IActionResult> UpdateWeightRecord(int id, [FromBody] UpdateWeightRecordRequest request)
         {
+            string? userId = null;
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized();
@@ -94,9 +105,10 @@ namespace Fitness_Tracker.Controllers
         [HttpDelete("record/{id}")]
         public async Task<IActionResult> DeleteWeightRecord(int id)
         {
+            string? userId = null;
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized();

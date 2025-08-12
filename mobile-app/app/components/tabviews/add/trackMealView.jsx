@@ -18,6 +18,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
@@ -527,7 +528,10 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
       onRequestClose={onClose}
     >
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.modalContent}>
+        <Pressable
+          style={[styles.modalContent, { flexDirection: "column" }]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Log Food</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -535,97 +539,118 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.foodInfoContainer}>
-            <Text style={styles.modalFoodName}>{food.name}</Text>
-            <Text style={styles.modalFoodSubtitle}>Per 100g</Text>
-
-            <View style={styles.macrosGrid}>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroLabel}>Calories</Text>
-                <Text style={styles.macroValue}>
-                  {food.caloriesPer100g} kcal
+          <View style={styles.modalBody}>
+            <ScrollView
+              style={styles.modalScrollView}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.modalScrollContentContainer}
+              nestedScrollEnabled={true}
+              scrollEnabled={true}
+              bounces={false}
+              alwaysBounceVertical={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.foodInfoContainer}>
+                <Text style={styles.modalFoodName}>{food.name}</Text>
+                <Text style={styles.modalFoodSubtitle}>
+                  {food.subTitle || food.SubTitle || food.subtitle || ""}
                 </Text>
-              </View>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroLabel}>Protein</Text>
-                <Text style={styles.macroValue}>{food.proteinPer100g}g</Text>
-              </View>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroLabel}>Carbs</Text>
-                <Text style={styles.macroValue}>
-                  {food.carbohydratePer100g}g
-                </Text>
-              </View>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroLabel}>Fat</Text>
-                <Text style={styles.macroValue}>{food.fatPer100g}g</Text>
-              </View>
-            </View>
-          </View>
+                <Text style={styles.per100gLabel}>Per 100g</Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Amount (grams)</Text>
-            <TextInput
-              style={styles.textInput}
-              value={grams}
-              onChangeText={setGrams}
-              placeholder="Enter grams consumed"
-              keyboardType="numeric"
-              placeholderTextColor="#999"
-            />
-            {grams && parseFloat(grams) > 0 && (
-              <View style={styles.previewContainer}>
-                <Text style={styles.previewTitle}>Preview:</Text>
-                <View style={styles.previewMacros}>
-                  <Text style={styles.previewText}>
-                    Calories:{" "}
-                    {Math.round(
-                      (food.caloriesPer100g * parseFloat(grams)) / 100
-                    )}{" "}
-                    kcal
-                  </Text>
-                  <Text style={styles.previewText}>
-                    Protein:{" "}
-                    {Math.round(
-                      ((food.proteinPer100g * parseFloat(grams)) / 100) * 10
-                    ) / 10}
-                    g
-                  </Text>
-                  <Text style={styles.previewText}>
-                    Carbs:{" "}
-                    {Math.round(
-                      ((food.carbohydratePer100g * parseFloat(grams)) / 100) *
-                        10
-                    ) / 10}
-                    g
-                  </Text>
-                  <Text style={styles.previewText}>
-                    Fat:{" "}
-                    {Math.round(
-                      ((food.fatPer100g * parseFloat(grams)) / 100) * 10
-                    ) / 10}
-                    g
-                  </Text>
+                <View style={styles.macrosGrid}>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Calories</Text>
+                    <Text style={styles.macroValue}>
+                      {food.caloriesPer100g} kcal
+                    </Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Protein</Text>
+                    <Text style={styles.macroValue}>
+                      {food.proteinPer100g}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Carbs</Text>
+                    <Text style={styles.macroValue}>
+                      {food.carbohydratePer100g}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroLabel}>Fat</Text>
+                    <Text style={styles.macroValue}>{food.fatPer100g}g</Text>
+                  </View>
                 </View>
               </View>
-            )}
-          </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Date</Text>
-            <TouchableOpacity
-              style={styles.badgeContainer}
-              onPress={showDatePickerModal}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
-              <Icon
-                name="calendar-today"
-                size={20}
-                color="#619819"
-                style={{ marginLeft: 2 }}
-              />
-            </TouchableOpacity>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Amount (grams)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={grams}
+                  onChangeText={setGrams}
+                  placeholder="Enter grams consumed"
+                  keyboardType="numeric"
+                  placeholderTextColor="#999"
+                />
+                {grams && parseFloat(grams) > 0 && (
+                  <View style={styles.previewContainer}>
+                    <Text style={styles.previewTitle}>Preview:</Text>
+                    <View style={styles.previewMacros}>
+                      <Text style={styles.previewText}>
+                        Calories:{" "}
+                        {Math.round(
+                          (food.caloriesPer100g * parseFloat(grams)) / 100
+                        )}{" "}
+                        kcal
+                      </Text>
+                      <Text style={styles.previewText}>
+                        Protein:{" "}
+                        {Math.round(
+                          ((food.proteinPer100g * parseFloat(grams)) / 100) * 10
+                        ) / 10}
+                        g
+                      </Text>
+                      <Text style={styles.previewText}>
+                        Carbs:{" "}
+                        {Math.round(
+                          ((food.carbohydratePer100g * parseFloat(grams)) /
+                            100) *
+                            10
+                        ) / 10}
+                        g
+                      </Text>
+                      <Text style={styles.previewText}>
+                        Fat:{" "}
+                        {Math.round(
+                          ((food.fatPer100g * parseFloat(grams)) / 100) * 10
+                        ) / 10}
+                        g
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Date</Text>
+                <TouchableOpacity
+                  style={styles.badgeContainer}
+                  onPress={showDatePickerModal}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.badgeText}>
+                    {formatDate(selectedDate)}
+                  </Text>
+                  <Icon
+                    name="calendar-today"
+                    size={20}
+                    color="#619819"
+                    style={{ marginLeft: 2 }}
+                  />
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
 
           <View style={styles.modalActions}>
@@ -1267,11 +1292,10 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: "90%",
+    height: "95%",
     backgroundColor: Colors.white.color,
     borderRadius: 15,
-    padding: 20,
-    alignItems: "center",
-    marginVertical: 80,
+    marginVertical: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -1283,7 +1307,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    marginBottom: 15,
+    padding: 20,
+    paddingBottom: 15,
   },
   modalTitle: {
     fontSize: 24,
@@ -1306,6 +1331,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   modalFoodSubtitle: {
+    fontSize: 14,
+    color: "#999",
+    marginBottom: 5,
+    fontWeight: "400",
+    textAlign: "center",
+  },
+  per100gLabel: {
     fontSize: 14,
     color: "#999",
     marginBottom: 15,
@@ -1367,11 +1399,29 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#619819",
   },
+  modalBody: {
+    flex: 1,
+    width: "100%",
+    minHeight: 0,
+  },
+  modalScrollView: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: Colors.white.color,
+  },
+  modalScrollContentContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
   modalActions: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
-    marginTop: 20,
+    padding: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: Colors.white.color,
   },
   cancelButton: {
     backgroundColor: "#e0e0e0",

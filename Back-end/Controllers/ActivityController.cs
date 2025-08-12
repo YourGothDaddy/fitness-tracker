@@ -53,6 +53,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)
@@ -88,6 +92,10 @@ namespace Fitness_Tracker.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return Unauthorized(new { Message = ex.Message });
+                }
                 return BadRequest(ex.Message);
             }
             catch (Exception ex)

@@ -179,6 +179,15 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // If backend returns 400 with user-related issues, surface a logout hint
+    if (
+      error.response?.status === 400 &&
+      typeof error.response?.data === "string" &&
+      error.response.data.toLowerCase().includes("user not found")
+    ) {
+      return Promise.reject({ logout: true, error });
+    }
+
     return Promise.reject(error);
   }
 );
