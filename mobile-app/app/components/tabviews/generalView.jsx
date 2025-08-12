@@ -18,6 +18,7 @@ import { Colors } from "@/constants/Colors";
 import { nutritionService } from "../../services/nutritionService";
 import { weightService } from "../../services/weightService";
 import { activityService } from "../../services/activityService";
+import { mealService } from "../../services/mealService";
 import { useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
@@ -267,6 +268,30 @@ const GeneralView = () => {
       }
     },
     [activityDate, handleError]
+  );
+
+  const handleDeleteMeal = useCallback(
+    async (mealId) => {
+      try {
+        await mealService.deleteMeal(mealId);
+        await fetchActivityOverview(activityDate);
+      } catch (err) {
+        handleError(err, "meal deletion");
+      }
+    },
+    [activityDate, fetchActivityOverview, handleError]
+  );
+
+  const handleDeleteExercise = useCallback(
+    async (activityId) => {
+      try {
+        await activityService.deleteActivity(activityId);
+        await fetchActivityOverview(activityDate);
+      } catch (err) {
+        handleError(err, "exercise deletion");
+      }
+    },
+    [activityDate, fetchActivityOverview, handleError]
   );
 
   useFocusEffect(
@@ -767,24 +792,17 @@ const GeneralView = () => {
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>Meals</Text>
               <View style={styles.tableContainer}>
-                {/* Table Header */}
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>
-                    Meal & Calories
-                  </Text>
-                  <View style={styles.timeHeaderContainer}>
-                    <Text
-                      style={[styles.tableHeaderText, { textAlign: "center" }]}
-                    >
-                      Time
-                    </Text>
-                  </View>
-                </View>
-
                 {activityOverview.meals && activityOverview.meals.length > 0 ? (
                   activityOverview.meals.map((meal, index) => (
                     <View key={`meal-${index}`} style={styles.tableRow}>
-                      <View style={styles.mainContent}>
+                      <TouchableOpacity
+                        accessibilityLabel="Delete meal"
+                        onPress={() => handleDeleteMeal(meal.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Icon name="delete" size={20} color="#e74c3c" />
+                      </TouchableOpacity>
+                      <View style={styles.rowTop}>
                         <View style={styles.titleContainer}>
                           <Icon
                             name={getMealTypeIcon(meal.mealType)}
@@ -795,37 +813,22 @@ const GeneralView = () => {
                             {meal.name}
                           </Text>
                         </View>
-                        <View style={styles.detailsContainer}>
-                          {meal.weight > 0 && (
-                            <View style={styles.detailRow}>
-                              <Icon name="scale" size={16} color="#636e72" />
-                              <Text style={styles.detailText}>
-                                {meal.weight}g
-                              </Text>
-                            </View>
-                          )}
-                          <View style={styles.detailRow}>
-                            <Icon
-                              name="local-fire-department"
-                              size={16}
-                              color="#636e72"
-                            />
-                            <Text style={styles.detailText}>
-                              {meal.calories} kcal
-                            </Text>
-                          </View>
-                        </View>
                       </View>
-                      <View style={styles.timeContainer}>
-                        <Icon
-                          name="schedule"
-                          size={14}
-                          color="#619819"
-                          style={styles.timeIcon}
-                        />
-                        <Text style={styles.timeText}>
-                          {activityService.formatTime(meal.time)}
+                      <View style={styles.rowBottom}>
+                        <Text style={styles.calorieText}>
+                          {meal.calories} kcal
                         </Text>
+                        <View style={styles.timeInline}>
+                          <Icon
+                            name="schedule"
+                            size={14}
+                            color="#619819"
+                            style={styles.timeIcon}
+                          />
+                          <Text style={styles.timeText}>
+                            {activityService.formatTime(meal.time)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   ))
@@ -842,25 +845,18 @@ const GeneralView = () => {
             <View style={[styles.sectionContainer, { marginTop: 20 }]}>
               <Text style={styles.sectionTitle}>Exercises</Text>
               <View style={styles.tableContainer}>
-                {/* Table Header */}
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { flex: 1 }]}>
-                    Exercise & Calories
-                  </Text>
-                  <View style={styles.timeHeaderContainer}>
-                    <Text
-                      style={[styles.tableHeaderText, { textAlign: "center" }]}
-                    >
-                      Time
-                    </Text>
-                  </View>
-                </View>
-
                 {activityOverview.exercises &&
                 activityOverview.exercises.length > 0 ? (
                   activityOverview.exercises.map((exercise, index) => (
                     <View key={`exercise-${index}`} style={styles.tableRow}>
-                      <View style={styles.mainContent}>
+                      <TouchableOpacity
+                        accessibilityLabel="Delete exercise"
+                        onPress={() => handleDeleteExercise(exercise.id)}
+                        style={styles.deleteButton}
+                      >
+                        <Icon name="delete" size={20} color="#e74c3c" />
+                      </TouchableOpacity>
+                      <View style={styles.rowTop}>
                         <View style={styles.titleContainer}>
                           <Icon
                             name={getExerciseIcon(
@@ -874,35 +870,22 @@ const GeneralView = () => {
                             {exercise.name}
                           </Text>
                         </View>
-                        <View style={styles.detailsContainer}>
-                          <View style={styles.detailRow}>
-                            <Icon name="timer" size={16} color="#636e72" />
-                            <Text style={styles.detailText}>
-                              {exercise.durationInMinutes} min
-                            </Text>
-                          </View>
-                          <View style={styles.detailRow}>
-                            <Icon
-                              name="local-fire-department"
-                              size={16}
-                              color="#636e72"
-                            />
-                            <Text style={styles.detailText}>
-                              {exercise.caloriesBurned} kcal
-                            </Text>
-                          </View>
-                        </View>
                       </View>
-                      <View style={styles.timeContainer}>
-                        <Icon
-                          name="schedule"
-                          size={14}
-                          color="#619819"
-                          style={styles.timeIcon}
-                        />
-                        <Text style={styles.timeText}>
-                          {activityService.formatTime(exercise.time)}
+                      <View style={styles.rowBottom}>
+                        <Text style={styles.calorieText}>
+                          {exercise.caloriesBurned} kcal
                         </Text>
+                        <View style={styles.timeInline}>
+                          <Icon
+                            name="schedule"
+                            size={14}
+                            color="#619819"
+                            style={styles.timeIcon}
+                          />
+                          <Text style={styles.timeText}>
+                            {activityService.formatTime(exercise.time)}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                   ))
@@ -1048,19 +1031,28 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(97, 152, 25, 0.1)",
     paddingVertical: 12,
     paddingHorizontal: 16,
-  },
-  tableRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+  },
+  leftHeader: { flex: 1 },
+  tableRow: {
+    position: "relative",
     padding: 16,
+    paddingTop: 18,
+    paddingRight: 48,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(97, 152, 25, 0.1)",
   },
-  mainContent: {
-    flex: 1,
-    gap: 6,
+  rowTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
+  rowBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  calorieText: { fontSize: 13, color: "#636e72", paddingLeft: 28 },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -1086,20 +1078,30 @@ const styles = StyleSheet.create({
     color: "#636e72",
   },
   timeHeaderContainer: {
-    minWidth: 85,
+    width: 100,
     alignItems: "center",
     justifyContent: "center",
   },
-  timeContainer: {
-    backgroundColor: "rgba(97, 152, 25, 0.1)",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 12,
+  timeInline: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    minWidth: 85,
-    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "rgba(97, 152, 25, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  iconButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  actionsHeaderContainer: { width: 44 },
+  deleteButton: {
+    position: "absolute",
+    top: 10,
+    right: 12,
+    padding: 6,
+    zIndex: 1,
   },
   timeText: {
     fontSize: 13,

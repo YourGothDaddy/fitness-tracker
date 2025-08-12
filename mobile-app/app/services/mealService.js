@@ -32,6 +32,17 @@ class MealService {
       throw error;
     }
   }
+
+  async deleteMeal(mealId) {
+    try {
+      const response = await axiosInstance.delete(
+        `${API_URL}/api/meal/delete/${mealId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export const mealService = new MealService();

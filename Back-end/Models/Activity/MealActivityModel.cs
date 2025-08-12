@@ -4,6 +4,7 @@ namespace Fitness_Tracker.Models.Activity
 
     public class MealActivityModel
     {
+        public int Id { get; set; }
         public string Name { get; set; }
         public int Weight { get; set; }
         public int Calories { get; set; }

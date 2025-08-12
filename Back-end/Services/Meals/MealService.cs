@@ -68,5 +68,17 @@
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<bool> DeleteMealAsync(int id, string userId)
+        {
+            var meal = await _databaseContext.Meals.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+            if (meal == null)
+            {
+                return false;
+            }
+            _databaseContext.Meals.Remove(meal);
+            await _databaseContext.SaveChangesAsync();
+            return true;
+        }
     }
 }

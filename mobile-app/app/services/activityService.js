@@ -151,6 +151,16 @@ class ActivityService {
     }
   }
 
+  async deleteActivity(activityId) {
+    try {
+      const url = `${API_URL}/api/activity/delete/${activityId}`;
+      const response = await axiosInstance.delete(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addFavoriteActivityType(activityTypeId) {
     try {
       const url = `${API_URL}/api/activity/favorites/add`;

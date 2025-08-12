@@ -172,6 +172,26 @@ namespace Fitness_Tracker.Controllers
         }
 
         /// <summary>
+        /// Deletes an activity (exercise) entry for the authenticated user.
+        /// </summary>
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> DeleteActivity(int id)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var deleted = await _activityService.DeleteActivityAsync(id, userId);
+            if (!deleted)
+            {
+                return NotFound(new { Message = "Activity not found." });
+            }
+            return Ok(new { Message = "Activity deleted successfully." });
+        }
+
+        /// <summary>
         /// Retrieves all available activity types.
         /// </summary>
         /// <returns>An <see cref="IActionResult"/> containing a list of activity types.</returns>

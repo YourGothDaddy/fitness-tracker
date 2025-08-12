@@ -12,5 +12,7 @@
         public Task<int> GetTotalUserMealCaloriesAsync(string userId, DateTime date);
 
         public Task<List<MealListModel>> GetAllMealsAsync();
+
+        public Task<bool> DeleteMealAsync(int id, string userId);
     }
 }

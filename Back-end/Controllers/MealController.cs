@@ -77,6 +77,24 @@
             return Ok(meals);
         }
 
+        [HttpDelete(DeleteMealHttpAttributeName)]
+        public async Task<IActionResult> DeleteMeal(int id)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var deleted = await _mealService.DeleteMealAsync(id, userId);
+            if (!deleted)
+            {
+                return NotFound(new { Message = "Meal not found." });
+            }
+
+            return Ok(new { Message = "Meal deleted successfully." });
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

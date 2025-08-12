@@ -74,6 +74,7 @@ namespace Fitness_Tracker.Services.Activity
                 .OrderBy(m => m.Date)
                 .Select(m => new MealActivityModel
                 {
+                    Id = m.Id,
                     Name = m.Name,
                     Weight = 0, // Add weight property to Meal model if needed
                     Calories = m.Calories,
@@ -92,6 +93,7 @@ namespace Fitness_Tracker.Services.Activity
                 .OrderBy(a => a.Date)
                 .Select(a => new ExerciseActivityModel
                 {
+                    Id = a.Id,
                     Name = a.ActivityType.Name,
                     DurationInMinutes = a.DurationInMinutes,
                     CaloriesBurned = a.CaloriesBurned,
@@ -525,6 +527,18 @@ namespace Fitness_Tracker.Services.Activity
                     Notes = cw.Notes
                 })
                 .ToListAsync();
+        }
+
+        public async Task<bool> DeleteActivityAsync(int id, string userId)
+        {
+            var activity = await _databaseContext.Activities.FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+            if (activity == null)
+            {
+                return false;
+            }
+            _databaseContext.Activities.Remove(activity);
+            await _databaseContext.SaveChangesAsync();
+            return true;
         }
     }
 } 
