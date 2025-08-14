@@ -24,6 +24,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import activityService from "@/app/services/activityService";
 import nutritionService from "@/app/services/nutritionService";
 import userService from "@/app/services/userService";
+import goalsService from "@/app/services/goalsService";
 import { useFocusEffect } from "@react-navigation/native";
 
 // Helper to filter and format profile payload for backend (memoized for performance)
@@ -231,6 +232,39 @@ const EnergySettingsView = () => {
     return () => clearTimeout(timeoutId);
   }, [selectedBmrType, customBMR, selectedActivityLevel, isTefEnabled]);
 
+  // Debounced daily calories recalculation when BMR settings change
+  useEffect(() => {
+    // Don't recalculate if initial data hasn't loaded yet or if initial load is in progress
+    if (
+      !hasInitialDataLoaded.current ||
+      fetchInProgress.current ||
+      isUpdatingActivityLevel.current
+    ) {
+      return;
+    }
+
+    // Only recalculate if we have valid BMR settings
+    if (selectedBmrType === "Custom") {
+      const customBmrValue = parseFloat(customBMR);
+      if (!customBmrValue || isNaN(customBmrValue)) {
+        return;
+      }
+    }
+
+    // Debounce recalculation to prevent excessive API calls
+    const timeoutId = setTimeout(async () => {
+      try {
+        await goalsService.recalculateDailyCalories();
+      } catch (error) {
+        console.error("Failed to recalculate daily calories:", error);
+        // Don't show error to user for background recalculation
+      }
+    }, 500); // 500ms debounce delay
+
+    // Cleanup timeout on dependency change or unmount
+    return () => clearTimeout(timeoutId);
+  }, [selectedBmrType, customBMR, selectedActivityLevel, isTefEnabled]);
+
   const handleBmrTypeSelect = (option) => {
     setSelectedBmrType(option);
     setActiveDropdown(null);
@@ -286,6 +320,9 @@ const EnergySettingsView = () => {
 
       // Update local state only after successful API call
       setSelectedActivityLevel(level);
+
+      // Recalculate daily calories after successful activity level update
+      await goalsService.recalculateDailyCalories();
     } catch (err) {
       console.error("Failed to save activity level:", err);
       setError("Failed to save activity level. Please try again.");
@@ -315,6 +352,9 @@ const EnergySettingsView = () => {
         includeTef: newTef,
       });
       await userService.updateProfileData(updatedProfile);
+
+      // Recalculate daily calories after successful TEF update
+      await goalsService.recalculateDailyCalories();
     } catch (err) {
       console.error("Failed to save TEF setting:", err);
       setError("Failed to save TEF setting. Please try again.");

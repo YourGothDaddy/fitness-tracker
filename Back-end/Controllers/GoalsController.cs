@@ -157,5 +157,34 @@ namespace Fitness_Tracker.Controllers
                 return StatusCode(500, "An error occurred while setting weight goal.");
             }
         }
+
+        [HttpPost("recalculate-daily-calories")]
+        public async Task<IActionResult> RecalculateDailyCalories()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized();
+                }
+
+                var result = await _userService.RecalculateDailyCaloriesAsync(userId);
+                if (result.Succeeded)
+                {
+                    return Ok();
+                }
+
+                return BadRequest(result.Errors);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while recalculating daily calories.");
+            }
+        }
     }
 } 

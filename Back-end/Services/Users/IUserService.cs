@@ -34,5 +34,6 @@
         public Task<WeightGoalResponseModel> CalculateWeightGoalAsync(string userId, WeightGoalModel model);
         public Task<IdentityResult> SetWeightGoalAsync(string userId, WeightGoalModel model);
         public Task<WeightGoalResponseModel> GetUserWeightGoalAsync(string userId);
+        public Task<IdentityResult> RecalculateDailyCaloriesAsync(string userId);
     }
 }

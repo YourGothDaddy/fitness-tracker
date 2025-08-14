@@ -361,6 +361,32 @@ using Fitness_Tracker.Data.Models.Enums;
             };
         }
 
+        public async Task<IdentityResult> RecalculateDailyCaloriesAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found");
+            }
+
+            // Calculate new maintenance calories based on current settings
+            var newMaintenanceCalories = await CalculateMaintenanceCaloriesAsync(user);
+            
+            // If user has a weight goal, calculate the adjusted calorie target
+            if (user.GoalWeight > 0 && user.WeeklyWeightChangeGoal != 0)
+            {
+                var calorieDeficit = (int)(user.WeeklyWeightChangeGoal * 7700 / 7);
+                user.DailyCaloriesGoal = newMaintenanceCalories + calorieDeficit;
+            }
+            else
+            {
+                // If no weight goal, just use maintenance calories
+                user.DailyCaloriesGoal = newMaintenanceCalories;
+            }
+
+            return await _userManager.UpdateAsync(user);
+        }
+
         private async Task<int> CalculateMaintenanceCaloriesAsync(User user)
         {
             if (user.Weight <= 0 || user.Height <= 0 || user.Age <= 0)

@@ -67,6 +67,21 @@ class GoalsService {
       throw error;
     }
   }
+
+  async recalculateDailyCalories() {
+    try {
+      const response = await axiosInstance.post(`${API_URL}/api/goals/recalculate-daily-calories`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error("Please log in again");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data?.message || "Failed to recalculate daily calories");
+      }
+      throw error;
+    }
+  }
 }
 
 export default new GoalsService();

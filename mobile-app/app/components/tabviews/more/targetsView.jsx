@@ -16,6 +16,7 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import goalsService from "@/app/services/goalsService";
 import Slider from "@react-native-community/slider";
+import { useFocusEffect } from "@react-navigation/native";
 
 const TargetCard = ({ title, description, icon, onPress }) => {
   return (
@@ -341,6 +342,13 @@ const TargetsView = () => {
   useEffect(() => {
     fetchGoals();
   }, [fetchGoals]);
+
+  // Refresh goals when returning from energy settings or other target pages
+  useFocusEffect(
+    useCallback(() => {
+      fetchGoals();
+    }, [fetchGoals])
+  );
 
   const handleTargetPress = useCallback(
     (href) => {
