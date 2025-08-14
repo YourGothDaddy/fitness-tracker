@@ -19,6 +19,8 @@
         public DbSet<ActivityCategory> ActivityCategories { get; set; }
         public DbSet<ActivityType> ActivityTypes { get; set; }
         public DbSet<Activity> Activities { get; set; }
+        public DbSet<ActivityExercise> ActivityExercises { get; set; }
+        public DbSet<ExerciseMetProfile> ExerciseMetProfiles { get; set; }
         public DbSet<WeightRecord> WeightRecords { get; set; }
         public DbSet<CustomWorkout> CustomWorkouts { get; set; }
 
@@ -48,6 +50,18 @@
                 .HasOne(a => a.ActivityType)
                 .WithMany(at => at.Activities)
                 .HasForeignKey(a => a.ActivityTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ActivityExercise>()
+                .HasOne(ae => ae.ActivityType)
+                .WithMany(at => at.ActivityExercises)
+                .HasForeignKey(ae => ae.ActivityTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ExerciseMetProfile>()
+                .HasOne(emp => emp.ActivityExercise)
+                .WithMany(ae => ae.MetProfiles)
+                .HasForeignKey(emp => emp.ActivityExerciseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Entity<ActivityType>()
@@ -117,7 +131,7 @@
                 .HasForeignKey(ci => ci.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Fix for multiple cascade paths on CustomWorkout (both Restrict)
+
             builder.Entity<CustomWorkout>()
                 .HasOne(cw => cw.ActivityCategory)
                 .WithMany()

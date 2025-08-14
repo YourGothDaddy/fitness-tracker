@@ -96,6 +96,7 @@ class ActivityService {
   async calculateExerciseCalories({
     category,
     subcategory,
+    exercise,
     effortLevel,
     durationInMinutes,
     terrainType,
@@ -105,6 +106,7 @@ class ActivityService {
       const payload = {
         category,
         subcategory,
+        exercise: exercise || null,
         effortLevel,
         durationInMinutes: Number(durationInMinutes),
         terrainType: terrainType || null,
@@ -124,6 +126,7 @@ class ActivityService {
   async trackExercise({
     category,
     subcategory,
+    exercise,
     effortLevel,
     durationInMinutes,
     terrainType,
@@ -136,6 +139,7 @@ class ActivityService {
       const payload = {
         category,
         subcategory,
+        exercise: exercise || null,
         effortLevel,
         durationInMinutes: Number(durationInMinutes),
         terrainType: terrainType || null,
@@ -145,6 +149,40 @@ class ActivityService {
       };
 
       const response = await axiosInstance.post(url, payload);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getCategories() {
+    try {
+      const url = `${API_URL}/api/activity/categories`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getSubcategories(category) {
+    try {
+      const url = `${API_URL}/api/activity/subcategories?category=${encodeURIComponent(
+        category
+      )}`;
+      const response = await axiosInstance.get(url);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getExercises(category, subcategory) {
+    try {
+      const url = `${API_URL}/api/activity/exercises?category=${encodeURIComponent(
+        category
+      )}&subcategory=${encodeURIComponent(subcategory)}`;
+      const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {
       throw error;

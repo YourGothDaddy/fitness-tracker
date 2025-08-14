@@ -163,215 +163,187 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<ExerciseMetaDataModel>> GetExerciseMetaDataAsync(string userId)
         {
-            // Fetch user weight (default to 70kg if not found)
             var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
             float userWeight = user?.Weight ?? 70f;
 
-            // MET values mapping
-            var metValues = new Dictionary<(string Category, string Subcategory, string Level), float>
-            {
-                // Cardio
-                { ("Cardio", "Cycling", "Low"), 4.0f },
-                { ("Cardio", "Cycling", "Moderate"), 6.8f },
-                { ("Cardio", "Cycling", "Hard"), 8.0f },
-                { ("Cardio", "Cycling", "Maximal"), 10.0f },
-                { ("Cardio", "Jumping Rope", "Low"), 8.8f },
-                { ("Cardio", "Jumping Rope", "Moderate"), 11.8f },
-                { ("Cardio", "Jumping Rope", "Hard"), 12.3f },
-                { ("Cardio", "Running", "Low"), 8.3f }, // 8 km/h
-                { ("Cardio", "Running", "Moderate"), 9.8f }, // 9.7 km/h
-                { ("Cardio", "Running", "Hard"), 11.0f }, // 11.3 km/h
-                { ("Cardio", "Swimming", "Low"), 6.0f },
-                { ("Cardio", "Swimming", "Moderate"), 8.0f },
-                { ("Cardio", "Swimming", "Hard"), 10.0f },
-                { ("Cardio", "Walking", "Low"), 2.0f }, // 3.2 km/h
-                { ("Cardio", "Walking", "Moderate"), 3.5f }, // 5.6 km/h
-                { ("Cardio", "Walking", "Hard"), 4.3f }, // 6.4 km/h
-                // Gym
-                { ("Gym", "Resistance Training", "Low"), 3.5f },
-                { ("Gym", "Resistance Training", "Moderate"), 5.0f },
-                { ("Gym", "Resistance Training", "Hard"), 6.0f },
-                { ("Gym", "Circuit Training", "Low"), 7.0f },
-                { ("Gym", "Circuit Training", "Moderate"), 8.0f },
-                { ("Gym", "Circuit Training", "Hard"), 9.0f },
-                // Outdoor Activity
-                { ("Outdoor Activity", "Hiking", "Easy trail"), 6.0f },
-                { ("Outdoor Activity", "Hiking", "Moderate incline"), 6.5f },
-                { ("Outdoor Activity", "Hiking", "Steep or rough terrain"), 7.8f },
-                { ("Outdoor Activity", "Cycling", "Low"), 4.0f },
-                { ("Outdoor Activity", "Cycling", "Moderate"), 6.8f },
-                { ("Outdoor Activity", "Cycling", "Hard"), 8.0f },
-                { ("Outdoor Activity", "Cycling", "Maximal"), 10.0f },
-            };
-
-            var effortLevelsCycling = new List<string> { "Low", "Moderate", "Hard", "Maximal" };
-            var effortLevelsDefault = new List<string> { "Low", "Moderate", "Hard" };
-            var terrainTypes = new List<string> { "Easy trail", "Moderate incline", "Steep or rough terrain" };
-
             var activityTypes = await _databaseContext.ActivityTypes
                 .Include(at => at.ActivityCategory)
+                .Where(at => at.IsPublic)
+                .Where(at => _databaseContext.ActivityExercises.Any(e => e.ActivityTypeId == at.Id && e.IsPublic))
                 .ToListAsync();
 
             var result = new List<ExerciseMetaDataModel>();
+            
             foreach (var type in activityTypes)
             {
+                var firstExercise = await _databaseContext.ActivityExercises
+                    .Include(e => e.MetProfiles)
+                    .FirstOrDefaultAsync(e => e.ActivityTypeId == type.Id && e.IsPublic);
+
+                if (firstExercise == null || !firstExercise.MetProfiles.Any())
+                    continue;
+
                 var meta = new ExerciseMetaDataModel
                 {
                     Category = type.ActivityCategory.Name,
                     Subcategory = type.Name
                 };
-                // Cardio
-                if (type.ActivityCategory.Name == "Cardio")
+
+                var availableKeys = firstExercise.MetProfiles.Select(mp => mp.Key).OrderBy(k => k).ToList();
+                
+                bool isHiking = type.Name == "Hiking" && type.ActivityCategory.Name == "Outdoor Activity";
+                
+                if (isHiking)
                 {
-                    if (type.Name == "Cycling")
-                    {
-                        meta.EffortLevels = effortLevelsCycling;
-                        // Default to Moderate for calculation
-                        var met = metValues.GetValueOrDefault((meta.Category, meta.Subcategory, "Moderate"), 1f);
-                        meta.CaloriesPerMinute = (met * userWeight) / 60f;
-                        meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-                        meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
-                    }
-                    else if (new[] { "Jumping Rope", "Running", "Swimming", "Walking" }.Contains(type.Name))
-                    {
-                        meta.EffortLevels = effortLevelsDefault;
-                        // Default to Moderate for calculation
-                        var met = metValues.GetValueOrDefault((meta.Category, meta.Subcategory, "Moderate"), 1f);
-                        meta.CaloriesPerMinute = (met * userWeight) / 60f;
-                        meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-                        meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
-                    }
+                    meta.TerrainTypes = availableKeys;
                 }
-                // Gym
-                else if (type.ActivityCategory.Name == "Gym")
+                else
                 {
-                    if (new[] { "Resistance Training", "Circuit Training" }.Contains(type.Name))
-                    {
-                        meta.EffortLevels = effortLevelsDefault;
-                        // Default to Moderate for calculation
-                        var met = metValues.GetValueOrDefault((meta.Category, meta.Subcategory, "Moderate"), 1f);
-                        meta.CaloriesPerMinute = (met * userWeight) / 60f;
-                        meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-                        meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
-                    }
+                    meta.EffortLevels = availableKeys;
                 }
-                // Outdoor Activity
-                else if (type.ActivityCategory.Name == "Outdoor Activity")
-                {
-                    if (type.Name == "Cycling")
-                    {
-                        meta.EffortLevels = effortLevelsCycling;
-                        // Default to Moderate for calculation
-                        var met = metValues.GetValueOrDefault((meta.Category, meta.Subcategory, "Moderate"), 1f);
-                        meta.CaloriesPerMinute = (met * userWeight) / 60f;
-                        meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-                        meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
-                    }
-                    else if (type.Name == "Hiking")
-                    {
-                        meta.TerrainTypes = terrainTypes;
-                        // Default to Moderate incline for calculation
-                        var met = metValues.GetValueOrDefault((meta.Category, meta.Subcategory, "Moderate incline"), 1f);
-                        meta.CaloriesPerMinute = (met * userWeight) / 60f;
-                        meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-                        meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
-                    }
-                }
+
+                var defaultKey = GetDefaultEffortKey(availableKeys, isHiking);
+                var defaultProfile = firstExercise.MetProfiles.FirstOrDefault(mp => mp.Key == defaultKey)
+                                  ?? firstExercise.MetProfiles.First();
+
+                var met = defaultProfile.Met;
+                meta.CaloriesPerMinute = (met * userWeight) / 60f;
+                meta.CaloriesPerHalfHour = (met * userWeight * 30f) / 60f;
+                meta.CaloriesPerHour = (met * userWeight * 60f) / 60f;
+
                 result.Add(meta);
             }
+            
             return result;
         }
 
-        private static readonly Dictionary<(string Category, string Subcategory, string Level), float> MetValues = new()
+        private static string GetDefaultEffortKey(List<string> availableKeys, bool isHiking)
         {
-            // Cardio
-            { ("Cardio", "Cycling", "Low"), 4.0f },
-            { ("Cardio", "Cycling", "Moderate"), 6.8f },
-            { ("Cardio", "Cycling", "Hard"), 8.0f },
-            { ("Cardio", "Cycling", "Maximal"), 10.0f },
-            { ("Cardio", "Jumping Rope", "Low"), 8.8f },
-            { ("Cardio", "Jumping Rope", "Moderate"), 11.8f },
-            { ("Cardio", "Jumping Rope", "Hard"), 12.3f },
-            { ("Cardio", "Running", "Low"), 8.3f }, // 8 km/h
-            { ("Cardio", "Running", "Moderate"), 9.8f }, // 9.7 km/h
-            { ("Cardio", "Running", "Hard"), 11.0f }, // 11.3 km/h
-            { ("Cardio", "Swimming", "Low"), 6.0f },
-            { ("Cardio", "Swimming", "Moderate"), 8.0f },
-            { ("Cardio", "Swimming", "Hard"), 10.0f },
-            { ("Cardio", "Walking", "Low"), 2.0f }, // 3.2 km/h
-            { ("Cardio", "Walking", "Moderate"), 3.5f }, // 5.6 km/h
-            { ("Cardio", "Walking", "Hard"), 4.3f }, // 6.4 km/h
-            // Gym
-            { ("Gym", "Resistance Training", "Low"), 3.5f },
-            { ("Gym", "Resistance Training", "Moderate"), 5.0f },
-            { ("Gym", "Resistance Training", "Hard"), 6.0f },
-            { ("Gym", "Circuit Training", "Low"), 7.0f },
-            { ("Gym", "Circuit Training", "Moderate"), 8.0f },
-            { ("Gym", "Circuit Training", "Hard"), 9.0f },
-            // Outdoor Activity
-            { ("Outdoor Activity", "Hiking", "Easy trail"), 6.0f },
-            { ("Outdoor Activity", "Hiking", "Moderate incline"), 6.5f },
-            { ("Outdoor Activity", "Hiking", "Steep or rough terrain"), 7.8f },
-            { ("Outdoor Activity", "Cycling", "Low"), 4.0f },
-            { ("Outdoor Activity", "Cycling", "Moderate"), 6.8f },
-            { ("Outdoor Activity", "Cycling", "Hard"), 8.0f },
-            { ("Outdoor Activity", "Cycling", "Maximal"), 10.0f },
-        };
-
-        private static float GetMetValue(string category, string subcategory, string effortLevelOrTerrain)
-        {
-            // Try to get MET value for the given combination
-            if (MetValues.TryGetValue((category, subcategory, effortLevelOrTerrain), out var met))
-                return met;
-            // Fallback to Moderate or Moderate incline if not found
-            if (MetValues.TryGetValue((category, subcategory, "Moderate"), out met))
-                return met;
-            if (MetValues.TryGetValue((category, subcategory, "Moderate incline"), out met))
-                return met;
-            return 1f; // fallback
+            if (isHiking)
+            {
+                return availableKeys.FirstOrDefault(k => k.Contains("Moderate")) ?? availableKeys.First();
+            }
+            else
+            {
+                return availableKeys.FirstOrDefault(k => k == "Moderate") ?? availableKeys.First();
+            }
         }
 
-        public async Task<ExerciseMetaDataModel> CalculateExerciseCaloriesAsync(string userId, CalculateExerciseCaloriesRequest request)
+        /// <summary>
+        /// Gets MET value from database for given category, subcategory, exercise and effort level/terrain type
+        /// </summary>
+        private async Task<float> GetMetValueFromDatabaseAsync(string category, string subcategory, string exercise, string effortLevelOrTerrain)
         {
-            // Fetch user weight (default to 70kg if not found)
-            var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            float userWeight = user?.Weight ?? 70f;
+            if (!string.IsNullOrWhiteSpace(exercise))
+            {
+                var specificExercise = await _databaseContext.ActivityExercises
+                    .Include(e => e.ActivityType)
+                    .ThenInclude(t => t.ActivityCategory)
+                    .Include(e => e.MetProfiles)
+                    .FirstOrDefaultAsync(e => e.Name == exercise 
+                                           && e.ActivityType.Name == subcategory 
+                                           && e.ActivityType.ActivityCategory.Name == category
+                                           && e.IsPublic);
 
-            string category = request.Category;
-            string subcategory = request.Subcategory;
-            string effortLevel = request.EffortLevel;
-            string terrainType = request.TerrainType;
-            int duration = request.DurationInMinutes;
-
-            // Validation
-            if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
-                throw new ArgumentNullException("Category and Subcategory are required.");
-            if (category == "Outdoor Activity" && subcategory == "Hiking") {
-                if (string.IsNullOrWhiteSpace(terrainType))
-                    throw new ArgumentNullException("TerrainType is required for Hiking.");
-            } else {
-                if (string.IsNullOrWhiteSpace(effortLevel))
-                    throw new ArgumentNullException("EffortLevel is required for this activity.");
+                if (specificExercise?.MetProfiles.Any() == true)
+                {
+                    var exactProfile = specificExercise.MetProfiles.FirstOrDefault(p => p.Key == effortLevelOrTerrain);
+                    if (exactProfile != null)
+                        return exactProfile.Met;
+                    
+                    var fallbackProfile = specificExercise.MetProfiles.FirstOrDefault(p => p.Key.Contains("Moderate"))
+                                        ?? specificExercise.MetProfiles.First();
+                    return fallbackProfile.Met;
+                }
             }
 
-            // For hiking, use terrainType as the effort level
-            string metKey = (category == "Outdoor Activity" && subcategory == "Hiking") ? terrainType : effortLevel;
-            float met = GetMetValue(category, subcategory, metKey);
+            var anyExercise = await _databaseContext.ActivityExercises
+                .Include(e => e.ActivityType)
+                .ThenInclude(t => t.ActivityCategory)
+                .Include(e => e.MetProfiles)
+                .FirstOrDefaultAsync(e => e.ActivityType.Name == subcategory 
+                                       && e.ActivityType.ActivityCategory.Name == category
+                                       && e.IsPublic
+                                       && e.MetProfiles.Any(p => p.Key == effortLevelOrTerrain));
 
-            float caloriesPerMinute = (met * userWeight) / 60f;
-            float caloriesPerHalfHour = (met * userWeight * 30f) / 60f;
-            float caloriesPerHour = (met * userWeight * 60f) / 60f;
-            float totalCalories = caloriesPerMinute * duration;
-
-            return new ExerciseMetaDataModel
+            if (anyExercise != null)
             {
-                Category = category,
-                Subcategory = subcategory,
-                CaloriesPerMinute = caloriesPerMinute,
-                CaloriesPerHalfHour = caloriesPerHalfHour,
-                CaloriesPerHour = caloriesPerHour,
-                // EffortLevels and TerrainTypes are not needed in response here
-            };
+                var profile = anyExercise.MetProfiles.FirstOrDefault(p => p.Key == effortLevelOrTerrain);
+                if (profile != null)
+                    return profile.Met;
+            }
+
+            var moderateExercise = await _databaseContext.ActivityExercises
+                .Include(e => e.ActivityType)
+                .ThenInclude(t => t.ActivityCategory)
+                .Include(e => e.MetProfiles)
+                .FirstOrDefaultAsync(e => e.ActivityType.Name == subcategory 
+                                       && e.ActivityType.ActivityCategory.Name == category
+                                       && e.IsPublic
+                                       && e.MetProfiles.Any());
+
+            if (moderateExercise?.MetProfiles.Any() == true)
+            {
+                var moderateProfile = moderateExercise.MetProfiles.FirstOrDefault(p => p.Key.Contains("Moderate"))
+                                    ?? moderateExercise.MetProfiles.First();
+                return moderateProfile.Met;
+            }
+
+            return 5.0f;
+        }
+
+        public async Task<CalculateExerciseCaloriesResponse> CalculateExerciseCaloriesAsync(string userId, CalculateExerciseCaloriesRequest request)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Category) || string.IsNullOrWhiteSpace(request.Subcategory))
+                throw new ArgumentException("Category and Subcategory are required.");
+            if (request.DurationInMinutes <= 0)
+                throw new ArgumentException("Duration must be greater than 0.");
+
+            try
+            {
+                var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                float userWeight = user?.Weight ?? 70f;
+
+                string category = request.Category;
+                string subcategory = request.Subcategory;
+                string effortLevel = request.EffortLevel;
+                string terrainType = request.TerrainType;
+                string exercise = request.Exercise;
+                int duration = request.DurationInMinutes;
+
+                bool isHiking = category == "Outdoor Activity" && subcategory == "Hiking";
+                string effectiveKey;
+                
+                if (isHiking)
+                {
+                    effectiveKey = !string.IsNullOrWhiteSpace(terrainType) ? terrainType : "Moderate incline";
+                }
+                else
+                {
+                    effectiveKey = !string.IsNullOrWhiteSpace(effortLevel) ? effortLevel : "Moderate";
+                }
+
+                float met = await GetMetValueFromDatabaseAsync(category, subcategory, exercise, effectiveKey);
+
+                float caloriesPerMinute = (met * userWeight) / 60f;
+                float caloriesPerHalfHour = (met * userWeight * 30f) / 60f;
+                float caloriesPerHour = (met * userWeight * 60f) / 60f;
+                float totalCalories = caloriesPerMinute * duration;
+
+                return new CalculateExerciseCaloriesResponse
+                {
+                    CaloriesPerMinute = caloriesPerMinute,
+                    CaloriesPerHalfHour = caloriesPerHalfHour,
+                    CaloriesPerHour = caloriesPerHour,
+                    TotalCalories = totalCalories
+                };
+            }
+            catch (Exception ex) when (!(ex is ArgumentException || ex is ArgumentNullException))
+            {
+                throw new InvalidOperationException($"Failed to calculate exercise calories: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -539,6 +511,46 @@ namespace Fitness_Tracker.Services.Activity
             _databaseContext.Activities.Remove(activity);
             await _databaseContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<string>> GetActivityCategoriesAsync()
+        {
+            return await _databaseContext.ActivityCategories
+                .OrderBy(c => c.Name)
+                .Select(c => c.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<string>> GetSubcategoriesByCategoryAsync(string category)
+        {
+            return await _databaseContext.ActivityTypes
+                .Include(t => t.ActivityCategory)
+                .Where(t => t.ActivityCategory.Name == category && t.IsPublic)
+                .Where(t => t.ActivityExercises.Any(e => e.IsPublic))
+                .OrderBy(t => t.Name)
+                .Select(t => t.Name)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<ActivityExerciseVariantModel>> GetExercisesByCategoryAndSubcategoryAsync(string category, string subcategory)
+        {
+            var query = _databaseContext.ActivityExercises
+                .Include(e => e.ActivityType)
+                .ThenInclude(t => t.ActivityCategory)
+                .Include(e => e.MetProfiles)
+                .Where(e => e.IsPublic && e.ActivityType.Name == subcategory && e.ActivityType.ActivityCategory.Name == category);
+
+            var list = await query
+                .OrderBy(e => e.Name)
+                .Select(e => new ActivityExerciseVariantModel
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Keys = e.MetProfiles.Select(mp => mp.Key).OrderBy(k => k).ToList()
+                })
+                .ToListAsync();
+            return list;
         }
     }
 } 

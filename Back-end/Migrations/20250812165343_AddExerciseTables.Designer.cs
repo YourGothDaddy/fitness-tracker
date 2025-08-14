@@ -4,6 +4,7 @@ using Fitness_Tracker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Fitness_Tracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250812165343_AddExerciseTables")]
+    partial class AddExerciseTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -765,7 +768,7 @@ namespace Fitness_Tracker.Migrations
             modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityExercise", b =>
                 {
                     b.HasOne("Fitness_Tracker.Data.Models.ActivityType", "ActivityType")
-                        .WithMany("ActivityExercises")
+                        .WithMany()
                         .HasForeignKey("ActivityTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1005,8 +1008,6 @@ namespace Fitness_Tracker.Migrations
             modelBuilder.Entity("Fitness_Tracker.Data.Models.ActivityType", b =>
                 {
                     b.Navigation("Activities");
-
-                    b.Navigation("ActivityExercises");
                 });
 
             modelBuilder.Entity("Fitness_Tracker.Data.Models.Consumables.ConsumableItem", b =>

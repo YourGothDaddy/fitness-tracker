@@ -301,6 +301,7 @@ namespace Fitness_Tracker.Controllers
                 {
                     Category = model.Category,
                     Subcategory = model.Subcategory,
+                    Exercise = model.Exercise,
                     EffortLevel = model.EffortLevel,
                     DurationInMinutes = model.DurationInMinutes,
                     TerrainType = model.TerrainType
@@ -427,6 +428,42 @@ namespace Fitness_Tracker.Controllers
         {
             var types = await _activityService.GetPublicActivityTypesAsync();
             return Ok(types);
+        }
+
+        /// <summary>
+        /// Lists all activity categories (names only)
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            var categories = await _activityService.GetActivityCategoriesAsync();
+            return Ok(categories);
+        }
+
+        /// <summary>
+        /// Lists subcategories (activity types) for a given category (names only)
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("subcategories")]
+        public async Task<IActionResult> GetSubcategories([FromQuery] string category)
+        {
+            if (string.IsNullOrWhiteSpace(category)) return BadRequest("category is required");
+            var subcategories = await _activityService.GetSubcategoriesByCategoryAsync(category);
+            return Ok(subcategories);
+        }
+
+        /// <summary>
+        /// Lists exercises (third-level variants) for category + subcategory
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("exercises")]
+        public async Task<IActionResult> GetExercises([FromQuery] string category, [FromQuery] string subcategory)
+        {
+            if (string.IsNullOrWhiteSpace(category) || string.IsNullOrWhiteSpace(subcategory))
+                return BadRequest("category and subcategory are required");
+            var items = await _activityService.GetExercisesByCategoryAndSubcategoryAsync(category, subcategory);
+            return Ok(items);
         }
 
         /// <summary>
