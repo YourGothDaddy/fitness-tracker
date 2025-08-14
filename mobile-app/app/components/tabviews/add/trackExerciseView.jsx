@@ -12,6 +12,7 @@ import {
   Pressable,
   Alert,
   Image,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
@@ -889,6 +890,37 @@ const TrackExerciseView = () => {
   const categoryAnimRefs = useRef({}).current;
   const subcategoryAnimRefs = useRef({}).current;
 
+  // Handle back button press
+  useEffect(() => {
+    const backAction = () => {
+      // If we're in the exercise flow (all tab), handle internal navigation
+      if (activeTab === "all") {
+        if (allViewLevel === "exercise") {
+          // Go back to subcategory selection
+          setAllViewLevel("subcategory");
+          setSelectedSubcategory(null);
+          setExercisesForSubcategory([]);
+          return true; // Prevent default back behavior
+        } else if (allViewLevel === "subcategory") {
+          // Go back to category selection
+          setAllViewLevel("category");
+          setSelectedCategory(null);
+          setSubcategoriesForCategory([]);
+          return true; // Prevent default back behavior
+        }
+      }
+      // For other tabs or at the top level, allow default back behavior
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [activeTab, allViewLevel]);
+
   useEffect(() => {
     const fetchMetaData = async () => {
       try {
@@ -949,6 +981,9 @@ const TrackExerciseView = () => {
     if (activeTab !== "all") {
       setAllViewLevel("category");
       setSelectedCategory(null);
+      setSelectedSubcategory(null);
+      setSubcategoriesForCategory([]);
+      setExercisesForSubcategory([]);
     }
   }, [activeTab]);
 
@@ -1193,6 +1228,8 @@ const TrackExerciseView = () => {
                           onPressOut={handlePressOut}
                           onPress={() => {
                             setSelectedCategory(cat);
+                            setSelectedSubcategory(null);
+                            setExercisesForSubcategory([]);
                             setAllViewLevel("subcategory");
                             (async () => {
                               try {
@@ -1276,6 +1313,7 @@ const TrackExerciseView = () => {
                       setAllViewLevel("category");
                       setSelectedCategory(null);
                       setSelectedSubcategory(null);
+                      setSubcategoriesForCategory([]);
                     }}
                     style={styles.breadcrumbBack}
                   >
@@ -1436,6 +1474,8 @@ const TrackExerciseView = () => {
                   <TouchableOpacity
                     onPress={() => {
                       setAllViewLevel("subcategory");
+                      setSelectedSubcategory(null);
+                      setExercisesForSubcategory([]);
                     }}
                     style={styles.breadcrumbBack}
                   >
