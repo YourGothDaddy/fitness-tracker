@@ -8,9 +8,10 @@ import {
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Colors } from "../../../constants/Colors";
 import { nutritionService } from "@/app/services/nutritionService";
+import { useFocusEffect } from "@react-navigation/native";
 
 const TargetsView = () => {
   const categories = {
@@ -210,87 +211,74 @@ const TargetsView = () => {
   const [sterolsData, setSterolsData] = useState(null);
   const [vitaminsData, setVitaminsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingDetailed, setLoadingDetailed] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const today = new Date();
-
-        // Fetch main targets first
-        try {
-          const mainTargetsData = await nutritionService.getMainTargets(today);
-          setMainTargets(mainTargetsData.targets);
-        } catch (mainTargetsError) {
-          setError("Failed to load main targets");
-          return;
-        }
-
-        // Then fetch carbohydrates
-        try {
-          const carbsData = await nutritionService.getCarbohydrates(today);
-          setCarbohydratesData(carbsData);
-        } catch (carbsError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch amino acids
-        try {
-          const aminoAcidsData = await nutritionService.getAminoAcids(today);
-          setAminoAcidsData(aminoAcidsData);
-        } catch (aminoAcidsError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch fats
-        try {
-          const fatsData = await nutritionService.getFats(today);
-          setFatsData(fatsData);
-        } catch (fatsError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch minerals
-        try {
-          const mineralsData = await nutritionService.getMinerals(today);
-          setMineralsData(mineralsData);
-        } catch (mineralsError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch other nutrients
-        try {
-          const otherData = await nutritionService.getOtherNutrients(today);
-          setOtherData(otherData);
-        } catch (otherError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch sterols
-        try {
-          const sterolsData = await nutritionService.getSterols(today);
-          setSterolsData(sterolsData);
-        } catch (sterolsError) {
-          // Don't set error here as we still want to show main targets
-        }
-
-        // Then fetch vitamins
-        try {
-          const vitaminsData = await nutritionService.getVitamins(today);
-          setVitaminsData(vitaminsData);
-        } catch (vitaminsError) {
-          // Don't set error here as we still want to show main targets
-        }
-      } catch (err) {
-        setError("Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+  const fetchMainTargets = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const today = new Date();
+      const mainTargetsData = await nutritionService.getMainTargets(today);
+      setMainTargets(mainTargetsData.targets);
+      setError("");
+    } catch (mainTargetsError) {
+      setError("Failed to load main targets");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  const fetchDetailedNutrients = useCallback(async () => {
+    setLoadingDetailed(true);
+    const today = new Date();
+
+    // Fetch all detailed nutrient data in parallel
+    const promises = [
+      nutritionService.getCarbohydrates(today).catch(() => null),
+      nutritionService.getAminoAcids(today).catch(() => null),
+      nutritionService.getFats(today).catch(() => null),
+      nutritionService.getMinerals(today).catch(() => null),
+      nutritionService.getOtherNutrients(today).catch(() => null),
+      nutritionService.getSterols(today).catch(() => null),
+      nutritionService.getVitamins(today).catch(() => null),
+    ];
+
+    try {
+      const [
+        carbsData,
+        aminoAcidsData,
+        fatsData,
+        mineralsData,
+        otherData,
+        sterolsData,
+        vitaminsData,
+      ] = await Promise.all(promises);
+
+      setCarbohydratesData(carbsData);
+      setAminoAcidsData(aminoAcidsData);
+      setFatsData(fatsData);
+      setMineralsData(mineralsData);
+      setOtherData(otherData);
+      setSterolsData(sterolsData);
+      setVitaminsData(vitaminsData);
+    } catch (err) {
+      // Silently handle errors for detailed nutrients
+      console.log("Some detailed nutrients failed to load");
+    } finally {
+      setLoadingDetailed(false);
+    }
+  }, []);
+
+  // Use useFocusEffect to refresh data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Fetch main targets immediately (fast)
+      fetchMainTargets();
+      // Fetch detailed nutrients in the background (slower, but doesn't block UI)
+      fetchDetailedNutrients();
+    }, [fetchMainTargets, fetchDetailedNutrients])
+  );
 
   const renderProgressBar = (consumed, required) => {
     const percentage = Math.min((consumed / required) * 100, 100);
@@ -363,140 +351,158 @@ const TargetsView = () => {
       </LinearGradient>
 
       {/* Category Cards */}
-      {Object.entries(categories).map(([category, nutrients], catIndex) => (
+      {loadingDetailed ? (
         <LinearGradient
-          key={catIndex}
           colors={["#ffffff", "#f8faf5"]}
           style={styles.categoryCard}
         >
           <View style={styles.cardHeader}>
-            <Icon
-              name={
-                category === "Carbohydrates"
-                  ? "grain"
-                  : category === "AminoAcids"
-                  ? "science"
-                  : category === "Fats"
-                  ? "opacity"
-                  : category === "Minerals"
-                  ? "diamond"
-                  : category === "Vitamins"
-                  ? "medication"
-                  : category === "Sterols"
-                  ? "biotech"
-                  : "category"
-              }
-              size={24}
-              color="#619819"
-            />
-            <Text style={styles.cardTitle}>{category}</Text>
+            <Icon name="hourglass-empty" size={24} color="#619819" />
+            <Text style={styles.cardTitle}>Loading Detailed Nutrients...</Text>
           </View>
-
-          <View style={styles.nutrientsGrid}>
-            {nutrients.map((nutrient, index) => {
-              let item;
-              if (category === "Carbohydrates" && carbohydratesData) {
-                const nutrientData = carbohydratesData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "AminoAcids" && aminoAcidsData) {
-                const nutrientData = aminoAcidsData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "Fats" && fatsData) {
-                const nutrientData = fatsData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "Minerals" && mineralsData) {
-                const nutrientData = mineralsData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "Other" && otherData) {
-                const nutrientData = otherData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "Sterols" && sterolsData) {
-                const nutrientData = sterolsData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              } else if (category === "Vitamins" && vitaminsData) {
-                const nutrientData = vitaminsData.nutrients.find(
-                  (n) => n.label === nutrient
-                );
-                if (nutrientData) {
-                  item = {
-                    label: nutrient,
-                    consumed: nutrientData.consumed,
-                    required: nutrientData.required,
-                  };
-                }
-              }
-
-              if (!item) {
-                item = {
-                  label: nutrient,
-                  consumed: 0,
-                  required: 100,
-                };
-              }
-
-              return (
-                <View key={index} style={styles.nutrientItem}>
-                  <Text style={styles.nutrientLabel}>{nutrient}</Text>
-                  <Text style={styles.nutrientValues}>
-                    {item.consumed === null ? "Unknown" : item.consumed}/
-                    {item.required}g
-                  </Text>
-                  {item.consumed !== null &&
-                    renderProgressBar(item.consumed, item.required)}
-                </View>
-              );
-            })}
+          <View style={styles.loadingContentContainer}>
+            <ActivityIndicator size="large" color={Colors.darkGreen.color} />
+            <Text style={styles.loadingText}>
+              Loading detailed nutrient data...
+            </Text>
           </View>
         </LinearGradient>
-      ))}
+      ) : (
+        Object.entries(categories).map(([category, nutrients], catIndex) => (
+          <LinearGradient
+            key={catIndex}
+            colors={["#ffffff", "#f8faf5"]}
+            style={styles.categoryCard}
+          >
+            <View style={styles.cardHeader}>
+              <Icon
+                name={
+                  category === "Carbohydrates"
+                    ? "grain"
+                    : category === "AminoAcids"
+                    ? "science"
+                    : category === "Fats"
+                    ? "opacity"
+                    : category === "Minerals"
+                    ? "diamond"
+                    : category === "Vitamins"
+                    ? "medication"
+                    : category === "Sterols"
+                    ? "biotech"
+                    : "category"
+                }
+                size={24}
+                color="#619819"
+              />
+              <Text style={styles.cardTitle}>{category}</Text>
+            </View>
+
+            <View style={styles.nutrientsGrid}>
+              {nutrients.map((nutrient, index) => {
+                let item;
+                if (category === "Carbohydrates" && carbohydratesData) {
+                  const nutrientData = carbohydratesData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "AminoAcids" && aminoAcidsData) {
+                  const nutrientData = aminoAcidsData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "Fats" && fatsData) {
+                  const nutrientData = fatsData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "Minerals" && mineralsData) {
+                  const nutrientData = mineralsData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "Other" && otherData) {
+                  const nutrientData = otherData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "Sterols" && sterolsData) {
+                  const nutrientData = sterolsData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                } else if (category === "Vitamins" && vitaminsData) {
+                  const nutrientData = vitaminsData.nutrients.find(
+                    (n) => n.label === nutrient
+                  );
+                  if (nutrientData) {
+                    item = {
+                      label: nutrient,
+                      consumed: nutrientData.consumed,
+                      required: nutrientData.required,
+                    };
+                  }
+                }
+
+                if (!item) {
+                  item = {
+                    label: nutrient,
+                    consumed: 0,
+                    required: 100,
+                  };
+                }
+
+                return (
+                  <View key={index} style={styles.nutrientItem}>
+                    <Text style={styles.nutrientLabel}>{nutrient}</Text>
+                    <Text style={styles.nutrientValues}>
+                      {item.consumed === null ? "Unknown" : item.consumed}/
+                      {item.required}g
+                    </Text>
+                    {item.consumed !== null &&
+                      renderProgressBar(item.consumed, item.required)}
+                  </View>
+                );
+              })}
+            </View>
+          </LinearGradient>
+        ))
+      )}
     </View>
   );
 };
@@ -632,6 +638,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     minHeight: 100,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#636e72",
+    marginTop: 10,
+    textAlign: "center",
   },
 });
 

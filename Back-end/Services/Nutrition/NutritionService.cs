@@ -2,6 +2,7 @@ namespace Fitness_Tracker.Services.Nutrition
 {
     using Fitness_Tracker.Data;
     using Fitness_Tracker.Data.Models;
+    using Fitness_Tracker.Data.Models.Enums;
     using Fitness_Tracker.Models.Nutrition;
     using Microsoft.EntityFrameworkCore;
     using System;
@@ -199,6 +200,24 @@ namespace Fitness_Tracker.Services.Nutrition
             var consumedCarbs = meals.Sum(m => m.Carbs);
             var consumedFat = meals.Sum(m => m.Fat);
 
+            // Calculate macro targets based on user's macro settings
+            double proteinTarget, carbsTarget, fatTarget;
+
+            if (user.MacroMode == MacroMode.Ratios)
+            {
+                // Use ratios mode - convert percentages to grams
+                proteinTarget = (user.DailyCaloriesGoal * user.ProteinRatio / 100.0) / 4.0; // 4 calories per gram of protein
+                carbsTarget = (user.DailyCaloriesGoal * user.CarbsRatio / 100.0) / 4.0; // 4 calories per gram of carbs
+                fatTarget = (user.DailyCaloriesGoal * user.FatRatio / 100.0) / 9.0; // 9 calories per gram of fat
+            }
+            else
+            {
+                // Use fixed mode - convert calories to grams
+                proteinTarget = user.ProteinKcal / 4.0; // 4 calories per gram of protein
+                carbsTarget = user.CarbsKcal / 4.0; // 4 calories per gram of carbs
+                fatTarget = user.FatKcal / 9.0; // 9 calories per gram of fat
+            }
+
             var targets = new List<TargetModel>
             {
                 new TargetModel
@@ -212,21 +231,21 @@ namespace Fitness_Tracker.Services.Nutrition
                 {
                     Label = "Protein",
                     Consumed = consumedProtein,
-                    Required = user.DailyCaloriesGoal * 0.3 / 4,
+                    Required = proteinTarget,
                     Color = "#8CC63F"
                 },
                 new TargetModel
                 {
                     Label = "Net Carbs",
                     Consumed = consumedCarbs,
-                    Required = user.DailyCaloriesGoal * 0.4 / 4,
+                    Required = carbsTarget,
                     Color = "#4A90E2"
                 },
                 new TargetModel
                 {
                     Label = "Fat",
                     Consumed = consumedFat,
-                    Required = user.DailyCaloriesGoal * 0.3 / 9,
+                    Required = fatTarget,
                     Color = "#E24A4A"
                 }
             };
