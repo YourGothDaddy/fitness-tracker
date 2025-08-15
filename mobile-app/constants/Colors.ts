@@ -40,6 +40,9 @@ export const Colors = {
   gray: {
     color: "#808080",
   },
+  lightGray: {
+    color: "#e0e0e0",
+  },
   red: {
     color: "#ff000d",
   },
