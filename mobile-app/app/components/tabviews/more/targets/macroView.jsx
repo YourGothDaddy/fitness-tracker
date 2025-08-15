@@ -14,19 +14,8 @@ import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
 import { useFocusEffect } from "@react-navigation/native";
 
-const OptionButton = React.memo(({ title, isSelected, onPress }) => (
-  <TouchableOpacity
-    style={[styles.optionButton, isSelected && styles.selectedOption]}
-    onPress={onPress}
-  >
-    <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
-      {title}
-    </Text>
-  </TouchableOpacity>
-));
-
 const MacroField = React.memo(
-  ({ title, color, percentage, kcal, value, onChangeText, isFixed }) => (
+  ({ title, color, percentage, kcal, value, onChangeText }) => (
     <View style={styles.macroFieldContainer}>
       <View style={[styles.colorCircle, { backgroundColor: color }]} />
       <Text style={styles.macroFieldTitle}>{title}</Text>
@@ -52,7 +41,6 @@ const TotalKcalField = React.memo(({ kcal }) => (
 const MacroView = () => {
   const router = useRouter();
   const { hideHeader } = useLocalSearchParams();
-  const [selectedOption, setSelectedOption] = useState("Ratios");
   const [totalKcal, setTotalKcal] = useState(2000);
   const [macroValues, setMacroValues] = useState({
     protein: 30,
@@ -74,22 +62,13 @@ const MacroView = () => {
         .getMacroSettings()
         .then((data) => {
           if (!isActive) return;
-          // Defensive: handle missing fields
-          setSelectedOption(data.macroMode === 1 ? "Fixed" : "Ratios");
+          // Only use ratios mode
           setTotalKcal(data.totalKcal || 2000);
-          setMacroValues(
-            data.macroMode === 1
-              ? {
-                  protein: data.proteinKcal || 0,
-                  netCarbs: data.carbsKcal || 0,
-                  fat: data.fatKcal || 0,
-                }
-              : {
-                  protein: data.proteinRatio || 30,
-                  netCarbs: data.carbsRatio || 40,
-                  fat: data.fatRatio || 30,
-                }
-          );
+          setMacroValues({
+            protein: data.proteinRatio || 30,
+            netCarbs: data.carbsRatio || 40,
+            fat: data.fatRatio || 30,
+          });
         })
         .catch((err) => {
           if (!isActive) return;
@@ -103,18 +82,6 @@ const MacroView = () => {
       };
     }, [])
   );
-
-  const handleOptionPress = useCallback((option) => {
-    setSelectedOption(option);
-    setSuccess(false);
-    setError(null);
-    // Reset macro values to defaults when switching
-    setMacroValues(
-      option === "Ratios"
-        ? { protein: 30, netCarbs: 40, fat: 30 }
-        : { protein: 0, netCarbs: 0, fat: 0 }
-    );
-  }, []);
 
   const handleMacroChange = useCallback((field, value) => {
     const numValue = parseInt(value, 10) || 0;
@@ -132,18 +99,11 @@ const MacroView = () => {
     setSuccess(false);
     try {
       const payload = {
-        macroMode: selectedOption === "Fixed" ? 1 : 0,
+        macroMode: 0, // Always use Ratios mode
         totalKcal,
-        proteinRatio:
-          selectedOption === "Ratios" ? macroValues.protein : undefined,
-        carbsRatio:
-          selectedOption === "Ratios" ? macroValues.netCarbs : undefined,
-        fatRatio: selectedOption === "Ratios" ? macroValues.fat : undefined,
-        proteinKcal:
-          selectedOption === "Fixed" ? macroValues.protein : undefined,
-        carbsKcal:
-          selectedOption === "Fixed" ? macroValues.netCarbs : undefined,
-        fatKcal: selectedOption === "Fixed" ? macroValues.fat : undefined,
+        proteinRatio: macroValues.protein,
+        carbsRatio: macroValues.netCarbs,
+        fatRatio: macroValues.fat,
       };
       await userService.updateMacroSettings(payload);
       setSuccess(true);
@@ -155,38 +115,18 @@ const MacroView = () => {
   };
 
   const macroKcals = useMemo(() => {
-    if (selectedOption === "Ratios") {
-      return {
-        protein: Math.round((macroValues.protein / 100) * totalKcal),
-        netCarbs: Math.round((macroValues.netCarbs / 100) * totalKcal),
-        fat: Math.round((macroValues.fat / 100) * totalKcal),
-      };
-    } else {
-      return macroValues;
-    }
-  }, [selectedOption, macroValues, totalKcal]);
+    return {
+      protein: Math.round((macroValues.protein / 100) * totalKcal),
+      netCarbs: Math.round((macroValues.netCarbs / 100) * totalKcal),
+      fat: Math.round((macroValues.fat / 100) * totalKcal),
+    };
+  }, [macroValues, totalKcal]);
 
   const macroPercentages = useMemo(() => {
     const totalMacroKcal = Object.values(macroKcals).reduce(
       (sum, val) => sum + val,
       0
     );
-    if (selectedOption === "Fixed") {
-      return {
-        protein:
-          totalMacroKcal > 0
-            ? ((macroKcals.protein / totalMacroKcal) * 100).toFixed(1)
-            : "0.0",
-        netCarbs:
-          totalMacroKcal > 0
-            ? ((macroKcals.netCarbs / totalMacroKcal) * 100).toFixed(1)
-            : "0.0",
-        fat:
-          totalMacroKcal > 0
-            ? ((macroKcals.fat / totalMacroKcal) * 100).toFixed(1)
-            : "0.0",
-      };
-    }
     return {
       protein:
         totalMacroKcal > 0
@@ -201,22 +141,14 @@ const MacroView = () => {
           ? Math.round((macroKcals.fat / totalMacroKcal) * 100)
           : 0,
     };
-  }, [macroKcals, selectedOption]);
+  }, [macroKcals]);
 
   const totalPercentage = useMemo(() => {
     return Object.values(macroPercentages).reduce((sum, val) => sum + val, 0);
   }, [macroPercentages]);
 
-  const totalKcalSum = useMemo(() => {
-    return Object.values(macroKcals).reduce((sum, val) => sum + val, 0);
-  }, [macroKcals]);
-
-  const isExceedingTotalKcal = totalKcalSum > totalKcal;
-
   const explanationText =
-    selectedOption === "Ratios"
-      ? "Ratios: Set percentages for each macro. The app calculates kcal based on your total calorie goal."
-      : "Fixed: Enter specific kcal for each macro. Percentages are calculated based on your input.";
+    "Set percentages for each macro. The app calculates kcal based on your total calorie goal.";
 
   return (
     <>
@@ -260,18 +192,6 @@ const MacroView = () => {
               Saved!
             </Text>
           )}
-          <View style={styles.optionsContainer}>
-            <OptionButton
-              title="Ratios"
-              isSelected={selectedOption === "Ratios"}
-              onPress={() => handleOptionPress("Ratios")}
-            />
-            <OptionButton
-              title="Fixed"
-              isSelected={selectedOption === "Fixed"}
-              onPress={() => handleOptionPress("Fixed")}
-            />
-          </View>
           <Text style={styles.explanationText}>{explanationText}</Text>
           <View style={styles.macroFieldsContainer}>
             <MacroField
@@ -279,48 +199,29 @@ const MacroView = () => {
               color={Colors.green.color}
               percentage={macroPercentages.protein}
               kcal={macroKcals.protein}
-              value={
-                selectedOption === "Ratios"
-                  ? macroValues.protein
-                  : macroKcals.protein
-              }
+              value={macroValues.protein}
               onChangeText={(text) => handleMacroChange("protein", text)}
-              isFixed={selectedOption === "Fixed"}
             />
             <MacroField
               title="Net Carbs"
               color={Colors.blue.color}
               percentage={macroPercentages.netCarbs}
               kcal={macroKcals.netCarbs}
-              value={
-                selectedOption === "Ratios"
-                  ? macroValues.netCarbs
-                  : macroKcals.netCarbs
-              }
+              value={macroValues.netCarbs}
               onChangeText={(text) => handleMacroChange("netCarbs", text)}
-              isFixed={selectedOption === "Fixed"}
             />
             <MacroField
               title="Fat"
               color={Colors.red.color}
               percentage={macroPercentages.fat}
               kcal={macroKcals.fat}
-              value={
-                selectedOption === "Ratios" ? macroValues.fat : macroKcals.fat
-              }
+              value={macroValues.fat}
               onChangeText={(text) => handleMacroChange("fat", text)}
-              isFixed={selectedOption === "Fixed"}
             />
             <TotalKcalField kcal={totalKcal} />
-            {selectedOption === "Ratios" && totalPercentage > 100 && (
+            {totalPercentage > 100 && (
               <Text style={styles.errorText}>
                 Values can't be calculated. Total percentage exceeds 100%.
-              </Text>
-            )}
-            {selectedOption === "Fixed" && isExceedingTotalKcal && (
-              <Text style={styles.warningText}>
-                Warning: The sum of macronutrient calories exceeds the total
-                kcal goal.
               </Text>
             )}
             <TouchableOpacity
@@ -355,30 +256,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     padding: 15,
-  },
-  optionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 15,
-  },
-  optionButton: {
-    flex: 1,
-    padding: 10,
-    alignItems: "center",
-    backgroundColor: Colors.lightGreen.color,
-    borderRadius: 5,
-    marginHorizontal: 5,
-  },
-  selectedOption: {
-    backgroundColor: Colors.green.color,
-  },
-  optionText: {
-    color: Colors.black.color,
-    fontWeight: "bold",
-  },
-  selectedOptionText: {
-    color: Colors.white.color,
   },
   explanationText: {
     marginBottom: 15,
@@ -437,12 +314,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Colors.red.color,
-    fontSize: 12,
-    marginTop: 5,
-    textAlign: "center",
-  },
-  warningText: {
-    color: Colors.yellow.color,
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",

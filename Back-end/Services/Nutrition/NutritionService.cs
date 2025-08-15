@@ -203,20 +203,10 @@ namespace Fitness_Tracker.Services.Nutrition
             // Calculate macro targets based on user's macro settings
             double proteinTarget, carbsTarget, fatTarget;
 
-            if (user.MacroMode == MacroMode.Ratios)
-            {
-                // Use ratios mode - convert percentages to grams
-                proteinTarget = (user.DailyCaloriesGoal * user.ProteinRatio / 100.0) / 4.0; // 4 calories per gram of protein
-                carbsTarget = (user.DailyCaloriesGoal * user.CarbsRatio / 100.0) / 4.0; // 4 calories per gram of carbs
-                fatTarget = (user.DailyCaloriesGoal * user.FatRatio / 100.0) / 9.0; // 9 calories per gram of fat
-            }
-            else
-            {
-                // Use fixed mode - convert calories to grams
-                proteinTarget = user.ProteinKcal / 4.0; // 4 calories per gram of protein
-                carbsTarget = user.CarbsKcal / 4.0; // 4 calories per gram of carbs
-                fatTarget = user.FatKcal / 9.0; // 9 calories per gram of fat
-            }
+            // Always use ratios mode - convert percentages to grams
+            proteinTarget = (user.DailyCaloriesGoal * user.ProteinRatio / 100.0) / 4.0; // 4 calories per gram of protein
+            carbsTarget = (user.DailyCaloriesGoal * user.CarbsRatio / 100.0) / 4.0; // 4 calories per gram of carbs
+            fatTarget = (user.DailyCaloriesGoal * user.FatRatio / 100.0) / 9.0; // 9 calories per gram of fat
 
             var targets = new List<TargetModel>
             {

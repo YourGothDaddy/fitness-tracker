@@ -199,10 +199,7 @@ using Fitness_Tracker.Data.Models.Enums;
                 TotalKcal = totalKcal,
                 ProteinRatio = user.ProteinRatio,
                 CarbsRatio = user.CarbsRatio,
-                FatRatio = user.FatRatio,
-                ProteinKcal = user.ProteinKcal,
-                CarbsKcal = user.CarbsKcal,
-                FatKcal = user.FatKcal
+                FatRatio = user.FatRatio
             };
         }
 
@@ -216,24 +213,11 @@ using Fitness_Tracker.Data.Models.Enums;
             if (model.TotalKcal > 0)
                 user.DailyCaloriesGoal = model.TotalKcal;
 
-            if (user.MacroMode == Fitness_Tracker.Data.Models.Enums.MacroMode.Ratios)
-            {
-                user.ProteinRatio = model.ProteinRatio ?? 30;
-                user.CarbsRatio = model.CarbsRatio ?? 40;
-                user.FatRatio = model.FatRatio ?? 30;
-                user.ProteinKcal = 0;
-                user.CarbsKcal = 0;
-                user.FatKcal = 0;
-            }
-            else
-            {
-                user.ProteinKcal = model.ProteinKcal ?? 0;
-                user.CarbsKcal = model.CarbsKcal ?? 0;
-                user.FatKcal = model.FatKcal ?? 0;
-                user.ProteinRatio = 0;
-                user.CarbsRatio = 0;
-                user.FatRatio = 0;
-            }
+            // Always use ratios mode
+            user.ProteinRatio = model.ProteinRatio ?? 30;
+            user.CarbsRatio = model.CarbsRatio ?? 40;
+            user.FatRatio = model.FatRatio ?? 30;
+            
             await _userManager.UpdateAsync(user);
         }
 
