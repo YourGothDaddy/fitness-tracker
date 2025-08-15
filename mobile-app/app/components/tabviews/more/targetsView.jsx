@@ -407,7 +407,7 @@ const TargetsView = () => {
           </View>
         )}
 
-        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <View style={styles.contentContainer}>
           {/* New Set Weight Goal Button */}
           <TouchableOpacity
             style={styles.setWeightGoalButton}
@@ -469,7 +469,7 @@ const TargetsView = () => {
               }
             />
           </View>
-        </ScrollView>
+        </View>
 
         {/* Set Weight Goal Modal */}
         <SetWeightGoalModal
@@ -512,12 +512,13 @@ const styles = StyleSheet.create({
   backButton: {
     paddingLeft: 20,
   },
-  scrollViewContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
+  contentContainer: {
+    flex: 1,
+    paddingBottom: 40,
   },
   profilePreview: {
-    paddingVertical: 30,
+    paddingVertical: 22,
+    paddingHorizontal: 20,
   },
   statsContainer: {
     flexDirection: "row",
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.lightGreen.color,
     borderRadius: 15,
-    padding: 20,
+    padding: 15,
     alignItems: "center",
     elevation: 3,
     shadowColor: "#000",
@@ -551,6 +552,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+    marginHorizontal: 20,
     gap: 10,
   },
   sectionTitleText: {
@@ -560,11 +562,13 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     gap: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   targetCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: 15,
     backgroundColor: Colors.white.color,
     borderRadius: 15,
     elevation: 3,
@@ -657,6 +661,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 18,
     marginTop: 10,
+    marginHorizontal: 20,
     gap: 10,
     elevation: 3,
     shadowColor: "#000",
