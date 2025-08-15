@@ -136,79 +136,76 @@ const More = () => {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-        <View style={styles.profilePreview}>
-          <TouchableOpacity
-            style={styles.avatarContainer}
-            onPress={handlePickAvatar}
-            activeOpacity={0.7}
-          >
-            {avatarUri && !avatarLoadError ? (
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.avatarImage}
-                onError={() => setAvatarLoadError(true)}
-              />
-            ) : profile?.avatarUrl && !avatarLoadError ? (
-              <Image
-                source={{
-                  uri: profile.avatarUrl.startsWith("http")
-                    ? profile.avatarUrl
-                    : `${API_URL}${profile.avatarUrl}`,
-                }}
-                style={styles.avatarImage}
-                onError={() => setAvatarLoadError(true)}
-              />
-            ) : loading ? (
-              <Text style={styles.avatarText}>--</Text>
-            ) : (
-              <Text style={styles.avatarText}>{profile?.initials || "--"}</Text>
-            )}
-          </TouchableOpacity>
-          <Text style={styles.welcomeText}>Welcome back!</Text>
-          {loading ? (
-            <Text style={styles.nameText}>Loading...</Text>
-          ) : error ? (
-            <Text style={styles.nameText}>Error</Text>
+      <View style={styles.profilePreview}>
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={handlePickAvatar}
+          activeOpacity={0.7}
+        >
+          {avatarUri && !avatarLoadError ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={styles.avatarImage}
+              onError={() => setAvatarLoadError(true)}
+            />
+          ) : profile?.avatarUrl && !avatarLoadError ? (
+            <Image
+              source={{
+                uri: profile.avatarUrl.startsWith("http")
+                  ? profile.avatarUrl
+                  : `${API_URL}${profile.avatarUrl}`,
+              }}
+              style={styles.avatarImage}
+              onError={() => setAvatarLoadError(true)}
+            />
+          ) : loading ? (
+            <Text style={styles.avatarText}>--</Text>
           ) : (
-            <Text style={styles.nameText}>
-              {profile?.fullName || "No Name"}
-            </Text>
+            <Text style={styles.avatarText}>{profile?.initials || "--"}</Text>
           )}
-        </View>
+        </TouchableOpacity>
+        {loading ? (
+          <Text style={styles.nameText}>Loading...</Text>
+        ) : error ? (
+          <Text style={styles.nameText}>Error</Text>
+        ) : (
+          <Text style={styles.nameText}>{profile?.fullName || "No Name"}</Text>
+        )}
+      </View>
 
-        <View style={styles.menuContainer}>
-          <MenuCard
-            icon="account-circle"
-            title="Account Settings"
-            description="Manage your account details and preferences"
-            href="/components/tabviews/more/accountView"
-            onPress={() =>
-              handleCardPress("/components/tabviews/more/accountView")
-            }
-          />
+      <View style={styles.menuContainer}>
+        <MenuCard
+          icon="account-circle"
+          title="Account Settings"
+          description="Manage your account details and preferences"
+          href="/components/tabviews/more/accountView"
+          onPress={() =>
+            handleCardPress("/components/tabviews/more/accountView")
+          }
+        />
 
-          <MenuCard
-            icon="person"
-            title="Profile Information"
-            description="Update your personal and fitness details"
-            href="/profile"
-            onPress={() =>
-              handleCardPress("/components/tabviews/more/profileView")
-            }
-          />
+        <MenuCard
+          icon="person"
+          title="Profile Information"
+          description="Update your personal and fitness details"
+          href="/profile"
+          onPress={() =>
+            handleCardPress("/components/tabviews/more/profileView")
+          }
+        />
 
-          <MenuCard
-            icon="flag"
-            title="Fitness Targets"
-            description="Set and track your fitness goals"
-            href="/"
-            onPress={() =>
-              handleCardPress("/components/tabviews/more/targetsView")
-            }
-          />
-        </View>
+        <MenuCard
+          icon="flag"
+          title="Fitness Targets"
+          description="Set and track your fitness goals"
+          href="/"
+          onPress={() =>
+            handleCardPress("/components/tabviews/more/targetsView")
+          }
+        />
+      </View>
 
+      <View style={styles.logoutContainer}>
         <TouchableOpacity
           style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
           onPress={handleLogout}
@@ -220,7 +217,7 @@ const More = () => {
             {isLoggingOut ? "Logging Out..." : "Log Out"}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -240,6 +237,10 @@ const styles = StyleSheet.create({
   scrollViewContainer: {
     flexGrow: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  scrollView: {
+    flex: 1,
   },
   profilePreview: {
     alignItems: "center",
@@ -283,11 +284,13 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     gap: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   menuCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 20,
+    padding: 15,
     backgroundColor: Colors.white.color,
     borderRadius: 15,
     elevation: 3,
@@ -318,6 +321,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
+  logoutContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -325,8 +332,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.darkGreen.color,
     padding: 15,
     borderRadius: 12,
-    marginTop: 30,
-    marginBottom: 20,
     gap: 10,
   },
   disabledButton: {
