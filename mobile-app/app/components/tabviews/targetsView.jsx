@@ -457,6 +457,11 @@ const TargetsView = () => {
                   {nutrients
                     .filter((nutrient) => trackedNutrients.includes(nutrient))
                     .map((nutrient, index) => {
+                      // Get user's custom target for this nutrient
+                      const userTarget = userNutrientTargets[category]?.find(
+                        (n) => n.NutrientName === nutrient
+                      );
+
                       let item;
                       if (category === "Carbohydrates" && carbohydratesData) {
                         const nutrientData = carbohydratesData.nutrients.find(
@@ -466,7 +471,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "AminoAcids" && aminoAcidsData) {
@@ -477,7 +483,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "Fats" && fatsData) {
@@ -488,7 +495,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "Minerals" && mineralsData) {
@@ -499,7 +507,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "Other" && otherData) {
@@ -510,7 +519,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "Sterols" && sterolsData) {
@@ -521,7 +531,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       } else if (category === "Vitamins" && vitaminsData) {
@@ -532,7 +543,8 @@ const TargetsView = () => {
                           item = {
                             label: nutrient,
                             consumed: nutrientData.consumed,
-                            required: nutrientData.required,
+                            required:
+                              userTarget?.DailyTarget || nutrientData.required,
                           };
                         }
                       }
@@ -541,13 +553,23 @@ const TargetsView = () => {
                         item = {
                           label: nutrient,
                           consumed: 0,
-                          required: 100,
+                          required: userTarget?.DailyTarget || 100,
                         };
                       }
 
                       return (
                         <View key={index} style={styles.nutrientItem}>
-                          <Text style={styles.nutrientLabel}>{nutrient}</Text>
+                          <View style={styles.nutrientHeader}>
+                            <Text style={styles.nutrientLabel}>{nutrient}</Text>
+                            {userTarget?.DailyTarget && (
+                              <Icon
+                                name="edit"
+                                size={12}
+                                color={Colors.darkGreen.color}
+                                style={styles.customTargetIcon}
+                              />
+                            )}
+                          </View>
                           <Text style={styles.nutrientValues}>
                             {item.consumed === null ? "Unknown" : item.consumed}
                             /{item.required}g
@@ -706,11 +728,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
   },
+  nutrientHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
   nutrientLabel: {
     fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
-    marginBottom: 4,
+    flex: 1,
+  },
+  customTargetIcon: {
+    marginLeft: 4,
   },
   nutrientValues: {
     fontSize: 12,
