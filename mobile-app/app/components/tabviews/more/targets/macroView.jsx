@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Dimensions,
   Alert,
@@ -204,6 +203,16 @@ const MacroView = () => {
     setError(null);
   }, []);
 
+  const handleAutoDistribution = useCallback(() => {
+    setMacroValues({
+      protein: 14,
+      netCarbs: 66,
+      fat: 20,
+    });
+    setSuccess(false);
+    setError(null);
+  }, []);
+
   const handleSave = async () => {
     if (totalPercentage !== 100) {
       Alert.alert(
@@ -302,7 +311,7 @@ const MacroView = () => {
           </View>
         )}
 
-        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+        <View style={styles.container}>
           <TotalCaloriesDisplay
             totalKcal={totalKcal}
             remainingKcal={remainingKcal}
@@ -314,6 +323,20 @@ const MacroView = () => {
             fat={macroValues.fat}
             totalKcal={totalKcal}
           />
+
+          <TouchableOpacity
+            style={styles.autoDistributionButton}
+            onPress={handleAutoDistribution}
+          >
+            <MaterialIcons
+              name="auto-fix-high"
+              size={20}
+              color={Colors.white.color}
+            />
+            <Text style={styles.autoDistributionButtonText}>
+              Auto Distribution
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.slidersContainer}>
             <MacroSlider
@@ -404,7 +427,7 @@ const MacroView = () => {
               </View>
             )}
           </View>
-        </ScrollView>
+        </View>
       </SafeAreaView>
     </>
   );
@@ -422,9 +445,11 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: Colors.white.color,
   },
-  scrollViewContainer: {
-    flexGrow: 1,
-    padding: 6, // Reduced from 12 to reduce top margin
+  container: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingTop: 2,
   },
   loadingContainer: {
     flex: 1,
@@ -638,5 +663,24 @@ const styles = StyleSheet.create({
     minHeight: 60, // Increased from 40 to provide more space for alerts
     marginTop: 10, // Added margin to create space between save button and alerts
     marginBottom: 10, // Added margin for spacing
+  },
+  autoDistributionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.darkGreen.color,
+    padding: 8,
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  autoDistributionButtonText: {
+    color: Colors.white.color,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
   },
 });
