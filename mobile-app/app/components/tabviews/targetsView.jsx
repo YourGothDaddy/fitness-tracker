@@ -12,6 +12,41 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Colors } from "../../../constants/Colors";
 import { nutritionService } from "@/app/services/nutritionService";
 import { useFocusEffect } from "@react-navigation/native";
+import Svg, { Circle, Path } from "react-native-svg";
+
+// Circular Progress Component
+const CircularProgress = ({
+  percentage,
+  size = 36,
+  strokeWidth = 2,
+  color = "#8cc63f",
+}) => {
+  const outerRadius = (size - strokeWidth) / 2;
+  const innerRadius = (percentage / 100) * outerRadius;
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg width={size} height={size}>
+        {/* Outer circle (solid white background) */}
+        <Circle cx={size / 2} cy={size / 2} r={outerRadius} fill="white" />
+        {/* Inner progress circle that grows from center */}
+        <Circle cx={size / 2} cy={size / 2} r={innerRadius} fill={color} />
+        {/* Checkmark when 100% */}
+        {Math.round(percentage) >= 100 && (
+          <Path
+            d="M 10 18 L 15 23 L 26 12"
+            stroke="white"
+            strokeWidth={4}
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={1}
+          />
+        )}
+      </Svg>
+    </View>
+  );
+};
 
 const TargetsView = () => {
   const categories = {
@@ -366,38 +401,38 @@ const TargetsView = () => {
         ) : error ? (
           <Text style={{ color: "red" }}>{error}</Text>
         ) : (
-          (Array.isArray(mainTargets) ? mainTargets : []).map((item, index) => (
-            <View key={index} style={styles.mainTargetRow}>
-              <View style={styles.targetIconContainer}>
-                <LinearGradient
-                  colors={[item.color, shadeColor(item.color, 20)]}
-                  style={styles.targetIconGradient}
-                >
-                  <Icon
-                    name={
-                      item.label === "Energy"
-                        ? "local-fire-department"
-                        : item.label === "Protein"
-                        ? "fitness-center"
-                        : item.label === "Net Carbs"
-                        ? "grain"
-                        : "opacity"
-                    }
-                    size={20}
-                    color="white"
-                  />
-                </LinearGradient>
+          (Array.isArray(mainTargets) ? mainTargets : []).map((item, index) => {
+            let percentage = Math.min(
+              (item.consumed / item.required) * 100,
+              100
+            );
+            // Fix floating point precision issues - if very close to 100%, make it 100%
+            if (percentage >= 99.5) {
+              percentage = 100;
+            }
+            return (
+              <View key={index} style={styles.mainTargetRow}>
+                <View style={styles.targetIconContainer}>
+                  <View style={styles.targetIconGradient}>
+                    <CircularProgress
+                      percentage={percentage}
+                      size={36}
+                      strokeWidth={2}
+                      color="#8cc63f"
+                    />
+                  </View>
+                </View>
+                <View style={styles.targetInfo}>
+                  <Text style={styles.targetLabel}>{item.label}</Text>
+                  <Text style={styles.targetValues}>
+                    {item.consumed.toFixed(1)}/{item.required.toFixed(1)}{" "}
+                    {item.label === "Energy" ? "kcal" : "g"}
+                  </Text>
+                </View>
+                {renderProgressBar(item.consumed, item.required)}
               </View>
-              <View style={styles.targetInfo}>
-                <Text style={styles.targetLabel}>{item.label}</Text>
-                <Text style={styles.targetValues}>
-                  {Math.round(item.consumed)}/{Math.round(item.required)}{" "}
-                  {item.label === "Energy" ? "kcal" : "g"}
-                </Text>
-              </View>
-              {renderProgressBar(item.consumed, item.required)}
-            </View>
-          ))
+            );
+          })
         )}
       </LinearGradient>
 
@@ -679,6 +714,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "transparent",
   },
   targetInfo: {
     flex: 1,
