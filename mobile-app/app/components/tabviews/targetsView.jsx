@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Colors } from "../../../constants/Colors";
 import { nutritionService } from "@/app/services/nutritionService";
 import { useFocusEffect } from "@react-navigation/native";
@@ -33,15 +33,22 @@ const CircularProgress = ({
         <Circle cx={size / 2} cy={size / 2} r={innerRadius} fill={color} />
         {/* Checkmark when 100% */}
         {Math.round(percentage) >= 100 && (
-          <Path
-            d="M 10 18 L 15 23 L 26 12"
-            stroke="white"
-            strokeWidth={4}
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity={1}
-          />
+          <>
+            {console.log(
+              `Rendering checkmark for ${percentage}% (rounded: ${Math.round(
+                percentage
+              )})`
+            )}
+            <Path
+              d="M 10 18 L 15 23 L 26 12"
+              stroke="white"
+              strokeWidth={4}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={1}
+            />
+          </>
         )}
       </Svg>
     </View>
@@ -340,33 +347,8 @@ const TargetsView = () => {
     }
   }, []);
 
-  // Use useFocusEffect to refresh data when the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      // Fetch user nutrient targets first
-      fetchUserNutrientTargets();
-      // Fetch main targets immediately (fast)
-      fetchMainTargets();
-      // Fetch detailed nutrients in the background (slower, but doesn't block UI)
-      fetchDetailedNutrients();
-    }, [fetchUserNutrientTargets, fetchMainTargets, fetchDetailedNutrients])
-  );
-
-  // Helper function to get tracked nutrients for a category
-  const getTrackedNutrients = (category) => {
-    if (!userNutrientTargets[category]) return [];
-
-    return userNutrientTargets[category]
-      .filter((nutrient) => nutrient.IsTracked)
-      .map((nutrient) => nutrient.NutrientName);
-  };
-
-  // Helper function to check if a category has any tracked nutrients
-  const hasTrackedNutrients = (category) => {
-    return getTrackedNutrients(category).length > 0;
-  };
-
-  const renderProgressBar = (consumed, required) => {
+  // Define renderProgressBar function first
+  const renderProgressBar = useCallback((consumed, required) => {
     const percentage = Math.min((consumed / required) * 100, 100);
     return (
       <View style={styles.progressBarContainer}>
@@ -383,6 +365,72 @@ const TargetsView = () => {
         <Text style={styles.progressText}>{percentage.toFixed(0)}%</Text>
       </View>
     );
+  }, []);
+
+  // Use useFocusEffect to refresh data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Fetch user nutrient targets first
+      fetchUserNutrientTargets();
+      // Fetch main targets immediately (fast)
+      fetchMainTargets();
+      // Fetch detailed nutrients in the background (slower, but doesn't block UI)
+      fetchDetailedNutrients();
+    }, [fetchUserNutrientTargets, fetchMainTargets, fetchDetailedNutrients])
+  );
+
+  // Memoize the main targets rendering
+  const memoizedMainTargets = useMemo(() => {
+    return (Array.isArray(mainTargets) ? mainTargets : []).map(
+      (item, index) => {
+        let percentage = Math.min((item.consumed / item.required) * 100, 100);
+        // Debug logging
+        console.log(
+          `${item.label}: ${item.consumed}/${item.required} = ${percentage}%`
+        );
+        // Fix floating point precision issues - if very close to 100%, make it 100%
+        if (percentage >= 99.5) {
+          percentage = 100;
+          console.log(`${item.label}: Adjusted to 100%`);
+        }
+        return (
+          <View key={index} style={styles.mainTargetRow}>
+            <View style={styles.targetIconContainer}>
+              <View style={styles.targetIconGradient}>
+                <CircularProgress
+                  percentage={percentage}
+                  size={36}
+                  strokeWidth={2}
+                  color="#8cc63f"
+                />
+              </View>
+            </View>
+            <View style={styles.targetInfo}>
+              <Text style={styles.targetLabel}>{item.label}</Text>
+              <Text style={styles.targetValues}>
+                {item.consumed.toFixed(1)}/{item.required.toFixed(1)}{" "}
+                {item.label === "Energy" ? "kcal" : "g"}
+              </Text>
+            </View>
+            {renderProgressBar(item.consumed, item.required)}
+          </View>
+        );
+      }
+    );
+  }, [mainTargets, renderProgressBar]);
+
+  // Helper function to get tracked nutrients for a category
+  const getTrackedNutrients = (category) => {
+    if (!userNutrientTargets[category]) return [];
+
+    return userNutrientTargets[category]
+      .filter((nutrient) => nutrient.IsTracked)
+      .map((nutrient) => nutrient.NutrientName);
+  };
+
+  // Helper function to check if a category has any tracked nutrients
+  const hasTrackedNutrients = (category) => {
+    return getTrackedNutrients(category).length > 0;
   };
 
   return (
@@ -401,38 +449,7 @@ const TargetsView = () => {
         ) : error ? (
           <Text style={{ color: "red" }}>{error}</Text>
         ) : (
-          (Array.isArray(mainTargets) ? mainTargets : []).map((item, index) => {
-            let percentage = Math.min(
-              (item.consumed / item.required) * 100,
-              100
-            );
-            // Fix floating point precision issues - if very close to 100%, make it 100%
-            if (percentage >= 99.5) {
-              percentage = 100;
-            }
-            return (
-              <View key={index} style={styles.mainTargetRow}>
-                <View style={styles.targetIconContainer}>
-                  <View style={styles.targetIconGradient}>
-                    <CircularProgress
-                      percentage={percentage}
-                      size={36}
-                      strokeWidth={2}
-                      color="#8cc63f"
-                    />
-                  </View>
-                </View>
-                <View style={styles.targetInfo}>
-                  <Text style={styles.targetLabel}>{item.label}</Text>
-                  <Text style={styles.targetValues}>
-                    {item.consumed.toFixed(1)}/{item.required.toFixed(1)}{" "}
-                    {item.label === "Energy" ? "kcal" : "g"}
-                  </Text>
-                </View>
-                {renderProgressBar(item.consumed, item.required)}
-              </View>
-            );
-          })
+          memoizedMainTargets
         )}
       </LinearGradient>
 
