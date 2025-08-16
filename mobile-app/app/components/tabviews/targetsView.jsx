@@ -214,6 +214,41 @@ const TargetsView = () => {
   const [loadingDetailed, setLoadingDetailed] = useState(false);
   const [error, setError] = useState(null);
 
+  // New state for user nutrient targets
+  const [userNutrientTargets, setUserNutrientTargets] = useState({});
+  const [loadingTargets, setLoadingTargets] = useState(true);
+
+  const fetchUserNutrientTargets = useCallback(async () => {
+    setLoadingTargets(true);
+    try {
+      const data = await nutritionService.getUserNutrientTargets();
+      // Normalize property names for compatibility
+      const normalized = data.map((item) => ({
+        ...item,
+        NutrientName: item.NutrientName || item.Name || item.nutrientName,
+        Category: item.Category || item.category,
+        IsTracked: item.IsTracked ?? item.isTracked ?? false,
+        HasMaxThreshold: item.HasMaxThreshold ?? item.hasMaxThreshold ?? false,
+        DailyTarget: item.DailyTarget ?? item.dailyTarget ?? null,
+        MaxThreshold: item.MaxThreshold ?? item.maxThreshold ?? null,
+      }));
+
+      // Group by category
+      const grouped = {};
+      normalized.forEach((item) => {
+        if (!item.Category) return;
+        if (!grouped[item.Category]) grouped[item.Category] = [];
+        grouped[item.Category].push(item);
+      });
+      setUserNutrientTargets(grouped);
+    } catch (err) {
+      console.log("Failed to load user nutrient targets:", err);
+      setUserNutrientTargets({});
+    } finally {
+      setLoadingTargets(false);
+    }
+  }, []);
+
   const fetchMainTargets = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -273,12 +308,28 @@ const TargetsView = () => {
   // Use useFocusEffect to refresh data when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      // Fetch user nutrient targets first
+      fetchUserNutrientTargets();
       // Fetch main targets immediately (fast)
       fetchMainTargets();
       // Fetch detailed nutrients in the background (slower, but doesn't block UI)
       fetchDetailedNutrients();
-    }, [fetchMainTargets, fetchDetailedNutrients])
+    }, [fetchUserNutrientTargets, fetchMainTargets, fetchDetailedNutrients])
   );
+
+  // Helper function to get tracked nutrients for a category
+  const getTrackedNutrients = (category) => {
+    if (!userNutrientTargets[category]) return [];
+
+    return userNutrientTargets[category]
+      .filter((nutrient) => nutrient.IsTracked)
+      .map((nutrient) => nutrient.NutrientName);
+  };
+
+  // Helper function to check if a category has any tracked nutrients
+  const hasTrackedNutrients = (category) => {
+    return getTrackedNutrients(category).length > 0;
+  };
 
   const renderProgressBar = (consumed, required) => {
     const percentage = Math.min((consumed / required) * 100, 100);
@@ -350,8 +401,8 @@ const TargetsView = () => {
         )}
       </LinearGradient>
 
-      {/* Category Cards */}
-      {loadingDetailed ? (
+      {/* Category Cards - Only show categories with tracked nutrients */}
+      {loadingDetailed || loadingTargets ? (
         <LinearGradient
           colors={["#ffffff", "#f8faf5"]}
           style={styles.categoryCard}
@@ -368,141 +419,173 @@ const TargetsView = () => {
           </View>
         </LinearGradient>
       ) : (
-        Object.entries(categories).map(([category, nutrients], catIndex) => (
+        Object.entries(categories)
+          .filter(([category]) => hasTrackedNutrients(category))
+          .map(([category, nutrients], catIndex) => {
+            const trackedNutrients = getTrackedNutrients(category);
+
+            return (
+              <LinearGradient
+                key={catIndex}
+                colors={["#ffffff", "#f8faf5"]}
+                style={styles.categoryCard}
+              >
+                <View style={styles.cardHeader}>
+                  <Icon
+                    name={
+                      category === "Carbohydrates"
+                        ? "grain"
+                        : category === "AminoAcids"
+                        ? "science"
+                        : category === "Fats"
+                        ? "opacity"
+                        : category === "Minerals"
+                        ? "diamond"
+                        : category === "Vitamins"
+                        ? "medication"
+                        : category === "Sterols"
+                        ? "biotech"
+                        : "category"
+                    }
+                    size={24}
+                    color="#619819"
+                  />
+                  <Text style={styles.cardTitle}>{category}</Text>
+                </View>
+
+                <View style={styles.nutrientsGrid}>
+                  {nutrients
+                    .filter((nutrient) => trackedNutrients.includes(nutrient))
+                    .map((nutrient, index) => {
+                      let item;
+                      if (category === "Carbohydrates" && carbohydratesData) {
+                        const nutrientData = carbohydratesData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "AminoAcids" && aminoAcidsData) {
+                        const nutrientData = aminoAcidsData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "Fats" && fatsData) {
+                        const nutrientData = fatsData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "Minerals" && mineralsData) {
+                        const nutrientData = mineralsData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "Other" && otherData) {
+                        const nutrientData = otherData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "Sterols" && sterolsData) {
+                        const nutrientData = sterolsData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      } else if (category === "Vitamins" && vitaminsData) {
+                        const nutrientData = vitaminsData.nutrients.find(
+                          (n) => n.label === nutrient
+                        );
+                        if (nutrientData) {
+                          item = {
+                            label: nutrient,
+                            consumed: nutrientData.consumed,
+                            required: nutrientData.required,
+                          };
+                        }
+                      }
+
+                      if (!item) {
+                        item = {
+                          label: nutrient,
+                          consumed: 0,
+                          required: 100,
+                        };
+                      }
+
+                      return (
+                        <View key={index} style={styles.nutrientItem}>
+                          <Text style={styles.nutrientLabel}>{nutrient}</Text>
+                          <Text style={styles.nutrientValues}>
+                            {item.consumed === null ? "Unknown" : item.consumed}
+                            /{item.required}g
+                          </Text>
+                          {item.consumed !== null &&
+                            renderProgressBar(item.consumed, item.required)}
+                        </View>
+                      );
+                    })}
+                </View>
+              </LinearGradient>
+            );
+          })
+      )}
+
+      {/* Show message if no tracked nutrients */}
+      {!loadingDetailed &&
+        !loadingTargets &&
+        Object.keys(categories).every(
+          (category) => !hasTrackedNutrients(category)
+        ) && (
           <LinearGradient
-            key={catIndex}
             colors={["#ffffff", "#f8faf5"]}
             style={styles.categoryCard}
           >
             <View style={styles.cardHeader}>
-              <Icon
-                name={
-                  category === "Carbohydrates"
-                    ? "grain"
-                    : category === "AminoAcids"
-                    ? "science"
-                    : category === "Fats"
-                    ? "opacity"
-                    : category === "Minerals"
-                    ? "diamond"
-                    : category === "Vitamins"
-                    ? "medication"
-                    : category === "Sterols"
-                    ? "biotech"
-                    : "category"
-                }
-                size={24}
-                color="#619819"
-              />
-              <Text style={styles.cardTitle}>{category}</Text>
+              <Icon name="visibility-off" size={24} color="#619819" />
+              <Text style={styles.cardTitle}>No Tracked Nutrients</Text>
             </View>
-
-            <View style={styles.nutrientsGrid}>
-              {nutrients.map((nutrient, index) => {
-                let item;
-                if (category === "Carbohydrates" && carbohydratesData) {
-                  const nutrientData = carbohydratesData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "AminoAcids" && aminoAcidsData) {
-                  const nutrientData = aminoAcidsData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "Fats" && fatsData) {
-                  const nutrientData = fatsData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "Minerals" && mineralsData) {
-                  const nutrientData = mineralsData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "Other" && otherData) {
-                  const nutrientData = otherData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "Sterols" && sterolsData) {
-                  const nutrientData = sterolsData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                } else if (category === "Vitamins" && vitaminsData) {
-                  const nutrientData = vitaminsData.nutrients.find(
-                    (n) => n.label === nutrient
-                  );
-                  if (nutrientData) {
-                    item = {
-                      label: nutrient,
-                      consumed: nutrientData.consumed,
-                      required: nutrientData.required,
-                    };
-                  }
-                }
-
-                if (!item) {
-                  item = {
-                    label: nutrient,
-                    consumed: 0,
-                    required: 100,
-                  };
-                }
-
-                return (
-                  <View key={index} style={styles.nutrientItem}>
-                    <Text style={styles.nutrientLabel}>{nutrient}</Text>
-                    <Text style={styles.nutrientValues}>
-                      {item.consumed === null ? "Unknown" : item.consumed}/
-                      {item.required}g
-                    </Text>
-                    {item.consumed !== null &&
-                      renderProgressBar(item.consumed, item.required)}
-                  </View>
-                );
-              })}
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>
+                You haven't made any nutrients visible yet. Go to More → Targets
+                → Nutrient Targets to configure which nutrients you want to
+                track.
+              </Text>
             </View>
           </LinearGradient>
-        ))
-      )}
+        )}
     </View>
   );
 };
@@ -532,6 +615,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
+    marginBottom: 20,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -644,6 +728,16 @@ const styles = StyleSheet.create({
     color: "#636e72",
     marginTop: 10,
     textAlign: "center",
+  },
+  emptyStateContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#636e72",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });
 
