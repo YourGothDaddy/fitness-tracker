@@ -476,17 +476,32 @@ const NutrientTargetsView = () => {
         ) : (
           <>
             <View style={styles.stickyCategoryHeader}>
-              <View style={styles.categoryTitleWrapper}>
-                <Icon
-                  name={getCategoryIcon(category)}
-                  size={28}
-                  color={Colors.darkGreen.color}
-                />
-                <Text style={styles.categoryTitle}>{category}</Text>
+              <View style={styles.categoryHeaderContent}>
+                {/* Left stub - colored section */}
+                <LinearGradient
+                  colors={getCategoryGradient(category)}
+                  style={styles.categoryHeaderStub}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.categoryHeaderStubContent}>
+                    <Text style={styles.categoryHeaderLetter}>
+                      {category.charAt(0)}
+                    </Text>
+                    <Text style={styles.categoryHeaderLabel}>
+                      {getCategoryLabel(category)}
+                    </Text>
+                  </View>
+                </LinearGradient>
+
+                {/* Right main content area */}
+                <View style={styles.categoryHeaderMain}>
+                  <Text style={styles.categoryTitle}>{category}</Text>
+                  <Text style={styles.categoryItemCount}>
+                    {nutrientTargets[category]?.length || 0} items
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.categoryItemCount}>
-                {nutrientTargets[category]?.length || 0} items
-              </Text>
             </View>
             <ScrollView
               contentContainerStyle={styles.scrollViewContainer}
@@ -565,10 +580,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   stickyCategoryHeader: {
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 20,
     backgroundColor: Colors.white.color,
     zIndex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
   nutrientsScrollView: {
     flex: 1,
@@ -576,21 +593,58 @@ const styles = StyleSheet.create({
   nutrientsContainer: {
     paddingTop: 16,
   },
-  categoryTitleWrapper: {
+  categoryHeaderContent: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+  },
+  categoryHeaderStub: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  categoryHeaderStubContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryHeaderLetter: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: Colors.white.color,
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  categoryHeaderLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: Colors.white.color,
+    marginTop: 2,
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  categoryHeaderMain: {
+    flex: 1,
   },
   categoryTitle: {
     fontSize: 24,
-    fontWeight: "600",
-    color: Colors.darkGreen.color,
-    marginLeft: 12,
+    fontWeight: "700",
+    color: "#2D3748",
+    marginBottom: 4,
   },
   categoryItemCount: {
     fontSize: 14,
     color: "#718096",
-    marginLeft: 40,
+    fontWeight: "500",
   },
   loadingContentContainer: {
     flex: 1,
