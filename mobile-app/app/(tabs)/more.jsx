@@ -115,6 +115,10 @@ const More = () => {
         try {
           const uploadedUrl = await userService.uploadAvatar(localUri);
           setAvatarUri(uploadedUrl);
+          setAvatarLoadError(false); // Reset any previous load errors
+          // Refresh profile data to get the updated avatar URL
+          const updatedProfile = await userService.getProfile();
+          setProfile(updatedProfile);
           Alert.alert("Success", "Profile image updated!");
         } catch (uploadErr) {
           Alert.alert(
