@@ -412,6 +412,9 @@ const EnergySettingsView = () => {
               <Text style={{ color: "red" }}>{error}</Text>
             ) : (
               <>
+                <Text style={styles.energyLabel}>
+                  Daily Maintenance Calories
+                </Text>
                 <Text style={styles.energyValue}>
                   {energySettings
                     ? formatNumber(energySettings.MaintenanceCalories)
@@ -420,14 +423,39 @@ const EnergySettingsView = () => {
                 <Text style={styles.energyUnit}>kcal / day</Text>
                 <Text
                   style={{
-                    color: Colors.darkGreen.color,
-                    fontSize: 14,
-                    marginTop: 4,
+                    color: "#666",
+                    fontSize: 11,
+                    marginTop: 6,
+                    textAlign: "center",
+                    fontStyle: "italic",
                   }}
                 >
-                  BMR: {energySettings ? formatNumber(energySettings.BMR) : "-"}{" "}
-                  kcal
+                  The amount needed to maintain your current weight
                 </Text>
+                <View style={styles.bmrContainer}>
+                  <Text
+                    style={{
+                      color: Colors.darkGreen.color,
+                      fontSize: 14,
+                      fontWeight: "500",
+                    }}
+                  >
+                    BMR:{" "}
+                    {energySettings ? formatNumber(energySettings.BMR) : "-"}{" "}
+                    kcal
+                  </Text>
+                  <Text
+                    style={{
+                      color: "#666",
+                      fontSize: 10,
+                      marginTop: 2,
+                      textAlign: "center",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Basal Metabolic Rate - calories burned at rest
+                  </Text>
+                </View>
               </>
             )}
           </View>
@@ -635,7 +663,7 @@ const styles = StyleSheet.create({
   },
   energyCard: {
     margin: 20,
-    padding: 20,
+    padding: 15,
     backgroundColor: Colors.lightGreen.color,
     borderRadius: 15,
     alignItems: "center",
@@ -645,15 +673,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
   },
+  energyLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+    marginBottom: 6,
+    textAlign: "center",
+  },
   energyValue: {
-    fontSize: 36,
+    fontSize: 21,
     fontWeight: "bold",
     color: Colors.darkGreen.color,
-    marginBottom: 5,
+    marginBottom: 4,
   },
   energyUnit: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
+  },
+  bmrContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGreen.color + "40",
+    alignItems: "center",
   },
   settingsContainer: {
     padding: 20,
