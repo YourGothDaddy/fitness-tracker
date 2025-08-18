@@ -270,9 +270,7 @@ const TargetsView = () => {
         NutrientName: item.NutrientName || item.Name || item.nutrientName,
         Category: item.Category || item.category,
         IsTracked: item.IsTracked ?? item.isTracked ?? false,
-        HasMaxThreshold: item.HasMaxThreshold ?? item.hasMaxThreshold ?? false,
         DailyTarget: item.DailyTarget ?? item.dailyTarget ?? null,
-        MaxThreshold: item.MaxThreshold ?? item.maxThreshold ?? null,
       }));
 
       // Group by category

@@ -20,7 +20,5 @@ namespace Fitness_Tracker.Data.Models
 
         public bool IsTracked { get; set; } = false;
         public double? DailyTarget { get; set; } // mg, g, etc. (frontend can decide unit)
-        public bool HasMaxThreshold { get; set; } = false;
-        public double? MaxThreshold { get; set; }
     }
 } 

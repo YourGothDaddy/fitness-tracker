@@ -130,15 +130,9 @@ const CategoryTab = ({ title, count, onPress }) => (
 
 const NutrientRow = ({ nutrient, onUpdate }) => {
   const [isVisible, setIsVisible] = useState(nutrient.IsTracked);
-  const [isCustom, setIsCustom] = useState(nutrient.HasMaxThreshold);
   const [target, setTarget] = useState(
     nutrient.DailyTarget !== null && nutrient.DailyTarget !== undefined
       ? nutrient.DailyTarget.toString()
-      : ""
-  );
-  const [threshold, setThreshold] = useState(
-    nutrient.MaxThreshold !== null && nutrient.MaxThreshold !== undefined
-      ? nutrient.MaxThreshold.toString()
       : ""
   );
   const [loading, setLoading] = useState(false);
@@ -158,24 +152,11 @@ const NutrientRow = ({ nutrient, onUpdate }) => {
             : target === ""
             ? null
             : parseFloat(target),
-        HasMaxThreshold: changes?.HasMaxThreshold ?? isCustom,
-        MaxThreshold:
-          changes?.MaxThreshold !== undefined
-            ? changes.MaxThreshold
-            : threshold === ""
-            ? null
-            : parseFloat(threshold),
       });
       setIsVisible(updated.IsTracked);
-      setIsCustom(updated.HasMaxThreshold);
       setTarget(
         updated.DailyTarget !== null && updated.DailyTarget !== undefined
           ? updated.DailyTarget.toString()
-          : ""
-      );
-      setThreshold(
-        updated.MaxThreshold !== null && updated.MaxThreshold !== undefined
-          ? updated.MaxThreshold.toString()
           : ""
       );
     } catch (err) {
@@ -225,48 +206,6 @@ const NutrientRow = ({ nutrient, onUpdate }) => {
           />
         </TouchableOpacity>
       </View>
-
-      <View style={styles.thresholdContainer}>
-        <View style={styles.inputWrapper}>
-          <Text style={styles.inputLabel}>Max Threshold</Text>
-          <TextInput
-            style={[
-              styles.input,
-              !isCustom && styles.disabledInput,
-              isCustom && styles.activeInput,
-            ]}
-            placeholder="0"
-            keyboardType="numeric"
-            value={threshold}
-            onChangeText={(val) => setThreshold(val)}
-            onBlur={() =>
-              handleUpdate({
-                MaxThreshold: threshold === "" ? null : parseFloat(threshold),
-              })
-            }
-            editable={isCustom}
-          />
-          <Text style={styles.unit}>mg</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.customButton, isCustom && styles.customButtonActive]}
-          onPress={() => {
-            setIsCustom((prev) => {
-              handleUpdate({ HasMaxThreshold: !prev });
-              return !prev;
-            });
-          }}
-        >
-          <Text
-            style={[
-              styles.customButtonText,
-              isCustom && styles.customButtonTextActive,
-            ]}
-          >
-            Custom
-          </Text>
-        </TouchableOpacity>
-      </View>
       {loading && (
         <ActivityIndicator size="small" color={Colors.darkGreen.color} />
       )}
@@ -294,10 +233,7 @@ const NutrientTargetsView = () => {
           NutrientName: item.NutrientName || item.Name || item.nutrientName,
           Category: item.Category || item.category,
           IsTracked: item.IsTracked ?? item.isTracked ?? false,
-          HasMaxThreshold:
-            item.HasMaxThreshold ?? item.hasMaxThreshold ?? false,
           DailyTarget: item.DailyTarget ?? item.dailyTarget ?? null,
-          MaxThreshold: item.MaxThreshold ?? item.maxThreshold ?? null,
         }));
         // Group by category
         const grouped = {};
@@ -323,9 +259,6 @@ const NutrientTargetsView = () => {
       IsTracked: updated.IsTracked,
       DailyTarget:
         updated.DailyTarget === "" ? null : parseFloat(updated.DailyTarget),
-      HasMaxThreshold: updated.HasMaxThreshold,
-      MaxThreshold:
-        updated.MaxThreshold === "" ? null : parseFloat(updated.MaxThreshold),
     });
     // Normalize result to PascalCase
     const normalizedResult = {
@@ -333,10 +266,7 @@ const NutrientTargetsView = () => {
       NutrientName: result.NutrientName || result.Name || result.nutrientName,
       Category: result.Category || result.category,
       IsTracked: result.IsTracked ?? result.isTracked ?? false,
-      HasMaxThreshold:
-        result.HasMaxThreshold ?? result.hasMaxThreshold ?? false,
       DailyTarget: result.DailyTarget ?? result.dailyTarget ?? null,
-      MaxThreshold: result.MaxThreshold ?? result.maxThreshold ?? null,
     };
     // Update local state optimistically
     setNutrientTargets((prev) => {
@@ -521,10 +451,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  thresholdContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   inputWrapper: {
     flex: 1,
     marginRight: 12,
@@ -565,25 +491,7 @@ const styles = StyleSheet.create({
   visibilityButtonActive: {
     backgroundColor: Colors.darkGreen.color,
   },
-  customButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-  },
-  customButtonActive: {
-    backgroundColor: Colors.darkGreen.color,
-    borderColor: Colors.darkGreen.color,
-  },
-  customButtonText: {
-    color: "#6B7280",
-    fontWeight: "600",
-  },
-  customButtonTextActive: {
-    color: Colors.white.color,
-  },
+
   disabledInput: {
     backgroundColor: "#EDF2F7",
     borderColor: "#E2E8F0",

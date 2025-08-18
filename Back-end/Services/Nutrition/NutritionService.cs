@@ -759,9 +759,7 @@ namespace Fitness_Tracker.Services.Nutrition
                         NutrientName = userTarget.NutrientName,
                         Category = userTarget.Category,
                         IsTracked = userTarget.IsTracked,
-                        DailyTarget = userTarget.DailyTarget,
-                        HasMaxThreshold = userTarget.HasMaxThreshold,
-                        MaxThreshold = userTarget.MaxThreshold
+                        DailyTarget = userTarget.DailyTarget
                     });
                 }
                 else
@@ -772,9 +770,7 @@ namespace Fitness_Tracker.Services.Nutrition
                         NutrientName = nutrient.Name,
                         Category = nutrient.Category,
                         IsTracked = false,
-                        DailyTarget = null,
-                        HasMaxThreshold = false,
-                        MaxThreshold = null
+                        DailyTarget = null
                     });
                 }
             }
@@ -800,8 +796,6 @@ namespace Fitness_Tracker.Services.Nutrition
 
             entity.IsTracked = model.IsTracked;
             entity.DailyTarget = model.DailyTarget;
-            entity.HasMaxThreshold = model.HasMaxThreshold;
-            entity.MaxThreshold = model.MaxThreshold;
 
             await _databaseContext.SaveChangesAsync();
 
@@ -811,9 +805,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 NutrientName = entity.NutrientName,
                 Category = entity.Category,
                 IsTracked = entity.IsTracked,
-                DailyTarget = entity.DailyTarget,
-                HasMaxThreshold = entity.HasMaxThreshold,
-                MaxThreshold = entity.MaxThreshold
+                DailyTarget = entity.DailyTarget
             };
         }
     }
