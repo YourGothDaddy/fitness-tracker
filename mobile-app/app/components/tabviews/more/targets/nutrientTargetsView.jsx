@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import Icon from "../../../../../components/Icon";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
@@ -109,24 +110,127 @@ const getCategoryIcon = (category) => {
   return icons[category] || "circle";
 };
 
-const CategoryTab = ({ title, count, onPress }) => (
-  <TouchableOpacity style={styles.tabContainer} onPress={onPress}>
-    <View style={styles.tabContent}>
-      <View style={styles.categoryIconContainer}>
-        <Icon
-          name={getCategoryIcon(title)}
-          size={28}
-          color={Colors.darkGreen.color}
-        />
-      </View>
-      <View style={styles.categoryTextContainer}>
-        <Text style={styles.tabTitle}>{title}</Text>
-        <Text style={styles.itemCount}>{`${count} items`}</Text>
-      </View>
-      <Icon name="chevron-right" size={24} color={Colors.darkGreen.color} />
-    </View>
-  </TouchableOpacity>
-);
+const getCategoryGradient = (category) => {
+  const gradients = {
+    Carbohydrates: ["#FF6B6B", "#FF5252"], // Coral red gradient
+    AminoAcids: ["#4ECDC4", "#26A69A"], // Teal gradient
+    Fats: ["#45B7D1", "#2196F3"], // Sky blue gradient
+    Minerals: ["#96CEB4", "#66BB6A"], // Mint green gradient
+    Other: ["#FFEAA7", "#FFD54F"], // Soft yellow gradient
+    Sterols: ["#DDA0DD", "#BA68C8"], // Plum gradient
+    Vitamins: ["#FDCB6E", "#FF9800"], // Orange gradient
+  };
+  return gradients[category] || ["#A0AEC0", "#718096"];
+};
+
+const getCategoryLabel = (category) => {
+  const labels = {
+    Carbohydrates: "CARBS",
+    AminoAcids: "AMINO",
+    Fats: "FATS",
+    Minerals: "MIN",
+    Other: "OTHER",
+    Sterols: "STEROL",
+    Vitamins: "VIT",
+  };
+  return labels[category] || "CAT";
+};
+
+const CategoryTab = ({ title, count, onPress }) => {
+  const categoryGradient = getCategoryGradient(title);
+  const categoryLabel = getCategoryLabel(title);
+  const firstLetter = title.charAt(0);
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 150,
+        useNativeDriver: false,
+      }),
+      Animated.timing(glowAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(glowAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const animatedShadowOpacity = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 0.3],
+  });
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={styles.tabContainer}
+    >
+      <Animated.View
+        style={[
+          styles.tabContent,
+          {
+            transform: [{ scale: scaleAnim }],
+            shadowOpacity: animatedShadowOpacity,
+          },
+        ]}
+      >
+        {/* Left stub - colored section */}
+        <LinearGradient
+          colors={categoryGradient}
+          style={styles.ticketStub}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.stubContent}>
+            <Text style={styles.stubLetter}>{firstLetter}</Text>
+            <Text style={styles.stubLabel}>{categoryLabel}</Text>
+          </View>
+          {/* Ticket tear effect */}
+          <View style={styles.ticketTear}>
+            <View style={styles.tearCircle} />
+            <View style={styles.tearCircle} />
+            <View style={styles.tearCircle} />
+          </View>
+        </LinearGradient>
+
+        {/* Right main content area */}
+        <View style={styles.ticketMain}>
+          <View style={styles.ticketHeader}>
+            <Text style={styles.tabTitle}>{title}</Text>
+          </View>
+          <Text style={styles.itemCount}>{`${count} items`}</Text>
+          <View style={styles.actionChipContainer}>
+            <View style={styles.actionChip}>
+              <Text style={styles.actionChipText}>View</Text>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
 
 const NutrientRow = ({ nutrient, onUpdate }) => {
   const [isVisible, setIsVisible] = useState(nutrient.IsTracked);
@@ -429,41 +533,31 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   tabContainer: {
-    marginBottom: 12,
-    borderRadius: 16,
+    marginBottom: 16,
+    borderRadius: 20,
     backgroundColor: Colors.white.color,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: "hidden",
   },
   tabContent: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-  },
-  categoryIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: Colors.lightGreen.color,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  categoryTextContainer: {
-    flex: 1,
-    marginLeft: 16,
+    alignItems: "stretch",
+    padding: 0,
+    minHeight: 80,
   },
   tabTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#2D3748",
   },
   itemCount: {
     fontSize: 14,
     color: "#718096",
-    marginTop: 4,
+    fontWeight: "500",
   },
   unit: {
     fontSize: 14,
@@ -598,5 +692,89 @@ const styles = StyleSheet.create({
   },
   loadingToggle: {
     backgroundColor: Colors.darkGreen.color,
+  },
+  ticketStub: {
+    width: 80,
+    backgroundColor: "#FF6B6B",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+  },
+  stubContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stubLetter: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: Colors.white.color,
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  stubLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: Colors.white.color,
+    marginTop: 2,
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(0,0,0,0.2)",
+    textShadowOffset: { width: 0.5, height: 0.5 },
+    textShadowRadius: 1,
+  },
+  ticketTear: {
+    position: "absolute",
+    right: -8,
+    top: 0,
+    bottom: 0,
+    width: 16,
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  tearCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.white.color,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  ticketMain: {
+    flex: 1,
+    padding: 20,
+    paddingLeft: 16,
+    position: "relative",
+  },
+  ticketHeader: {
+    marginBottom: 8,
+  },
+  actionChipContainer: {
+    position: "absolute",
+    right: 20,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+  actionChip: {
+    backgroundColor: Colors.darkGreen.color,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionChipText: {
+    color: Colors.white.color,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });
