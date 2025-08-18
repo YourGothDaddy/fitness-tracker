@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   Animated,
+  BackHandler,
 } from "react-native";
 import { Tabs } from "expo-router";
 import { icons } from "../../constants";
@@ -41,6 +42,24 @@ const TabsLayout = () => {
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const router = useRouter();
+
+  // Handle hardware back button
+  React.useEffect(() => {
+    const backAction = () => {
+      if (showAddMenu) {
+        hideMenu();
+        return true; // Prevent default back behavior
+      }
+      return false; // Allow default back behavior
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [showAddMenu]);
 
   const showMenu = () => {
     setShowAddMenu(true);
