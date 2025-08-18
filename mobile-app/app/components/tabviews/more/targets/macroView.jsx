@@ -214,15 +214,6 @@ const MacroView = () => {
   }, []);
 
   const handleSave = async () => {
-    if (totalPercentage !== 100) {
-      Alert.alert(
-        "Invalid Distribution",
-        "Macro percentages must add up to 100%. Please adjust your values.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -390,19 +381,6 @@ const MacroView = () => {
           </TouchableOpacity>
 
           <View style={styles.alertsContainer}>
-            {!isDistributionValid && (
-              <View style={styles.validationContainer}>
-                <MaterialIcons
-                  name="warning"
-                  size={20}
-                  color={Colors.red.color}
-                />
-                <Text style={styles.validationText}>
-                  Total: {totalPercentage}% (should be 100%)
-                </Text>
-              </View>
-            )}
-
             {error && (
               <View style={styles.errorContainer}>
                 <MaterialIcons
@@ -629,13 +607,13 @@ const styles = StyleSheet.create({
   validationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffebee", // Changed from "#fff3cd" to red background
+    backgroundColor: "#e3f2fd", // Blue background for info
     padding: 6, // Reduced from 12
     borderRadius: 8,
     marginBottom: 8, // Reduced from 16
   },
   validationText: {
-    color: Colors.red.color, // Changed from Colors.yellow.color to red
+    color: Colors.blue.color, // Blue text for info
     marginLeft: 8,
     flex: 1,
     fontWeight: "500",

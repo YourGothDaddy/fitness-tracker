@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>false</InvariantGlobalization>
     <RootNamespace>Fitness_Tracker</RootNamespace>
+    <UserSecretsId>A</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
