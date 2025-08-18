@@ -167,50 +167,79 @@ const NutrientRow = ({ nutrient, onUpdate }) => {
   };
 
   return (
-    <Animated.View style={styles.nutrientCard}>
-      <Text style={styles.nutrientTitle}>{nutrient.NutrientName}</Text>
-      <View style={styles.targetContainer}>
+    <View style={styles.nutrientRow}>
+      <View style={styles.nutrientInfo}>
+        <Text style={[styles.nutrientTitle, !isVisible && styles.disabledText]}>
+          {nutrient.NutrientName}
+        </Text>
+        {error && <Text style={styles.errorText}>{error}</Text>}
+      </View>
+
+      <View style={styles.controlsContainer}>
         <View style={styles.inputWrapper}>
-          <Text style={styles.inputLabel}>Daily Target</Text>
-          <TextInput
-            style={[styles.input, isVisible && styles.activeInput]}
-            placeholder="0"
-            keyboardType="numeric"
-            value={target}
-            onChangeText={(val) => setTarget(val)}
-            onBlur={() =>
-              handleUpdate({
-                DailyTarget: target === "" ? null : parseFloat(target),
-              })
-            }
-            editable={isVisible}
-          />
-          <Text style={styles.unit}>mg</Text>
+          <Text style={[styles.inputLabel, !isVisible && styles.disabledText]}>
+            Daily Target
+          </Text>
+          <View
+            style={[
+              styles.inputContainer,
+              isVisible
+                ? styles.activeInputContainer
+                : styles.inactiveInputContainer,
+            ]}
+          >
+            <TextInput
+              style={[
+                styles.targetInput,
+                isVisible
+                  ? styles.activeTargetInput
+                  : styles.inactiveTargetInput,
+                loading && styles.loadingInput,
+              ]}
+              placeholder="0"
+              keyboardType="numeric"
+              value={target}
+              onChangeText={(val) => setTarget(val)}
+              onBlur={() =>
+                handleUpdate({
+                  DailyTarget: target === "" ? null : parseFloat(target),
+                })
+              }
+              editable={isVisible && !loading}
+            />
+            <Text style={[styles.unit, !isVisible && styles.disabledText]}>
+              mg
+            </Text>
+          </View>
         </View>
+
         <TouchableOpacity
           style={[
-            styles.visibilityButton,
-            isVisible && styles.visibilityButtonActive,
+            styles.visibilityToggle,
+            isVisible && styles.visibilityToggleActive,
+            loading && styles.loadingToggle,
           ]}
           onPress={() => {
+            if (loading) return;
             setIsVisible((prev) => {
               handleUpdate({ IsTracked: !prev });
               return !prev;
             });
           }}
+          disabled={loading}
         >
-          <Icon
-            name={isVisible ? "visibility" : "visibility-off"}
-            size={20}
-            color={isVisible ? Colors.white.color : Colors.darkGreen.color}
-          />
+          {loading ? (
+            <ActivityIndicator size="small" color={Colors.white.color} />
+          ) : (
+            <Icon
+              name={isVisible ? "visibility" : "visibility-off"}
+              size={16}
+              color={isVisible ? Colors.white.color : Colors.darkGreen.color}
+            />
+          )}
         </TouchableOpacity>
       </View>
-      {loading && (
-        <ActivityIndicator size="small" color={Colors.darkGreen.color} />
-      )}
-      {error && <Text style={{ color: "red" }}>{error}</Text>}
-    </Animated.View>
+    </View>
   );
 };
 
@@ -314,43 +343,52 @@ const NutrientTargetsView = () => {
             </TouchableOpacity>
           </View>
         )}
-        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-          <View style={styles.tabsContainer}>
-            {loading ? (
-              <View style={styles.loadingContentContainer}>
-                <ActivityIndicator
-                  size="large"
+        {!category ? (
+          <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+            <View style={styles.tabsContainer}>
+              {loading ? (
+                <View style={styles.loadingContentContainer}>
+                  <ActivityIndicator
+                    size="large"
+                    color={Colors.darkGreen.color}
+                  />
+                </View>
+              ) : error ? (
+                <View style={styles.loadingContentContainer}>
+                  <Text style={{ color: "red" }}>{error}</Text>
+                </View>
+              ) : (
+                Object.keys(nutrientTargets).map((cat) => (
+                  <CategoryTab
+                    key={cat}
+                    title={cat}
+                    count={nutrientTargets[cat].length}
+                    onPress={() => handleCategoryPress(cat)}
+                  />
+                ))
+              )}
+            </View>
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.stickyCategoryHeader}>
+              <View style={styles.categoryTitleWrapper}>
+                <Icon
+                  name={getCategoryIcon(category)}
+                  size={28}
                   color={Colors.darkGreen.color}
                 />
+                <Text style={styles.categoryTitle}>{category}</Text>
               </View>
-            ) : error ? (
-              <View style={styles.loadingContentContainer}>
-                <Text style={{ color: "red" }}>{error}</Text>
-              </View>
-            ) : !category ? (
-              Object.keys(nutrientTargets).map((cat) => (
-                <CategoryTab
-                  key={cat}
-                  title={cat}
-                  count={nutrientTargets[cat].length}
-                  onPress={() => handleCategoryPress(cat)}
-                />
-              ))
-            ) : (
+              <Text style={styles.categoryItemCount}>
+                {nutrientTargets[category]?.length || 0} items
+              </Text>
+            </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollViewContainer}
+              style={styles.nutrientsScrollView}
+            >
               <View style={styles.nutrientsContainer}>
-                <View style={styles.categoryHeaderContainer}>
-                  <View style={styles.categoryTitleWrapper}>
-                    <Icon
-                      name={getCategoryIcon(category)}
-                      size={28}
-                      color={Colors.darkGreen.color}
-                    />
-                    <Text style={styles.categoryTitle}>{category}</Text>
-                  </View>
-                  <Text style={styles.categoryItemCount}>
-                    {nutrientTargets[category]?.length || 0} items
-                  </Text>
-                </View>
                 {nutrientTargets[category]?.map((nutrient) => (
                   <NutrientRow
                     key={`${nutrient.Category}-${nutrient.NutrientName}`}
@@ -359,9 +397,9 @@ const NutrientTargetsView = () => {
                   />
                 ))}
               </View>
-            )}
-          </View>
-        </ScrollView>
+            </ScrollView>
+          </>
+        )}
       </SafeAreaView>
     </>
   );
@@ -378,8 +416,6 @@ const styles = StyleSheet.create({
     position: "relative",
     paddingBottom: 20,
     backgroundColor: Colors.white.color,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGreen.color,
   },
   backButton: {
     paddingLeft: 20,
@@ -429,80 +465,22 @@ const styles = StyleSheet.create({
     color: "#718096",
     marginTop: 4,
   },
-  nutrientCard: {
-    backgroundColor: Colors.white.color,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  nutrientTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2D3748",
-    marginBottom: 16,
-  },
-  targetContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  inputWrapper: {
-    flex: 1,
-    marginRight: 12,
-  },
-  inputLabel: {
+  unit: {
     fontSize: 14,
     color: "#718096",
-    marginBottom: 8,
+    marginLeft: 8,
   },
-  input: {
-    backgroundColor: "#F7FAFC",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  activeInput: {
-    borderColor: Colors.darkGreen.color,
-    backgroundColor: Colors.white.color,
-  },
-  unit: {
-    position: "absolute",
-    right: 12,
-    top: 40,
-    color: "#718096",
-  },
-  visibilityButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.lightGreen.color,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.darkGreen.color,
-  },
-  visibilityButtonActive: {
-    backgroundColor: Colors.darkGreen.color,
-  },
-
-  disabledInput: {
-    backgroundColor: "#EDF2F7",
-    borderColor: "#E2E8F0",
-    color: "#A0AEC0",
-  },
-  categoryHeaderContainer: {
-    paddingVertical: 20,
+  stickyCategoryHeader: {
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.lightGreen.color,
-    marginBottom: 20,
+    backgroundColor: Colors.white.color,
+    zIndex: 1,
+  },
+  nutrientsScrollView: {
+    flex: 1,
+  },
+  nutrientsContainer: {
+    paddingTop: 16,
   },
   categoryTitleWrapper: {
     flexDirection: "row",
@@ -525,5 +503,100 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     minHeight: 200,
+  },
+  nutrientRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.white.color,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  nutrientInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  nutrientTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#2D3748",
+  },
+  disabledText: {
+    color: "#A0AEC0",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  controlsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  inputWrapper: {
+    flex: 1,
+    marginRight: 12,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: "#718096",
+    marginBottom: 4,
+    fontWeight: "500",
+  },
+  inputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  activeInputContainer: {
+    backgroundColor: Colors.white.color,
+    borderColor: Colors.darkGreen.color,
+  },
+  inactiveInputContainer: {
+    backgroundColor: "#F7FAFC",
+    borderColor: "#E2E8F0",
+  },
+  targetInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#2D3748",
+    paddingVertical: 0,
+    backgroundColor: "transparent",
+  },
+  activeTargetInput: {
+    color: "#2D3748",
+  },
+  inactiveTargetInput: {
+    color: "#A0AEC0",
+  },
+  loadingInput: {
+    color: "#2D3748",
+  },
+  visibilityToggle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.lightGreen.color,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.darkGreen.color,
+  },
+  visibilityToggleActive: {
+    backgroundColor: Colors.darkGreen.color,
+  },
+  loadingToggle: {
+    backgroundColor: Colors.darkGreen.color,
   },
 });
