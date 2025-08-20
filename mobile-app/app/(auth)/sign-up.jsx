@@ -6,11 +6,13 @@ import {
   Keyboard,
   TouchableOpacity,
   Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Colors } from "@/constants/Colors";
 import Slider from "@react-native-community/slider";
 import Checkbox from "expo-checkbox";
@@ -22,6 +24,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
 import axios from "axios";
 import { API_URL } from "@/constants/Config";
+import goalsService from "@/app/services/goalsService";
 
 const validateStage = (stage, data) => {
   switch (stage) {
@@ -61,13 +64,17 @@ const SignUp = () => {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [activity, setActivity] = useState(0);
-  const [weightGoal, setWeightGoal] = useState(0);
-  const [manualKcal, setManualKcal] = useState(false);
-  const [kcalGoal, setKcalGoal] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Weight goal state
+  const [goalWeight, setGoalWeight] = useState("");
+  const [weightChangePerWeek, setWeightChangePerWeek] = useState(0.5);
+  const [forecastDate, setForecastDate] = useState("-");
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [error, setError] = useState(null);
 
   const activityLevels = [
     "No activity",
@@ -76,6 +83,88 @@ const SignUp = () => {
     "Moderately Active",
     "Very Active",
   ];
+
+  const calculateForecast = useCallback(() => {
+    console.log("calculateForecast called with:", {
+      weight,
+      goalWeight,
+      weightChangePerWeek,
+    });
+
+    const curr = parseFloat(weight);
+    const goal = parseFloat(goalWeight);
+    const wc = parseFloat(weightChangePerWeek);
+
+    console.log("Parsed values:", { curr, goal, wc });
+
+    if (isNaN(curr) || isNaN(goal) || isNaN(wc) || wc === 0) {
+      console.log('Invalid values, setting forecast to "-"');
+      setForecastDate("-");
+      return;
+    }
+
+    try {
+      setIsCalculating(true);
+      setError(null);
+
+      // Calculate forecast using the same formula as backend
+      const totalWeightChange = goal - curr;
+      const absTotalWeightChange = Math.abs(totalWeightChange);
+      const absWeightChangePerWeek = Math.abs(wc);
+      const exactWeeksToGoal = absTotalWeightChange / absWeightChangePerWeek;
+
+      console.log("Calculation:", { totalWeightChange, exactWeeksToGoal });
+
+      if (exactWeeksToGoal <= 0 || !isFinite(exactWeeksToGoal)) {
+        console.log('Invalid weeks calculation, setting forecast to "-"');
+        setForecastDate("-");
+        return;
+      }
+
+      const forecastDate = new Date();
+      forecastDate.setDate(
+        forecastDate.getDate() + Math.ceil(exactWeeksToGoal * 7)
+      );
+      const forecastString = forecastDate.toLocaleDateString();
+      console.log("Setting forecast to:", forecastString);
+      setForecastDate(forecastString);
+      setError(null);
+    } catch (err) {
+      console.log("Error in calculateForecast:", err);
+      setError("Failed to calculate forecast");
+      setForecastDate("-");
+    } finally {
+      setIsCalculating(false);
+    }
+  }, [weight, goalWeight, weightChangePerWeek]);
+
+  // Calculate forecast when inputs change
+  useEffect(() => {
+    console.log("useEffect triggered with:", {
+      weight,
+      goalWeight,
+      weightChangePerWeek,
+    });
+
+    if (weight && goalWeight && weightChangePerWeek !== 0) {
+      console.log("Calculating forecast with:", {
+        weight,
+        goalWeight,
+        weightChangePerWeek,
+      });
+      const timeoutId = setTimeout(() => {
+        calculateForecast();
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    } else {
+      console.log("Not calculating forecast:", {
+        weight,
+        goalWeight,
+        weightChangePerWeek,
+      });
+      setForecastDate("-");
+    }
+  }, [weight, goalWeight, weightChangePerWeek, calculateForecast]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -227,6 +316,9 @@ const SignUp = () => {
           >
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
+                <View style={styles.decorativeCircle} />
+                <View style={styles.decorativeCircle2} />
+
                 <Text style={styles.stageTitle}>Activity Level</Text>
                 <View style={styles.activityDisplay}>
                   <Text style={styles.activityText}>
@@ -295,81 +387,89 @@ const SignUp = () => {
           >
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
+                <View style={styles.decorativeCircle} />
+                <View style={styles.decorativeCircle2} />
+
                 <Text style={styles.stageTitle}>Weight Goal</Text>
                 <View style={styles.weightGoalContainer}>
-                  {!manualKcal && (
-                    <>
-                      <Text style={styles.weightGoalValue}>
-                        {weightGoal === 0
-                          ? "Maintain Weight"
-                          : weightGoal < 0
-                          ? `Lose ${Math.abs(weightGoal).toFixed(1)}kg/week`
-                          : `Gain ${weightGoal.toFixed(1)}kg/week`}
-                      </Text>
+                  <Text style={styles.weightGoalDescription}>
+                    Set your weight goal to help us calculate your personalized
+                    daily calorie target
+                  </Text>
 
-                      <View style={styles.goalVisualization}>
-                        <MaterialCommunityIcons
-                          name={
-                            weightGoal < 0
-                              ? "trending-down"
-                              : weightGoal > 0
-                              ? "trending-up"
-                              : "trending-neutral"
-                          }
-                          size={32}
-                          color={Colors.darkGreen.color}
-                        />
-                      </View>
-
-                      <Slider
-                        style={styles.customSlider}
-                        minimumValue={-1}
-                        maximumValue={1}
-                        step={0.1}
-                        value={weightGoal}
-                        onValueChange={setWeightGoal}
-                        minimumTrackTintColor={Colors.red.color}
-                        maximumTrackTintColor={Colors.green.color}
-                        thumbTintColor={Colors.darkGreen.color}
-                      />
-
-                      <View style={styles.sliderLabels}>
-                        <Text style={styles.sliderLabel}>Loss</Text>
-                        <Text style={styles.sliderLabel}>Maintain</Text>
-                        <Text style={styles.sliderLabel}>Gain</Text>
-                      </View>
-                    </>
-                  )}
-
-                  <View style={styles.checkboxContainer}>
-                    <Checkbox
-                      value={manualKcal}
-                      onValueChange={setManualKcal}
-                      color={manualKcal ? Colors.darkGreen.color : undefined}
-                    />
-                    <Text style={styles.checkboxLabel}>
-                      Set custom calorie goal
+                  {/* Current Weight Display */}
+                  <View style={styles.currentWeightDisplay}>
+                    <Text style={styles.currentWeightText}>
+                      Current Weight: {weight} kg
                     </Text>
                   </View>
 
-                  {manualKcal && (
-                    <View style={styles.manualKcalContainer}>
-                      <View style={styles.inputContainer}>
-                        <MaterialCommunityIcons
-                          name="fire"
-                          size={24}
-                          color={Colors.darkGreen.color}
-                        />
-                        <CustomField
-                          styles={styles.input}
-                          placeholder="Daily calorie goal"
-                          value={kcalGoal}
-                          onChangeText={setKcalGoal}
-                          numeric={true}
-                        />
-                      </View>
-                    </View>
-                  )}
+                  {/* Goal Weight Label */}
+                  <Text style={styles.goalWeightLabel}>Goal Weight (kg)</Text>
+
+                  {/* Goal Weight Input */}
+                  <View style={styles.goalWeightContainer}>
+                    <MaterialCommunityIcons
+                      name="target"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <CustomField
+                      styles={styles.goalWeightContainer}
+                      textInputStyle={styles.goalWeightInput}
+                      placeholder="___"
+                      value={goalWeight}
+                      onChangeText={setGoalWeight}
+                      numeric={true}
+                    />
+                  </View>
+
+                  {/* Weight Change per Week */}
+                  <Text style={styles.sliderValue}>
+                    Weight Change:{" "}
+                    {(() => {
+                      const curr = parseFloat(weight);
+                      const goal = parseFloat(goalWeight);
+                      const isLosing = goal < curr;
+                      const displayValue = isLosing
+                        ? -Math.abs(weightChangePerWeek)
+                        : Math.abs(weightChangePerWeek);
+                      return (
+                        (displayValue > 0 ? "+" : "") + displayValue.toFixed(1)
+                      );
+                    })()}{" "}
+                    kg/week
+                  </Text>
+                  <Slider
+                    style={styles.customSlider}
+                    minimumValue={0.1}
+                    maximumValue={2}
+                    step={0.1}
+                    value={Math.abs(weightChangePerWeek)}
+                    minimumTrackTintColor={Colors.darkGreen.color}
+                    maximumTrackTintColor={Colors.lightGreen.color}
+                    thumbTintColor={Colors.darkGreen.color}
+                    onValueChange={(v) => {
+                      // Determine if losing or gaining based on goal vs current weight
+                      const curr = parseFloat(weight);
+                      const goal = parseFloat(goalWeight);
+                      const isLosing = goal < curr;
+                      // Always store as positive, sign is determined by isLosing
+                      setWeightChangePerWeek(isLosing ? -v : v);
+                    }}
+                  />
+
+                  {/* Forecast Display */}
+                  <View style={styles.forecastContainer}>
+                    <Text style={styles.forecastLabel}>
+                      Estimated Goal Date:
+                    </Text>
+                    <Text style={styles.forecastValue}>
+                      {isCalculating ? "Calculating..." : forecastDate}
+                    </Text>
+                  </View>
+
+                  {error && <Text style={styles.errorText}>{error}</Text>}
                 </View>
               </View>
             </BlurView>
@@ -384,6 +484,9 @@ const SignUp = () => {
           >
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
+                <View style={styles.decorativeCircle} />
+                <View style={styles.decorativeCircle2} />
+
                 <Text style={styles.stageTitle}>Create Account</Text>
                 <View style={styles.accountInputs}>
                   <View style={styles.inputContainer}>
@@ -466,8 +569,8 @@ const SignUp = () => {
           height: parseFloat(height),
           age: parseInt(age),
           activityLevelId: activity + 1,
-          weeklyWeightChangeGoal: manualKcal ? 0 : weightGoal,
-          dailyCalorieGoal: manualKcal ? parseInt(kcalGoal) : null,
+          goalWeight: parseFloat(goalWeight),
+          weeklyWeightChangeGoal: weightChangePerWeek,
         };
 
         // Add explicit headers
@@ -510,7 +613,12 @@ const SignUp = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar
+        style="light"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <LinearGradient
         colors={["#e8f5e9", "#ffffff", "#e8f5e9"]}
         style={styles.gradient}
@@ -534,7 +642,7 @@ const SignUp = () => {
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
             {[1, 2, 3, 4].map((stage) => (
-              <View key={stage} style={styles.progressItem}>
+              <React.Fragment key={stage}>
                 <View
                   style={[
                     styles.progressCircle,
@@ -558,7 +666,7 @@ const SignUp = () => {
                     ]}
                   />
                 )}
-              </View>
+              </React.Fragment>
             ))}
           </View>
 
@@ -584,7 +692,7 @@ const SignUp = () => {
           )}
         </ScrollView>
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -593,6 +701,7 @@ export default SignUp;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 0,
   },
   gradient: {
     flex: 1,
@@ -600,22 +709,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 20,
+    paddingTop: 40,
   },
   header: {
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 30,
+    marginTop: 15,
+    marginBottom: 10,
   },
   appTitle: {
-    fontSize: 36,
+    fontSize: 24,
     fontWeight: "800",
     color: Colors.darkGreen.color,
     letterSpacing: 1,
   },
   logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     justifyContent: "center",
     alignItems: "center",
@@ -624,24 +734,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    marginBottom: 15,
+    marginBottom: 8,
   },
   progressContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 15,
     paddingHorizontal: 20,
   },
   progressItem: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
   },
   progressCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "#ffffff",
     borderWidth: 2,
     borderColor: Colors.lightGreen.color,
@@ -659,14 +769,14 @@ const styles = StyleSheet.create({
   },
   progressNumber: {
     color: Colors.lightGreen.color,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "600",
   },
   activeProgressNumber: {
     color: "#ffffff",
   },
   progressLine: {
-    flex: 1,
+    width: 40,
     height: 2,
     backgroundColor: Colors.lightGreen.color,
     marginHorizontal: 5,
@@ -675,7 +785,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.darkGreen.color,
   },
   stageWrapper: {
-    marginBottom: 30,
+    marginBottom: 10,
   },
   glassCard: {
     overflow: "hidden",
@@ -685,26 +795,26 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
   contentWrapper: {
-    padding: 25,
+    padding: 6,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
   },
   stageTitle: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "700",
     color: Colors.darkGreen.color,
     textAlign: "center",
-    marginBottom: 25,
+    marginBottom: 6,
   },
   inputWrapper: {
-    gap: 15,
+    gap: 4,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 3,
     shadowColor: "#fff",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -714,8 +824,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    marginLeft: 15,
-    fontSize: 16,
+    marginLeft: 8,
+    fontSize: 13,
     color: Colors.darkGreen.color,
     opacity: 0.8,
   },
@@ -759,41 +869,7 @@ const styles = StyleSheet.create({
   weightGoalContainer: {
     width: "100%",
     alignItems: "center",
-    padding: 20,
-  },
-  weightGoalLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: Colors.darkGreen.color,
-    textAlign: "center",
-  },
-  weightGoalValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: Colors.green.color,
-  },
-  sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: 10,
-    marginTop: 5,
-  },
-  sliderLabel: {
-    fontSize: 12,
-    color: Colors.gray.color,
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  checkboxLabel: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: Colors.darkGreen.color,
+    padding: 7.5,
   },
   kcalInput: {
     width: "100%",
@@ -857,41 +933,32 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 10,
   },
-  goalVisualization: {
-    alignItems: "center",
-    marginBottom: 10,
-  },
   customFieldPlaceholder: {
     color: Colors.darkGreen.color,
     opacity: 0.5,
   },
-  manualKcalContainer: {
-    width: "100%",
-    alignItems: "center",
-    marginTop: 20,
-  },
   genderContainer: {
-    marginBottom: 20,
+    marginBottom: 4,
   },
   genderLabel: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "600",
     color: Colors.darkGreen.color,
-    marginBottom: 10,
+    marginBottom: 2,
     textAlign: "center",
   },
   genderButtonsContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 15,
+    gap: 6,
   },
   genderButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 15,
-    padding: 15,
-    paddingHorizontal: 25,
+    borderRadius: 12,
+    padding: 4,
+    paddingHorizontal: 6,
     borderWidth: 1,
     borderColor: Colors.darkGreen.color,
   },
@@ -906,5 +973,101 @@ const styles = StyleSheet.create({
   },
   genderButtonTextActive: {
     color: "#ffffff",
+  },
+  weightGoalDescription: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 30,
+    lineHeight: 16,
+  },
+  currentWeightDisplay: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+    borderRadius: 8,
+    padding: 2,
+    marginBottom: 4,
+    gap: 4,
+    borderWidth: 0,
+  },
+  currentWeightText: {
+    fontSize: 11,
+    fontWeight: "400",
+    color: "#999",
+  },
+  sliderLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  sliderValue: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: Colors.darkGreen.color,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  forecastContainer: {
+    alignItems: "center",
+    marginTop: 7.5,
+    padding: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  forecastLabel: {
+    fontSize: 11,
+    color: Colors.darkGreen.color,
+    marginBottom: 2,
+  },
+  forecastValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: Colors.green.color,
+  },
+  goalWeightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 3,
+    shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+    width: "40%",
+    alignSelf: "center",
+  },
+  goalWeightLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.darkGreen.color,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  goalWeightInput: {
+    marginLeft: 8,
+    fontSize: 18,
+    color: Colors.darkGreen.color,
+    opacity: 0.8,
+    width: 40,
+    textAlign: "center",
+  },
+
+  errorText: {
+    fontSize: 14,
+    color: "#e74c3c",
+    textAlign: "center",
+    marginBottom: 16,
+    marginTop: 8,
   },
 });
