@@ -64,7 +64,7 @@ namespace Fitness_Tracker.Controllers
                     return Unauthorized();
                 }
 
-                var result = await _weightService.AddWeightRecordAsync(userId, request.Date, request.Weight, request.Notes);
+                var result = await _weightService.AddWeightRecordAsync(userId, request.Date, request.Weight);
                 return result ? Ok() : BadRequest("Failed to add weight record");
             }
             catch (InvalidOperationException ex)
@@ -93,7 +93,7 @@ namespace Fitness_Tracker.Controllers
                     return Unauthorized();
                 }
 
-                var result = await _weightService.UpdateWeightRecordAsync(id, userId, request.Weight, request.Notes);
+                var result = await _weightService.UpdateWeightRecordAsync(id, userId, request.Weight);
                 return result ? Ok() : NotFound("Weight record not found");
             }
             catch (Exception ex)
@@ -127,13 +127,13 @@ namespace Fitness_Tracker.Controllers
         {
             public DateTime Date { get; set; }
             public float Weight { get; set; }
-            public string Notes { get; set; }
+            // Notes removed
         }
 
         public class UpdateWeightRecordRequest
         {
             public float Weight { get; set; }
-            public string Notes { get; set; }
+            // Notes removed
         }
     }
 } 

@@ -13,10 +13,13 @@ namespace Fitness_Tracker.Models.Activity
         [Required]
         public int ActivityTypeId { get; set; }
 
+        // Optional: when provided, backend will create/find a private activity type with this title for the user
+        public string? Title { get; set; }
+
         [Required]
         public DateTime Date { get; set; }
 
-        public string Notes { get; set; }
+        // Notes removed
 
         public bool IsPublic { get; set; } = true;
     }

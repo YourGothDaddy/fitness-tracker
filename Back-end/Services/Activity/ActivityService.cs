@@ -123,10 +123,48 @@ namespace Fitness_Tracker.Services.Activity
             if (string.IsNullOrEmpty(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
-            // Validate ActivityType exists
+            // Validate or create ActivityType
             var activityType = await _databaseContext.ActivityTypes.FindAsync(model.ActivityTypeId);
             if (activityType == null)
-                throw new InvalidOperationException("Invalid ActivityTypeId");
+            {
+                if (!string.IsNullOrWhiteSpace(model.Title))
+                {
+                    // Try to find by Title for this user (private type) or public type
+                    var normalized = model.Title.Trim();
+                    activityType = await _databaseContext.ActivityTypes
+                        .Include(at => at.ActivityCategory)
+                        .Where(at => at.Name == normalized)
+                        .OrderByDescending(at => at.IsPublic)
+                        .FirstOrDefaultAsync();
+
+                    if (activityType == null)
+                    {
+                        // Create a private activity type under first available category
+                        var defaultCategory = await _databaseContext.ActivityCategories
+                            .OrderBy(c => c.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (defaultCategory == null)
+                            throw new InvalidOperationException("No activity categories configured");
+
+                        activityType = new Data.Models.ActivityType
+                        {
+                            Name = normalized,
+                            ActivityCategoryId = defaultCategory.Id,
+                            IsPublic = false,
+                            CreatedByUserId = userId,
+                            Calories = null,
+                        };
+                        _databaseContext.ActivityTypes.Add(activityType);
+                        await _databaseContext.SaveChangesAsync();
+                    }
+                    model.ActivityTypeId = activityType.Id;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Invalid ActivityTypeId");
+                }
+            }
 
             // Validate User exists
             var user = await _databaseContext.Users.FindAsync(userId);
@@ -141,7 +179,6 @@ namespace Fitness_Tracker.Services.Activity
                 Date = model.Date,
                 UserId = userId,
                 IsPublic = model.IsPublic,
-                // Notes is not in the entity, but could be added if needed
             };
 
             _databaseContext.Activities.Add(activity);
@@ -444,62 +481,9 @@ namespace Fitness_Tracker.Services.Activity
                 .ToListAsync();
         }
 
-        public async Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId)
-        {
-            var result = await _databaseContext.ActivityTypes
-                .Include(at => at.ActivityCategory)
-                .Where(at => at.CreatedByUserId == userId && !at.IsPublic)
-                .Select(at => new Models.Activity.ActivityTypeModel
-                {
-                    Id = at.Id,
-                    Name = at.Name,
-                    Category = at.ActivityCategory.Name,
-                    IsPublic = at.IsPublic,
-                    CreatedByUserId = at.CreatedByUserId,
-                    Calories = at.Calories
-                })
-                .ToListAsync();
-            return result;
-        }
+        // Custom activity types removed
 
-        public async Task<int> CreateCustomWorkoutAsync(string userId, Models.Activity.CustomWorkoutModel model)
-        {
-            if (model == null) throw new ArgumentNullException(nameof(model));
-            if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
-
-            var customWorkout = new Data.Models.CustomWorkout
-            {
-                UserId = userId,
-                Name = model.Name,
-                ActivityCategoryId = model.ActivityCategoryId,
-                ActivityTypeId = model.ActivityTypeId,
-                DurationInMinutes = model.DurationInMinutes,
-                CaloriesBurned = model.CaloriesBurned,
-                Notes = model.Notes
-            };
-            _databaseContext.CustomWorkouts.Add(customWorkout);
-            await _databaseContext.SaveChangesAsync();
-            return customWorkout.Id;
-        }
-
-        public async Task<List<Models.Activity.CustomWorkoutModel>> GetUserCustomWorkoutsAsync(string userId)
-        {
-            return await _databaseContext.CustomWorkouts
-                .Include(cw => cw.ActivityCategory)
-                .Where(cw => cw.UserId == userId)
-                .Select(cw => new Models.Activity.CustomWorkoutModel
-                {
-                    Id = cw.Id,
-                    Name = cw.Name,
-                    ActivityCategoryId = cw.ActivityCategoryId,
-                    ActivityCategoryName = cw.ActivityCategory.Name,
-                    ActivityTypeId = cw.ActivityTypeId,
-                    DurationInMinutes = cw.DurationInMinutes,
-                    CaloriesBurned = cw.CaloriesBurned,
-                    Notes = cw.Notes
-                })
-                .ToListAsync();
-        }
+        // Custom workout methods removed
 
         public async Task<bool> DeleteActivityAsync(int id, string userId)
         {

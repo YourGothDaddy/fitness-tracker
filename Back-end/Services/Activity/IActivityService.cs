@@ -18,9 +18,8 @@ namespace Fitness_Tracker.Services.Activity
         Task<List<Models.Activity.ActivityTypeModel>> GetFavoriteActivityTypesAsync(string userId);
         Task<int> CreateCustomActivityTypeAsync(Models.Admins.AddActivityTypeModel model, string userId);
         Task<List<Models.Activity.ActivityTypeModel>> GetPublicActivityTypesAsync();
-        Task<List<Models.Activity.ActivityTypeModel>> GetUserCustomActivityTypesAsync(string userId);
-        Task<int> CreateCustomWorkoutAsync(string userId, Models.Activity.CustomWorkoutModel model);
-        Task<List<Models.Activity.CustomWorkoutModel>> GetUserCustomWorkoutsAsync(string userId);
+        // Custom activity types removed
+        // Custom workout methods removed
 
         Task<bool> DeleteActivityAsync(int id, string userId);
 

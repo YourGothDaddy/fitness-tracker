@@ -12,6 +12,5 @@ namespace Fitness_Tracker.Models.Activity
         public string? TerrainType { get; set; } // optional, e.g., "Moderate incline"
         public DateTime Date { get; set; }
         public bool? IsPublic { get; set; }
-        public string? Notes { get; set; }
     }
 } 

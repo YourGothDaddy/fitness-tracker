@@ -6,10 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
-  Modal,
-  Pressable,
   Alert,
-  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Stack } from "expo-router";
@@ -19,48 +16,26 @@ import CustomButton from "../../CustomButton";
 import { Colors } from "../../../../constants/Colors";
 import activityService from "@/app/services/activityService";
 
-const workoutCategories = [
-  {
-    name: "Cardio",
-    subcategories: [
-      "Cycling",
-      "Jumping Rope",
-      "Running",
-      "Swimming",
-      "Walking",
-    ],
-  },
-  {
-    name: "Gym",
-    subcategories: ["Resistance Training", "Circuit Training"],
-  },
-  {
-    name: "Outdoor Activity",
-    subcategories: ["Hiking", "Cycling"],
-  },
-];
+// Category/Subcategory constants removed
 
 const AddWorkoutView = () => {
   const router = useRouter();
-  const [category, setCategory] = useState(workoutCategories[0].name);
-  const [subcategory, setSubcategory] = useState(
-    workoutCategories[0].subcategories[0]
-  );
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
   const [duration, setDuration] = useState("");
   const [energy, setEnergy] = useState("");
   const [date, setDate] = useState(() => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
   });
-  const [notes, setNotes] = useState("");
-  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-  const [subcategoryModalVisible, setSubcategoryModalVisible] = useState(false);
+  // Notes removed
+  // Category/Subcategory modals removed
   const [dateError, setDateError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [activityTypes, setActivityTypes] = useState([]);
-  const [isCustom, setIsCustom] = useState(false);
+  // Custom workout toggle removed
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -79,33 +54,44 @@ const AddWorkoutView = () => {
         const res = await activityService.getActivityLevels();
         setCategories(res);
       } catch {
-        setCategories(workoutCategories);
+        setCategories([]);
       }
     };
     fetchCategories();
   }, []);
 
-  const handleCategorySelect = (cat) => {
-    setCategory(cat.name);
-    setSubcategory(cat.subcategories[0]);
-    setCategoryModalVisible(false);
-  };
-
-  const handleSubcategorySelect = (sub) => {
-    setSubcategory(sub);
-    setSubcategoryModalVisible(false);
-  };
+  // Category/Subcategory selection removed
 
   const handleDateChange = (text) => {
     setDate(text);
     setDateError("");
   };
 
+  const findMatchingActivityType = (types, input) => {
+    if (!input) return null;
+    const needle = String(input).trim().toLowerCase();
+    if (needle.length === 0) return null;
+    const normalized = (t) =>
+      String(t?.name ?? t?.Name ?? "")
+        .trim()
+        .toLowerCase();
+    // exact match
+    let match = types.find((t) => normalized(t) === needle);
+    if (match) return match;
+    // unique startsWith
+    const starts = types.filter((t) => normalized(t).startsWith(needle));
+    if (starts.length === 1) return starts[0];
+    // unique includes
+    const includes = types.filter((t) => normalized(t).includes(needle));
+    if (includes.length === 1) return includes[0];
+    return null;
+  };
+
   const handleSubmit = async () => {
     setDateError("");
     setError("");
     setSuccess("");
-    if (!category || !subcategory || !duration || !energy || !date) {
+    if (!subcategory || !duration || !energy || !date) {
       Alert.alert("Error", "Please fill in all required fields.");
       return;
     }
@@ -116,15 +102,8 @@ const AddWorkoutView = () => {
     }
     setIsLoading(true);
     try {
-      const foundType = activityTypes.find(
-        (t) => t.name === subcategory && t.category === category
-      );
-      const activityTypeId = foundType ? foundType.id : null;
-      if (!activityTypeId) {
-        setError("Could not find a matching activity type.");
-        setIsLoading(false);
-        return;
-      }
+      const foundType = findMatchingActivityType(activityTypes, subcategory);
+      const activityTypeId = foundType ? foundType.id ?? foundType.Id : 0; // allow backend to create by title
       const now = new Date();
       const selectedDate = new Date(date);
       const dateWithCurrentTime = new Date(
@@ -140,8 +119,8 @@ const AddWorkoutView = () => {
         durationInMinutes: duration,
         caloriesBurned: energy,
         activityTypeId,
+        title: subcategory,
         date: dateWithCurrentTime,
-        notes,
         isPublic: true,
       };
       await activityService.addActivity(payload);
@@ -161,69 +140,9 @@ const AddWorkoutView = () => {
     }
   };
 
-  const handleCustomCreate = async () => {
-    setError("");
-    setSuccess("");
-    if (!category || !subcategory || !duration || !energy) {
-      Alert.alert(
-        "Error",
-        "Please fill in all required fields for a custom workout."
-      );
-      return;
-    }
-    setIsLoading(true);
-    try {
-      // Find categoryId and activityTypeId
-      let activityCategoryId = 1;
-      let activityTypeId = null;
-      if (categories && categories.length > 0) {
-        const found = categories.find(
-          (c) => c.name === category || c.Name === category
-        );
-        activityCategoryId = found?.id || found?.Id || 1;
-      }
-      if (activityTypes && activityTypes.length > 0) {
-        const foundType = activityTypes.find(
-          (t) => t.name === subcategory && t.category === category
-        );
-        activityTypeId = foundType?.id || null;
-      }
-      if (!activityTypeId) {
-        setError("Could not find a matching activity type for custom workout.");
-        setIsLoading(false);
-        return;
-      }
-      const payload = {
-        name: subcategory,
-        activityCategoryId,
-        activityTypeId,
-        durationInMinutes: parseInt(duration),
-        caloriesBurned: parseInt(energy),
-        notes,
-      };
-      await activityService.createCustomWorkout(payload);
-      setSuccess("Custom workout created! It will appear in your Custom tab.");
-      Alert.alert(
-        "Success",
-        "Custom workout created! It will appear in your Custom tab."
-      );
-      setIsCustom(false);
-    } catch (err) {
-      setError(
-        err?.response?.data?.message || err.message || "An error occurred."
-      );
-      Alert.alert(
-        "Error",
-        err?.response?.data?.message || err.message || "An error occurred."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Custom workout creation removed
 
-  const currentCategory = workoutCategories.find(
-    (cat) => cat.name === category
-  );
+  // currentCategory removed
 
   return (
     <>
@@ -250,67 +169,15 @@ const AddWorkoutView = () => {
         >
           <Text style={styles.title}>Add Workout</Text>
 
-          {/* Category Picker */}
-          <Text style={styles.label}>Workout Category</Text>
-          <Pressable
-            onPress={() => setCategoryModalVisible(true)}
-            style={[styles.input, { justifyContent: "center" }]}
-          >
-            <Text style={styles.pickerValue}>{category}</Text>
-          </Pressable>
-          <Modal
-            visible={categoryModalVisible}
-            transparent
-            animationType="fade"
-          >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={() => setCategoryModalVisible(false)}
-            >
-              <View style={styles.modalContent}>
-                {workoutCategories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat.name}
-                    style={styles.modalOption}
-                    onPress={() => handleCategorySelect(cat)}
-                  >
-                    <Text style={styles.modalOptionText}>{cat.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Pressable>
-          </Modal>
-
-          {/* Subcategory Picker */}
-          <Text style={styles.label}>Workout Subcategory</Text>
-          <Pressable
-            onPress={() => setSubcategoryModalVisible(true)}
-            style={[styles.input, { justifyContent: "center" }]}
-          >
-            <Text style={styles.pickerValue}>{subcategory}</Text>
-          </Pressable>
-          <Modal
-            visible={subcategoryModalVisible}
-            transparent
-            animationType="fade"
-          >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={() => setSubcategoryModalVisible(false)}
-            >
-              <View style={styles.modalContent}>
-                {currentCategory.subcategories.map((sub) => (
-                  <TouchableOpacity
-                    key={sub}
-                    style={styles.modalOption}
-                    onPress={() => handleSubcategorySelect(sub)}
-                  >
-                    <Text style={styles.modalOptionText}>{sub}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Pressable>
-          </Modal>
+          {/* Workout Title only (Category/Subcategory removed) */}
+          <Text style={styles.label}>Workout Title</Text>
+          <CustomField
+            styles={[styles.input]}
+            placeholder="e.g., Running, Cycling"
+            value={subcategory}
+            onChangeText={setSubcategory}
+            textInputStyle={{ fontSize: 14 }}
+          />
 
           <View style={styles.row}>
             <CustomField
@@ -346,54 +213,15 @@ const AddWorkoutView = () => {
             <Text style={{ color: "red", marginBottom: 10 }}>{dateError}</Text>
           ) : null}
 
-          <Text style={styles.label}>Notes (optional):</Text>
-          <TextInput
-            style={[styles.input, { height: 80, textAlignVertical: "top" }]}
-            placeholder="Key notes about the workout"
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={4}
-          />
+          {/* Notes removed */}
 
-          <Text style={styles.label}>Add as Custom Workout?</Text>
-          <TouchableOpacity
-            style={{
-              marginBottom: 14,
-              backgroundColor: isCustom ? Colors.darkGreen.color : "#eee",
-              borderRadius: 8,
-              padding: 10,
-            }}
-            onPress={() => setIsCustom((prev) => !prev)}
-          >
-            <Text
-              style={{
-                color: isCustom ? "#fff" : Colors.darkGreen.color,
-                textAlign: "center",
-              }}
-            >
-              {isCustom
-                ? "Will be added as custom workout"
-                : "Tap to add as custom workout"}
-            </Text>
-          </TouchableOpacity>
-          {isCustom ? (
-            <CustomButton
-              title={isLoading ? "Adding..." : "Add Custom Workout"}
-              handleOnPress={handleCustomCreate}
-              containerStyles={styles.saveButton}
-              textStyles={styles.saveButtonText}
-              isLoading={isLoading}
-            />
-          ) : (
-            <CustomButton
-              title={isLoading ? "Adding..." : "Add Workout"}
-              handleOnPress={handleSubmit}
-              containerStyles={styles.saveButton}
-              textStyles={styles.saveButtonText}
-              isLoading={isLoading}
-            />
-          )}
+          <CustomButton
+            title={isLoading ? "Adding..." : "Add Workout"}
+            handleOnPress={handleSubmit}
+            containerStyles={styles.saveButton}
+            textStyles={styles.saveButtonText}
+            isLoading={isLoading}
+          />
           {error ? (
             <Text style={{ color: "red", textAlign: "center", marginTop: 10 }}>
               {error}

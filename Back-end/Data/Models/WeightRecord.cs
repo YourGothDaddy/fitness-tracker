@@ -21,6 +21,6 @@ namespace Fitness_Tracker.Data.Models
         [Required]
         public float Weight { get; set; }
 
-        public string Notes { get; set; }
+        // Notes removed
     }
 } 

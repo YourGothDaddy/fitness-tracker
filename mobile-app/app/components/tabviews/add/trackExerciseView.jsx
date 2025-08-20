@@ -388,7 +388,6 @@ const ExerciseItem = ({
         terrainType: terrainTypes.length > 0 ? terrain : undefined,
         date: selectedDate,
         isPublic: true,
-        notes: "",
       };
 
       await activityService.trackExercise(requestData);
@@ -949,21 +948,11 @@ const TrackExerciseView = () => {
         let items = [];
         if (activeTab === "all") {
           items = await activityService.getPublicActivityTypes();
-        } else if (activeTab === "custom") {
-          const customWorkouts = await activityService.getUserCustomWorkouts();
-          items = customWorkouts.map((cw) => ({
-            id: cw.id,
-            name: cw.name,
-            category: cw.activityCategoryName || cw.activityCategoryId,
-            calories: cw.caloriesBurned,
-            isPublic: false,
-          }));
         } else if (activeTab === "favorites") {
-          const [publicTypes, customTypes] = await Promise.all([
+          const [publicTypes] = await Promise.all([
             activityService.getPublicActivityTypes(),
-            activityService.getUserCustomActivityTypes(),
           ]);
-          items = [...publicTypes, ...customTypes].filter((t) =>
+          items = [...publicTypes].filter((t) =>
             favoriteActivityTypeIds.includes(t.id)
           );
         }
@@ -1034,17 +1023,11 @@ const TrackExerciseView = () => {
     );
   };
 
-  // Helper to determine if an item is a custom workout in the current tab
-  const isCustomOrFavoriteCustom = (item) => {
-    // In 'custom' tab, all are custom
-    if (activeTab === "custom") return true;
-    // In 'favorites' tab, check if item is custom (not public)
-    if (activeTab === "favorites" && item.isPublic === false) return true;
-    return false;
-  };
+  // Helper removed: no custom workouts
+  const isCustomOrFavoriteCustom = (item) => false;
 
   // Determine if the current tab is 'custom'
-  const isCustomTab = activeTab === "custom";
+  const isCustomTab = false;
 
   return (
     <>
@@ -1121,19 +1104,7 @@ const TrackExerciseView = () => {
               Favorites
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "custom" && styles.activeTab]}
-            onPress={() => setActiveTab("custom")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "custom" && styles.activeTabText,
-              ]}
-            >
-              Custom
-            </Text>
-          </TouchableOpacity>
+          {/* Custom tab removed */}
         </View>
 
         {loading ? (
@@ -1536,21 +1507,15 @@ const TrackExerciseView = () => {
             {activeTab !== "all" && (
               <>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>
-                    {activeTab === "favorites"
-                      ? "Favorite Activities"
-                      : "Custom Workouts"}
-                  </Text>
+                  <Text style={styles.sectionTitle}>Favorite Activities</Text>
                   <Text style={styles.sectionSubtitle}>
-                    {activeTab === "favorites"
-                      ? "Your saved favorite exercises"
-                      : "Your personalized workout routines"}
+                    {"Your saved favorite exercises"}
                   </Text>
                 </View>
                 {filteredItems.map((item, index) => {
                   const meta = getMetaForItem(item);
                   const hideEffortAndDuration = isCustomOrFavoriteCustom(item);
-                  const isCustomWorkout = activeTab === "custom";
+                  const isCustomWorkout = false;
                   return (
                     <ExerciseItem
                       key={item.id || index}
@@ -1567,7 +1532,7 @@ const TrackExerciseView = () => {
                       terrainTypes={meta.terrainTypes || []}
                       hideEffortAndDuration={hideEffortAndDuration}
                       isCustomWorkout={hideEffortAndDuration}
-                      customCalories={item.calories}
+                      customCalories={undefined}
                     />
                   );
                 })}

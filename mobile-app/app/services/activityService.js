@@ -62,8 +62,8 @@ class ActivityService {
     durationInMinutes,
     caloriesBurned,
     activityTypeId,
+    title,
     date,
-    notes,
     isPublic = true,
   }) {
     try {
@@ -72,8 +72,8 @@ class ActivityService {
         durationInMinutes: Number(durationInMinutes),
         caloriesBurned: Number(caloriesBurned),
         activityTypeId: Number(activityTypeId),
+        title,
         date: this.formatDate(date),
-        notes: notes,
         isPublic: isPublic,
       };
       const response = await axiosInstance.post(url, payload);
@@ -132,7 +132,6 @@ class ActivityService {
     terrainType,
     date,
     isPublic = true,
-    notes = "",
   }) {
     try {
       const url = `${API_URL}/api/activity/track-exercise`;
@@ -145,7 +144,6 @@ class ActivityService {
         terrainType: terrainType || null,
         date: this.formatDate(date),
         isPublic,
-        notes,
       };
 
       const response = await axiosInstance.post(url, payload);
@@ -243,17 +241,6 @@ class ActivityService {
     }
   }
 
-  async createCustomActivityType({ name, activityCategoryId, calories }) {
-    try {
-      const url = `${API_URL}/api/activity/custom-activity-type`;
-      const payload = { name, activityCategoryId, calories };
-      const response = await axiosInstance.post(url, payload);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async getPublicActivityTypes() {
     try {
       const url = `${API_URL}/api/activity/public-activity-types`;
@@ -264,50 +251,7 @@ class ActivityService {
     }
   }
 
-  async getUserCustomActivityTypes() {
-    try {
-      const url = `${API_URL}/api/activity/custom-activity-types`;
-      const response = await axiosInstance.get(url);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async createCustomWorkout({
-    name,
-    activityCategoryId,
-    activityTypeId,
-    durationInMinutes,
-    caloriesBurned,
-    notes,
-  }) {
-    try {
-      const url = `${API_URL}/api/activity/custom-workout`;
-      const payload = {
-        name,
-        activityCategoryId,
-        activityTypeId,
-        durationInMinutes,
-        caloriesBurned,
-        notes,
-      };
-      const response = await axiosInstance.post(url, payload);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getUserCustomWorkouts() {
-    try {
-      const url = `${API_URL}/api/activity/custom-workouts`;
-      const response = await axiosInstance.get(url);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
+  // Custom workout features removed
 }
 
 export const activityService = new ActivityService();

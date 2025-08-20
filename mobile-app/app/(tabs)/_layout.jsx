@@ -42,6 +42,7 @@ const TabsLayout = () => {
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const router = useRouter();
+  const [activeAddMenuTab, setActiveAddMenuTab] = React.useState("log"); // 'log' | 'add'
 
   // Handle hardware back button
   React.useEffect(() => {
@@ -234,125 +235,171 @@ const TabsLayout = () => {
               </LinearGradient>
             </View>
 
-            {/* 1. Add Food/Meal (renamed from Add Food) */}
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleAddFood}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-            >
-              <View
+            {/* Segmented control for Log/Add */}
+            <View style={styles.menuTabsContainer}>
+              <Pressable
+                onPress={() => setActiveAddMenuTab("log")}
                 style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: "#F0FFF0" },
+                  styles.menuTab,
+                  activeAddMenuTab === "log" && styles.menuTabActive,
                 ]}
               >
-                <MaterialIcons name="restaurant" size={28} color="#4CAF50" />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Add Food/Meal</Text>
-                <Text style={styles.menuItemSubtitle}>
-                  Add a new food or meal with detailed nutrition
+                <Text
+                  style={[
+                    styles.menuTabText,
+                    activeAddMenuTab === "log" && styles.menuTabTextActive,
+                  ]}
+                >
+                  Log
                 </Text>
-              </View>
-              <MaterialIcons
-                name="chevron-right"
-                size={24}
-                color="#CCC"
-                style={styles.menuItemArrow}
-              />
-            </Pressable>
+              </Pressable>
+              <Pressable
+                onPress={() => setActiveAddMenuTab("add")}
+                style={[
+                  styles.menuTab,
+                  activeAddMenuTab === "add" && styles.menuTabActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.menuTabText,
+                    activeAddMenuTab === "add" && styles.menuTabTextActive,
+                  ]}
+                >
+                  Add
+                </Text>
+              </Pressable>
+            </View>
 
-            {/* 2. Add Workout */}
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleAddWorkout}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: "#F0F0FF" },
-                ]}
-              >
-                <MaterialIcons
-                  name="fitness-center"
-                  size={28}
-                  color="#7B61FF"
-                />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Add Workout</Text>
-                <Text style={styles.menuItemSubtitle}>
-                  Add a new workout with details
-                </Text>
-              </View>
-              <MaterialIcons
-                name="chevron-right"
-                size={24}
-                color="#CCC"
-                style={styles.menuItemArrow}
-              />
-            </Pressable>
+            {activeAddMenuTab === "log" ? (
+              <>
+                {/* Log Food/Meal */}
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleTrackMeal}
+                  android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                >
+                  <View
+                    style={[
+                      styles.menuIconContainer,
+                      { backgroundColor: "#FFF0F0" },
+                    ]}
+                  >
+                    <MaterialIcons name="fastfood" size={28} color="#FF6B6B" />
+                  </View>
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemTitle}>Log Food/Meal</Text>
+                    <Text style={styles.menuItemSubtitle}>
+                      Log your food or meal intake and calories
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#CCC"
+                    style={styles.menuItemArrow}
+                  />
+                </Pressable>
 
-            {/* 3. Log Food/Meal (renamed from Track Meal) */}
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleTrackMeal}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: "#FFF0F0" },
-                ]}
-              >
-                <MaterialIcons name="fastfood" size={28} color="#FF6B6B" />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Log Food/Meal</Text>
-                <Text style={styles.menuItemSubtitle}>
-                  Log your food or meal intake and calories
-                </Text>
-              </View>
-              <MaterialIcons
-                name="chevron-right"
-                size={24}
-                color="#CCC"
-                style={styles.menuItemArrow}
-              />
-            </Pressable>
+                {/* Log Workout */}
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleLogWorkout}
+                  android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                >
+                  <View
+                    style={[
+                      styles.menuIconContainer,
+                      { backgroundColor: "#F0F8FF" },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="directions-run"
+                      size={28}
+                      color="#4DA6FF"
+                    />
+                  </View>
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemTitle}>Log Workout</Text>
+                    <Text style={styles.menuItemSubtitle}>
+                      Record your exercise activity
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#CCC"
+                    style={styles.menuItemArrow}
+                  />
+                </Pressable>
+              </>
+            ) : (
+              <>
+                {/* Add Food/Meal */}
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleAddFood}
+                  android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                >
+                  <View
+                    style={[
+                      styles.menuIconContainer,
+                      { backgroundColor: "#F0FFF0" },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="restaurant"
+                      size={28}
+                      color="#4CAF50"
+                    />
+                  </View>
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemTitle}>Add Food/Meal</Text>
+                    <Text style={styles.menuItemSubtitle}>
+                      Add a new food or meal with detailed nutrition
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#CCC"
+                    style={styles.menuItemArrow}
+                  />
+                </Pressable>
 
-            {/* 4. Log Workout */}
-            <Pressable
-              style={styles.menuItem}
-              onPress={handleLogWorkout}
-              android_ripple={{ color: "rgba(0,0,0,0.1)" }}
-            >
-              <View
-                style={[
-                  styles.menuIconContainer,
-                  { backgroundColor: "#F0F8FF" },
-                ]}
-              >
-                <MaterialIcons
-                  name="directions-run"
-                  size={28}
-                  color="#4DA6FF"
-                />
-              </View>
-              <View style={styles.menuItemContent}>
-                <Text style={styles.menuItemTitle}>Log Workout</Text>
-                <Text style={styles.menuItemSubtitle}>
-                  Record your exercise activity
-                </Text>
-              </View>
-              <MaterialIcons
-                name="chevron-right"
-                size={24}
-                color="#CCC"
-                style={styles.menuItemArrow}
-              />
-            </Pressable>
+                {/* Add Workout (routes to log) */}
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={handleAddWorkout}
+                  android_ripple={{ color: "rgba(0,0,0,0.1)" }}
+                >
+                  <View
+                    style={[
+                      styles.menuIconContainer,
+                      { backgroundColor: "#F0F0FF" },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name="fitness-center"
+                      size={28}
+                      color="#7B61FF"
+                    />
+                  </View>
+                  <View style={styles.menuItemContent}>
+                    <Text style={styles.menuItemTitle}>Add Workout</Text>
+                    <Text style={styles.menuItemSubtitle}>
+                      Add a new workout with details
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name="chevron-right"
+                    size={24}
+                    color="#CCC"
+                    style={styles.menuItemArrow}
+                  />
+                </Pressable>
+              </>
+            )}
 
             <View style={styles.menuFooter}>
               <Pressable style={styles.cancelButton} onPress={hideMenu}>
@@ -568,6 +615,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 6,
+  },
+  menuTabsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  menuTab: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+    marginHorizontal: 8,
+  },
+  menuTabActive: {
+    backgroundColor: "#E9F4DA",
+    borderColor: Colors.darkGreen.color,
+  },
+  menuTabText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  menuTabTextActive: {
+    color: Colors.darkGreen.color,
   },
   menuTitle: {
     color: "#fff",

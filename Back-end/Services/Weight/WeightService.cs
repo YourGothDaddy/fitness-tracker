@@ -122,7 +122,7 @@ namespace Fitness_Tracker.Services.Weight
             };
         }
 
-        public async Task<bool> AddWeightRecordAsync(string userId, DateTime date, float weight, string notes)
+        public async Task<bool> AddWeightRecordAsync(string userId, DateTime date, float weight)
         {
             var user = await _databaseContext.Users.FindAsync(userId);
             if (user == null)
@@ -136,7 +136,6 @@ namespace Fitness_Tracker.Services.Weight
             if (existingRecord != null)
             {
                 existingRecord.Weight = weight;
-                existingRecord.Notes = notes;
             }
             else
             {
@@ -145,7 +144,6 @@ namespace Fitness_Tracker.Services.Weight
                     UserId = userId,
                     Date = date.Date,
                     Weight = weight,
-                    Notes = notes
                 });
             }
 
@@ -155,7 +153,7 @@ namespace Fitness_Tracker.Services.Weight
             return true;
         }
 
-        public async Task<bool> UpdateWeightRecordAsync(int recordId, string userId, float weight, string notes)
+        public async Task<bool> UpdateWeightRecordAsync(int recordId, string userId, float weight)
         {
             var record = await _databaseContext.WeightRecords
                 .FirstOrDefaultAsync(wr => wr.Id == recordId && wr.UserId == userId);
@@ -166,7 +164,6 @@ namespace Fitness_Tracker.Services.Weight
             }
 
             record.Weight = weight;
-            record.Notes = notes;
 
             var mostRecentRecord = await _databaseContext.WeightRecords
                 .Where(wr => wr.UserId == userId)

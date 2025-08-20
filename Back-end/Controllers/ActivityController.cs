@@ -313,7 +313,6 @@ namespace Fitness_Tracker.Controllers
                     CaloriesBurned = (int)Math.Round(caloriesResult.CaloriesPerMinute * model.DurationInMinutes),
                     ActivityTypeId = activityTypeId.Value,
                     Date = model.Date,
-                    Notes = model.Notes,
                     IsPublic = model.IsPublic ?? true
                 };
                 await _activityService.AddActivityAsync(addModel, userId);
@@ -400,25 +399,7 @@ namespace Fitness_Tracker.Controllers
             return Ok(new { IsFavorite = isFavorite });
         }
 
-        /// <summary>
-        /// Creates a custom activity type for the authenticated user (not public).
-        /// </summary>
-        /// <remarks>
-        /// This endpoint is reserved for admin or global activity types. Users should use /custom-workout for personal custom workouts.
-        /// </remarks>
-        [HttpPost("custom-activity-type")]
-        public async Task<IActionResult> CreateCustomActivityType([FromBody] Models.Admins.AddActivityTypeModel model)
-        {
-            // Prevent regular users from using this endpoint for personal custom workouts
-            var validationResult = ValidateUserAuthentication(out var userId);
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-            // Optionally, check for admin role here if needed
-            // For now, always return BadRequest for non-admins
-            return BadRequest("This endpoint is reserved for admin or global activity types. Use /custom-workout for personal custom workouts.");
-        }
+        // Custom activity type creation endpoint removed
 
         /// <summary>
         /// Retrieves all public activity types (for 'All' section).
@@ -466,64 +447,12 @@ namespace Fitness_Tracker.Controllers
             return Ok(items);
         }
 
-        /// <summary>
-        /// Retrieves all custom activity types created by the current user (for 'Custom' section).
-        /// </summary>
-        [HttpGet("custom-activity-types")]
-        public async Task<IActionResult> GetUserCustomActivityTypes()
-        {
-            var validationResult = ValidateUserAuthentication(out var userId);
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-            var types = await _activityService.GetUserCustomActivityTypesAsync(userId);
-            return Ok(types);
-        }
+        // Custom activity types endpoint removed
 
         /// <summary>
         /// Creates a new custom workout for the current user.
         /// </summary>
-        [HttpPost("custom-workout")]
-        public async Task<IActionResult> CreateCustomWorkout([FromBody] Models.Activity.CustomWorkoutModel model)
-        {
-            var validationResult = ValidateUserAuthentication(out var userId);
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-            try
-            {
-                var id = await _activityService.CreateCustomWorkoutAsync(userId, model);
-                return Ok(new { Id = id, Message = "Custom workout created." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while creating custom workout: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Retrieves all custom workouts created by the current user.
-        /// </summary>
-        [HttpGet("custom-workouts")]
-        public async Task<IActionResult> GetUserCustomWorkouts()
-        {
-            var validationResult = ValidateUserAuthentication(out var userId);
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-            try
-            {
-                var workouts = await _activityService.GetUserCustomWorkoutsAsync(userId);
-                return Ok(workouts);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while retrieving custom workouts: {ex.Message}");
-            }
-        }
+        // Custom workout endpoints removed
 
         // PRIVATE METHODS
 

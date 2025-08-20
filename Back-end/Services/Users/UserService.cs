@@ -294,7 +294,6 @@ using Fitness_Tracker.Data.Models.Enums;
                 if (existingRecord != null)
                 {
                     existingRecord.Weight = model.CurrentWeight;
-                    existingRecord.Notes = "Updated via weight goal setting";
                 }
                 else
                 {
@@ -303,7 +302,6 @@ using Fitness_Tracker.Data.Models.Enums;
                         UserId = userId,
                         Date = DateTime.Now.Date,
                         Weight = model.CurrentWeight,
-                        Notes = "Set via weight goal"
                     });
                 }
                 

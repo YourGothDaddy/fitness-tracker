@@ -12,13 +12,12 @@ class WeightService {
     }
   }
 
-  async addWeightRecord(date, weight, notes = "") {
+  async addWeightRecord(date, weight) {
     try {
       const url = `${API_URL}/api/weight/record`;
       const response = await axiosInstance.post(url, {
         date: date.toISOString(),
         weight,
-        notes,
       });
       return response.data;
     } catch (error) {
@@ -26,12 +25,11 @@ class WeightService {
     }
   }
 
-  async updateWeightRecord(recordId, weight, notes = "") {
+  async updateWeightRecord(recordId, weight) {
     try {
       const url = `${API_URL}/api/weight/record/${recordId}`;
       const response = await axiosInstance.put(url, {
         weight,
-        notes,
       });
       return response.data;
     } catch (error) {
