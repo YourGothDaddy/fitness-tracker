@@ -1,10 +1,9 @@
-import { API_URL } from "@/constants/Config";
 import axiosInstance from "@/app/services/authService";
 
 class GoalsService {
   async getUserGoals() {
     try {
-      const response = await axiosInstance.get(`${API_URL}/api/goals`);
+      const response = await axiosInstance.get(`/api/goals`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
@@ -16,7 +15,7 @@ class GoalsService {
 
   async updateUserGoals(goals) {
     try {
-      const response = await axiosInstance.put(`${API_URL}/api/goals`, goals);
+      const response = await axiosInstance.put(`/api/goals`, goals);
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
@@ -28,14 +27,19 @@ class GoalsService {
 
   async calculateWeightGoal(weightGoalData) {
     try {
-      const response = await axiosInstance.post(`${API_URL}/api/goals/calculate-weight-goal`, weightGoalData);
+      const response = await axiosInstance.post(
+        `/api/goals/calculate-weight-goal`,
+        weightGoalData
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
       if (error.response?.status === 400) {
-        throw new Error(error.response.data?.message || "Invalid weight goal data");
+        throw new Error(
+          error.response.data?.message || "Invalid weight goal data"
+        );
       }
       throw error;
     }
@@ -43,14 +47,19 @@ class GoalsService {
 
   async setWeightGoal(weightGoalData) {
     try {
-      const response = await axiosInstance.post(`${API_URL}/api/goals/set-weight-goal`, weightGoalData);
+      const response = await axiosInstance.post(
+        `/api/goals/set-weight-goal`,
+        weightGoalData
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
       if (error.response?.status === 400) {
-        throw new Error(error.response.data?.message || "Invalid weight goal data");
+        throw new Error(
+          error.response.data?.message || "Invalid weight goal data"
+        );
       }
       throw error;
     }
@@ -58,7 +67,7 @@ class GoalsService {
 
   async getUserWeightGoal() {
     try {
-      const response = await axiosInstance.get(`${API_URL}/api/goals/weight-goal`);
+      const response = await axiosInstance.get(`/api/goals/weight-goal`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
@@ -70,14 +79,18 @@ class GoalsService {
 
   async recalculateDailyCalories() {
     try {
-      const response = await axiosInstance.post(`${API_URL}/api/goals/recalculate-daily-calories`);
+      const response = await axiosInstance.post(
+        `/api/goals/recalculate-daily-calories`
+      );
       return response.data;
     } catch (error) {
       if (error.response?.status === 401) {
         throw new Error("Please log in again");
       }
       if (error.response?.status === 400) {
-        throw new Error(error.response.data?.message || "Failed to recalculate daily calories");
+        throw new Error(
+          error.response.data?.message || "Failed to recalculate daily calories"
+        );
       }
       throw error;
     }

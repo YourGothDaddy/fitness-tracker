@@ -1,10 +1,10 @@
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import React, { useState, useEffect } from "react";
-import { router, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/app/context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import * as SecureStore from "expo-secure-store";
 import { authService } from "@/app/services/authService";
 
 const SignIn = () => {
@@ -13,6 +13,7 @@ const SignIn = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   useEffect(() => {
     checkAuthStatus();
@@ -37,7 +38,7 @@ const SignIn = () => {
     setError("");
 
     try {
-      await authService.login(email, password);
+      await login(email, password);
       router.replace("/dashboard");
     } catch (error) {
       setError("Invalid email or password. Please try again.");
@@ -117,7 +118,7 @@ const SignIn = () => {
 
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/sign-up")}>
               <Text style={styles.signUpLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>

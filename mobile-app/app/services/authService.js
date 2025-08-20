@@ -1,4 +1,4 @@
-import { API_URL } from "@/constants/Config";
+import { API_URL, API_TIMEOUT } from "@/constants/Config";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 
@@ -8,6 +8,7 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
+  timeout: API_TIMEOUT,
 });
 
 const decodeToken = (token) => {
@@ -193,6 +194,26 @@ axiosInstance.interceptors.response.use(
 );
 
 class AuthService {
+  async register(registrationData) {
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/auth/register`,
+        registrationData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          timeout: API_TIMEOUT,
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async login(email, password, ipAddress = "127.0.0.1") {
     try {
       const response = await axios.post(
@@ -207,6 +228,7 @@ class AuthService {
             "Content-Type": "application/json",
             Accept: "application/json",
           },
+          timeout: API_TIMEOUT,
         }
       );
 

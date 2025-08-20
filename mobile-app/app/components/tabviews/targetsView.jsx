@@ -21,23 +21,36 @@ const CircularProgress = ({
   strokeWidth = 2,
   color = "#8cc63f",
 }) => {
-  const outerRadius = (size - strokeWidth) / 2;
-  const innerRadius = (percentage / 100) * outerRadius;
+  const safeSize = Number.isFinite(size) ? size : 36;
+  const safeStroke = Number.isFinite(strokeWidth) ? strokeWidth : 2;
+  const outerRadius = Math.max(0, (safeSize - safeStroke) / 2);
+  const pct = Number.isFinite(percentage)
+    ? Math.max(0, Math.min(percentage, 100))
+    : 0;
+  const innerRadius = (pct / 100) * outerRadius;
 
   return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
+    <View style={{ width: safeSize, height: safeSize }}>
+      <Svg width={safeSize} height={safeSize}>
         {/* Outer circle (solid white background) */}
-        <Circle cx={size / 2} cy={size / 2} r={outerRadius} fill="white" />
+        <Circle
+          cx={safeSize / 2}
+          cy={safeSize / 2}
+          r={outerRadius}
+          fill="white"
+        />
         {/* Inner progress circle that grows from center */}
-        <Circle cx={size / 2} cy={size / 2} r={innerRadius} fill={color} />
+        <Circle
+          cx={safeSize / 2}
+          cy={safeSize / 2}
+          r={innerRadius}
+          fill={color}
+        />
         {/* Checkmark when 100% */}
-        {Math.round(percentage) >= 100 && (
+        {Math.round(pct) >= 100 && (
           <>
             {console.log(
-              `Rendering checkmark for ${percentage}% (rounded: ${Math.round(
-                percentage
-              )})`
+              `Rendering checkmark for ${pct}% (rounded: ${Math.round(pct)})`
             )}
             <Path
               d="M 10 18 L 15 23 L 26 12"
@@ -347,7 +360,12 @@ const TargetsView = () => {
 
   // Define renderProgressBar function first
   const renderProgressBar = useCallback((consumed, required) => {
-    const percentage = Math.min((consumed / required) * 100, 100);
+    const c = Number(consumed);
+    const r = Number(required);
+    let percentage = 0;
+    if (Number.isFinite(c) && Number.isFinite(r) && r > 0) {
+      percentage = Math.max(0, Math.min((c / r) * 100, 100));
+    }
     return (
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBar}>
@@ -381,16 +399,21 @@ const TargetsView = () => {
   const memoizedMainTargets = useMemo(() => {
     return (Array.isArray(mainTargets) ? mainTargets : []).map(
       (item, index) => {
-        let percentage = Math.min((item.consumed / item.required) * 100, 100);
+        const c = Number(item?.consumed);
+        const r = Number(item?.required);
+        let percentage = 0;
+        if (Number.isFinite(c) && Number.isFinite(r) && r > 0) {
+          percentage = Math.max(0, Math.min((c / r) * 100, 100));
+        }
         // Debug logging
-        console.log(
-          `${item.label}: ${item.consumed}/${item.required} = ${percentage}%`
-        );
+        console.log(`${item.label}: ${c}/${r} = ${percentage}%`);
         // Fix floating point precision issues - if very close to 100%, make it 100%
         if (percentage >= 99.5) {
           percentage = 100;
           console.log(`${item.label}: Adjusted to 100%`);
         }
+        const consumedText = Number.isFinite(c) ? c.toFixed(1) : "0.0";
+        const requiredText = Number.isFinite(r) ? r.toFixed(1) : "0.0";
         return (
           <View key={index} style={styles.mainTargetRow}>
             <View style={styles.targetIconContainer}>
@@ -406,11 +429,11 @@ const TargetsView = () => {
             <View style={styles.targetInfo}>
               <Text style={styles.targetLabel}>{item.label}</Text>
               <Text style={styles.targetValues}>
-                {item.consumed.toFixed(1)}/{item.required.toFixed(1)}{" "}
+                {consumedText}/{requiredText}{" "}
                 {item.label === "Energy" ? "kcal" : "g"}
               </Text>
             </View>
-            {renderProgressBar(item.consumed, item.required)}
+            {renderProgressBar(c, r)}
           </View>
         );
       }

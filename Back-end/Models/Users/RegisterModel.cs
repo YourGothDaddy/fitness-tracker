@@ -25,6 +25,8 @@
         public int ActivityLevelId { get; set; }
         [Required]
         public float WeeklyWeightChangeGoal { get; set; }
+        [Required]
+        public float GoalWeight { get; set; }
 
     }
 }

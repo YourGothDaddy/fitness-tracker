@@ -64,5 +64,37 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\e99f3056-1ba4-4299-a240-a5ade53f225c_0934781e-503d-4b4d-a332-045b4c61ddee.jpeg))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\e99f3056-1ba4-4299-a240-a5ade53f225c_6fc4aa57-2f0c-4c54-a152-d5c46fed6eb9.png))">
+      <SourceType>Package</SourceType>
+      <SourceId>Fitness-Tracker</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/Fitness-Tracker</BasePath>
+      <RelativePath>avatars/e99f3056-1ba4-4299-a240-a5ade53f225c_6fc4aa57-2f0c-4c54-a152-d5c46fed6eb9.png</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\e99f3056-1ba4-4299-a240-a5ade53f225c_6fc4aa57-2f0c-4c54-a152-d5c46fed6eb9.png))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\e99f3056-1ba4-4299-a240-a5ade53f225c_cc1a9463-19de-446d-ae79-8c5907c89588.jpeg))">
+      <SourceType>Package</SourceType>
+      <SourceId>Fitness-Tracker</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/Fitness-Tracker</BasePath>
+      <RelativePath>avatars/e99f3056-1ba4-4299-a240-a5ade53f225c_cc1a9463-19de-446d-ae79-8c5907c89588.jpeg</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\avatars\e99f3056-1ba4-4299-a240-a5ade53f225c_cc1a9463-19de-446d-ae79-8c5907c89588.jpeg))</OriginalItemSpec>
+    </StaticWebAsset>
   </ItemGroup>
 </Project>

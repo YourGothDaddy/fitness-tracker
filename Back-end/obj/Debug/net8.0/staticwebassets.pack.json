@@ -17,6 +17,14 @@
       "PackagePath": "staticwebassets\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_0934781e-503d-4b4d-a332-045b4c61ddee.jpeg"
     },
     {
+      "Id": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_6fc4aa57-2f0c-4c54-a152-d5c46fed6eb9.png",
+      "PackagePath": "staticwebassets\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_6fc4aa57-2f0c-4c54-a152-d5c46fed6eb9.png"
+    },
+    {
+      "Id": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_cc1a9463-19de-446d-ae79-8c5907c89588.jpeg",
+      "PackagePath": "staticwebassets\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_cc1a9463-19de-446d-ae79-8c5907c89588.jpeg"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Fitness-Tracker.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

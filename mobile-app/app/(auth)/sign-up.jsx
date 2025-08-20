@@ -15,16 +15,14 @@ import { router } from "expo-router";
 import React, { useState, useEffect, useCallback } from "react";
 import { Colors } from "@/constants/Colors";
 import Slider from "@react-native-community/slider";
-import Checkbox from "expo-checkbox";
 import CustomField from "@/app/components/CustomField";
 import CustomButton from "@/app/components/CustomButton";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
-import axios from "axios";
-import { API_URL } from "@/constants/Config";
-import goalsService from "@/app/services/goalsService";
+import { authService } from "@/app/services/authService";
+import { useAuth } from "@/app/context/AuthContext";
 
 const validateStage = (stage, data) => {
   switch (stage) {
@@ -75,6 +73,8 @@ const SignUp = () => {
   const [forecastDate, setForecastDate] = useState("-");
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState(null);
+
+  const { login } = useAuth();
 
   const activityLevels = [
     "No activity",
@@ -557,6 +557,23 @@ const SignUp = () => {
   };
 
   const handleContinue = async () => {
+    // Run validation for the current stage before proceeding
+    const validationError = validateStage(currentStage, {
+      gender,
+      weight,
+      height,
+      age,
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+
+    if (validationError) {
+      Alert.alert("Validation", validationError);
+      return;
+    }
+
     if (currentStage === 4) {
       try {
         // Prepare registration data
@@ -573,24 +590,15 @@ const SignUp = () => {
           weeklyWeightChangeGoal: weightChangePerWeek,
         };
 
-        // Add explicit headers
-        const response = await axios.post(
-          `${API_URL}/api/auth/register`,
-          registrationData,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            timeout: 5000, // 5 second timeout
-          }
-        );
+        // Register the user
+        await authService.register(registrationData);
 
-        if (response.status === 200) {
-          Alert.alert("Success", "Registration successful!", [
-            { text: "OK", onPress: () => router.push("/dashboard") },
-          ]);
-        }
+        // Auto-login via AuthContext after successful registration
+        await login(email, password);
+
+        Alert.alert("Success", "Registration successful!", [
+          { text: "OK", onPress: () => router.replace("/dashboard") },
+        ]);
       } catch (error) {
         Alert.alert(
           "Registration Failed",
