@@ -24,8 +24,8 @@
             try
             {
                 _logger.LogInformation(
-                    "Search request received. Query: {SearchQuery}, Page: {PageNumber}, Size: {PageSize}, Filter: {Filter}",
-                    searchModel.SearchQuery ?? "(empty)", searchModel.PageNumber, searchModel.PageSize, searchModel.Filter);
+                    "Search request received. Query: {SearchQuery}, Page: {PageNumber}, Size: {PageSize}, Filter: {Filter}, Category: {Category}",
+                    searchModel.SearchQuery ?? "(empty)", searchModel.PageNumber, searchModel.PageSize, searchModel.Filter, searchModel.Category ?? "(none)");
 
                 // Initialize searchModel.SearchQuery if it's null
                 searchModel.SearchQuery ??= string.Empty;
@@ -54,7 +54,8 @@
                     searchModel.PageNumber,
                     searchModel.PageSize,
                     searchModel.Filter,
-                    userId
+                    userId,
+                    searchModel.Category
                 );
 
                 _logger.LogInformation(
@@ -66,8 +67,8 @@
             catch (Exception ex)
             {
                 _logger.LogError(ex, 
-                    "Error occurred while searching foods. Query: {SearchQuery}, Filter: {Filter}", 
-                    searchModel.SearchQuery, searchModel.Filter);
+                    "Error occurred while searching foods. Query: {SearchQuery}, Filter: {Filter}, Category: {Category}", 
+                    searchModel.SearchQuery, searchModel.Filter, searchModel.Category);
                 
                 return StatusCode(500, new { 
                     Message = "An error occurred while searching food items.", 
@@ -75,6 +76,14 @@
                     StackTrace = ex.StackTrace // Only in development
                 });
             }
+        }
+
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetConsumableCategories()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var categories = await _consumableService.GetDistinctConsumableCategoriesAsync(userId);
+            return Ok(categories);
         }
 
         /// <summary>

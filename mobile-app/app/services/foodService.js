@@ -85,7 +85,8 @@ export async function searchConsumableItems(
   searchQuery = "",
   pageNumber = 1,
   pageSize = 20,
-  filter = "All"
+  filter = "All",
+  category = null
 ) {
   // Ensure searchQuery is never undefined
   const requestParams = {
@@ -94,6 +95,10 @@ export async function searchConsumableItems(
     pageSize,
     filter,
   };
+
+  if (category) {
+    requestParams.category = category;
+  }
 
   try {
     const response = await axiosInstance.get(`/api/consumable/search`, {
@@ -132,6 +137,15 @@ export async function searchConsumableItems(
     // Something else went wrong
 
     throw new Error("Failed to initiate search request.");
+  }
+}
+
+export async function getConsumableCategories() {
+  try {
+    const response = await axiosInstance.get(`/api/consumable/categories`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch categories.");
   }
 }
 

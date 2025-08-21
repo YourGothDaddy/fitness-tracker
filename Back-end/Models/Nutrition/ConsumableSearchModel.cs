@@ -13,6 +13,11 @@ namespace Fitness_Tracker.Models.Nutrition
         public int PageSize { get; set; } = 20;
         
         public ConsumableSearchFilter Filter { get; set; } = ConsumableSearchFilter.All;
+
+        /// <summary>
+        /// Optional category to filter by. Matches the MainCategory field of consumables.
+        /// </summary>
+        public string? Category { get; set; }
     }
 
     public enum ConsumableSearchFilter

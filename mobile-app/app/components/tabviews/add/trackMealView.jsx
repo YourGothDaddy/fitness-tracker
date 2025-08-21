@@ -32,6 +32,7 @@ import {
   getFavoriteConsumables,
   searchConsumableItems,
   getAllCustomConsumableItems,
+  getConsumableCategories,
 } from "@/app/services/foodService";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 
@@ -695,6 +696,8 @@ const TrackMealView = () => {
   const [favoritesTotalPages, setFavoritesTotalPages] = useState(1);
   const [logFoodModalVisible, setLogFoodModalVisible] = useState(false);
   const [foodToLog, setFoodToLog] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Refs for request deduplication and cleanup
   const requestIdRef = useRef(0);
@@ -741,6 +744,8 @@ const TrackMealView = () => {
             ? "Favorites"
             : activeTab === "custom"
             ? "Custom"
+            : activeTab === "category"
+            ? "All"
             : "All";
 
         const query = debouncedSearchQuery || "";
@@ -749,7 +754,8 @@ const TrackMealView = () => {
           query,
           currentPage,
           pageSize,
-          filter
+          filter,
+          activeTab === "category" ? selectedCategory : null
         );
 
         // Check if this request is still the latest one
@@ -811,13 +817,27 @@ const TrackMealView = () => {
         }
       }
     },
-    [activeTab, currentPage, pageSize, debouncedSearchQuery]
+    [activeTab, currentPage, pageSize, debouncedSearchQuery, selectedCategory]
   );
 
   // Fetch favorites only once on component mount
   useEffect(() => {
     fetchFavorites();
   }, [fetchFavorites]);
+
+  // Fetch categories once
+  useEffect(() => {
+    (async () => {
+      try {
+        const cats = await getConsumableCategories();
+        if (Array.isArray(cats)) {
+          setCategories(cats);
+        }
+      } catch (err) {
+        console.error("[TrackMealView] Failed to fetch categories:", err);
+      }
+    })();
+  }, []);
 
   // Main effect for fetching foods - consolidated from multiple useEffects
   useEffect(() => {
@@ -832,6 +852,13 @@ const TrackMealView = () => {
     setCurrentPage(1);
     setFavoritesPage(1);
   }, [activeTab]);
+
+  // Reset page when category changes
+  useEffect(() => {
+    if (activeTab === "category") {
+      setCurrentPage(1);
+    }
+  }, [selectedCategory]);
 
   // Handle favorites pagination (client-side for now)
   useEffect(() => {
@@ -894,6 +921,12 @@ const TrackMealView = () => {
           currentPage: favoritesPage,
           totalPages: favoritesTotalPages,
           onPageChange: setFavoritesPage,
+        }
+      : activeTab === "category"
+      ? {
+          currentPage,
+          totalPages,
+          onPageChange: setCurrentPage,
         }
       : null;
 
@@ -989,6 +1022,44 @@ const TrackMealView = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Categories - horizontally scrollable */}
+        {categories && categories.length > 0 && (
+          <View style={styles.categoriesTabs}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesTabsContent}
+            >
+              {categories.map((cat) => {
+                const isActive =
+                  activeTab === "category" && selectedCategory === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[
+                      styles.categoryTab,
+                      isActive && styles.activeCategoryTab,
+                    ]}
+                    onPress={() => {
+                      setSelectedCategory(cat);
+                      setActiveTab("category");
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryTabText,
+                        isActive && styles.activeTabText,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Foods List */}
         <ScrollView
           style={styles.foodsList}
@@ -1029,9 +1100,9 @@ const TrackMealView = () => {
           )}
         </ScrollView>
         {/* Pagination below the list */}
-        {(activeTab === "all" || activeTab === "favorites") && (
-          <Pagination {...paginationProps} />
-        )}
+        {(activeTab === "all" ||
+          activeTab === "favorites" ||
+          activeTab === "category") && <Pagination {...paginationProps} />}
       </SafeAreaView>
       <LogFoodModal
         visible={logFoodModalVisible}
@@ -1057,11 +1128,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     paddingLeft: 20,
-    paddingBottom: 30,
+    paddingBottom: 15,
   },
   searchSection: {
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 20,
   },
   searchContainer: {
@@ -1099,6 +1170,7 @@ const styles = StyleSheet.create({
   },
   foodsListContent: {
     paddingHorizontal: 20,
+    paddingTop: 0,
     paddingBottom: 20,
   },
   foodItemContainer: {
@@ -1107,7 +1179,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 16,
     marginBottom: 12,
-    padding: 15,
+    padding: 12,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -1127,19 +1199,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   macrosContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
   macroText: {
     fontSize: 14,
     color: "#666",
     backgroundColor: "#f5f5f5",
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   addFoodButton: {
@@ -1148,8 +1220,37 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 5,
     gap: 10,
+  },
+  categoriesTabs: {
+    paddingHorizontal: 20,
+    marginBottom: 0,
+    height: 29,
+    overflow: "hidden",
+  },
+  categoriesTabsContent: {
+    flexDirection: "row",
+    gap: 8,
+    paddingRight: 20,
+  },
+  categoryTab: {
+    paddingVertical: 0,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: "#f5f5f5",
+    height: 21,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  categoryTabText: {
+    color: "#666",
+    fontSize: 10,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  activeCategoryTab: {
+    backgroundColor: Colors.darkGreen.color,
   },
   tab: {
     paddingVertical: 8,

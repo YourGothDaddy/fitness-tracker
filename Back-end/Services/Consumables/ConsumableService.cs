@@ -19,17 +19,18 @@ namespace Fitness_Tracker.Services.Consumables
         }
 
         public async Task<PagedResult<ConsumableItem>> SearchConsumableItemsAsync(
-            string query, 
-            int pageNumber, 
-            int pageSize, 
+            string query,
+            int pageNumber,
+            int pageSize,
             ConsumableSearchFilter filter,
-            string? userId = null)
+            string? userId = null,
+            string? category = null)
         {
             try
             {
                 _logger.LogInformation(
-                    "Starting search operation. Query: {Query}, Filter: {Filter}, UserId: {UserId}",
-                    query, filter, userId ?? "anonymous");
+                    "Starting search operation. Query: {Query}, Filter: {Filter}, Category: {Category}, UserId: {UserId}",
+                    query, filter, category ?? "(none)", userId ?? "anonymous");
 
                 // Start with base query
                 IQueryable<ConsumableItem> baseQuery = _databaseContext.ConsumableItems;
@@ -81,6 +82,14 @@ namespace Fitness_Tracker.Services.Consumables
                         break;
                 }
 
+                // Apply category filter (case-insensitive exact match)
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    var lowered = category.ToLower();
+                    baseQuery = baseQuery.Where(ci => ci.MainCategory != null && ci.MainCategory.ToLower() == lowered);
+                    _logger.LogDebug("Applied Category filter for category: {Category}", category);
+                }
+
                 // Log the generated SQL query for debugging
                 var queryString = baseQuery.ToString();
                 _logger.LogDebug("Generated SQL query: {Query}", queryString);
@@ -111,10 +120,32 @@ namespace Fitness_Tracker.Services.Consumables
             catch (Exception ex)
             {
                 _logger.LogError(ex, 
-                    "Error occurred during search operation. Query: {Query}, Filter: {Filter}, UserId: {UserId}",
-                    query, filter, userId ?? "anonymous");
+                    "Error occurred during search operation. Query: {Query}, Filter: {Filter}, Category: {Category}, UserId: {UserId}",
+                    query, filter, category ?? "(none)", userId ?? "anonymous");
                 throw; // Rethrow to maintain the exception chain
             }
+        }
+
+        public async Task<List<string>> GetDistinctConsumableCategoriesAsync(string? userId = null)
+        {
+            // Include public items; if userId present include user's items too
+            IQueryable<ConsumableItem> query = _databaseContext.ConsumableItems;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(ci => ci.IsPublic || ci.UserId == userId);
+            }
+            else
+            {
+                query = query.Where(ci => ci.IsPublic);
+            }
+
+            return await query
+                .Where(ci => ci.MainCategory != null && ci.MainCategory != "")
+                .Select(ci => ci.MainCategory!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
         }
 
         public async Task<List<ConsumableItem>> GetAllPublicConsumableItemsAsync()
