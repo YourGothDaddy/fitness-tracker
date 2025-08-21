@@ -147,6 +147,8 @@ namespace Fitness_Tracker.Services.Consumables
             var newConsumableItem = new ConsumableItem
             {
                 Name = model.Name,
+                SubTitle = model.SubTitle,
+                MainCategory = model.MainCategory,
                 CaloriesPer100g = model.CaloriesPer100g,
                 ProteinPer100g = model.ProteinPer100g,
                 CarbohydratePer100g = model.CarbohydratePer100g,

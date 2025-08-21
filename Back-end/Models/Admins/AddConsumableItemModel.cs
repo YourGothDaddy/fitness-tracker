@@ -28,5 +28,6 @@
         /// </summary>
         public string? UserId { get; set; }
         public string? SubTitle { get; set; } // Now nullable
+        public string? MainCategory { get; set; } // Main category for the consumable item
     }
 }

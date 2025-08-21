@@ -634,22 +634,52 @@
                         if (!string.IsNullOrWhiteSpace(val))
                             subTitle = val;
                     }
-                    if (await context.ConsumableItems.AnyAsync(c => c.Name == name && c.SubTitle == subTitle))
+                    // Get macronutrients first for duplicate checking
+                    int calories = item.TryGetProperty("CaloriesPer100g", out var cal) && cal.ValueKind == JsonValueKind.Number ? cal.GetInt32() : 0;
+                    double protein = item.TryGetProperty("ProteinPer100g", out var prot) && prot.ValueKind == JsonValueKind.Number ? prot.GetDouble() : 0;
+                    double carbs = item.TryGetProperty("CarbohydratesPer100g", out var carb) && carb.ValueKind == JsonValueKind.Number ? carb.GetDouble() : 0;
+                    double fat = item.TryGetProperty("FatsPer100g", out var fatEl) && fatEl.ValueKind == JsonValueKind.Number ? fatEl.GetDouble() : 0;
+
+                    // Check for existing items using precise matching (name + subtitle + macronutrients)
+                    var existingItems = await context.ConsumableItems
+                        .Where(c => c.Name == name)
+                        .ToListAsync();
+
+                    bool itemExists = false;
+                    foreach (var existing in existingItems)
+                    {
+                        if (existing.SubTitle == subTitle &&
+                            existing.CaloriesPer100g == calories &&
+                            existing.ProteinPer100g == protein &&
+                            existing.CarbohydratePer100g == carbs &&
+                            existing.FatPer100g == fat)
+                        {
+                            itemExists = true;
+                            break;
+                        }
+                    }
+
+                    if (itemExists)
                     {
                         skipped++;
                         Console.WriteLine($"[Seeder] Skipped existing: {name} | {subTitle}");
                         continue;
                     }
 
-                    int calories = item.TryGetProperty("CaloriesPer100g", out var cal) && cal.ValueKind == JsonValueKind.Number ? cal.GetInt32() : 0;
-                    double protein = item.TryGetProperty("ProteinPer100g", out var prot) && prot.ValueKind == JsonValueKind.Number ? prot.GetDouble() : 0;
-                    double carbs = item.TryGetProperty("CarbohydratesPer100g", out var carb) && carb.ValueKind == JsonValueKind.Number ? carb.GetDouble() : 0;
-                    double fat = item.TryGetProperty("FatsPer100g", out var fatEl) && fatEl.ValueKind == JsonValueKind.Number ? fatEl.GetDouble() : 0;
+                    // Get MainCategory from JSON
+                    string? mainCategory = null;
+                    if (item.TryGetProperty("MainCategory", out var mainCategoryProp) && mainCategoryProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = mainCategoryProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            mainCategory = val;
+                    }
 
                     var model = new AddConsumableItemModel
                     {
                         Name = name,
                         SubTitle = subTitle,
+                        MainCategory = mainCategory,
                         CaloriesPer100g = calories,
                         ProteinPer100g = protein,
                         CarbohydratePer100g = carbs,
@@ -782,9 +812,945 @@
             {
                 await context.SaveChangesAsync();
                 Console.WriteLine($"[SubTitle Seeder] Saved {updated} updates to database.");
+                
+                // Store the final hash for future comparisons
+                var finalDbHash = await CalculateDatabaseHash(context);
+                await StoreHash(context, finalDbHash, "SubTitle");
+                Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
             }
 
             Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+        }
+
+        private static async Task SeedConsumableItemSubtitlesAsync(ApplicationDbContext context, List<JsonElement> items)
+        {
+            Console.WriteLine($"[SubTitle Seeder] Starting to update subtitles for {items.Count} items...");
+
+            int updated = 0;
+            int skipped = 0;
+            int errors = 0;
+
+            foreach (var item in items)
+            {
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var name = titleProp.GetString();
+                    string? subTitle = null;
+                    
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(subTitle))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var existingItem = await context.ConsumableItems.FirstOrDefaultAsync(c => c.Name == name);
+                    if (existingItem != null && string.IsNullOrEmpty(existingItem.SubTitle))
+                    {
+                        existingItem.SubTitle = subTitle;
+                        updated++;
+                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                    }
+                    else if (existingItem != null && !string.IsNullOrEmpty(existingItem.SubTitle))
+                    {
+                        skipped++;
+                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                    }
+                    else
+                    {
+                        skipped++;
+                        Console.WriteLine($"[SubTitle Seeder] Skipped (not found in DB): {name}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[SubTitle Seeder] Error: {ex.Message}");
+                }
+            }
+
+            if (updated > 0)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[SubTitle Seeder] Saved {updated} updates to database.");
+            }
+            
+            // Always store the final hash for future comparisons (even if no updates were made)
+            var finalDbHash = await CalculateDatabaseHash(context);
+            await StoreHash(context, finalDbHash, "SubTitle");
+            Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
+
+            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+        }
+
+        private static ConsumableItem? FindBestMatch(List<ConsumableItem> potentialMatches, string? subTitle, int calories, double protein, double carbs, double fat)
+        {
+            if (potentialMatches.Count == 0) return null;
+            if (potentialMatches.Count == 1) return potentialMatches[0];
+
+            var bestScore = -1;
+            ConsumableItem? bestMatch = null;
+
+            foreach (var match in potentialMatches)
+            {
+                var score = CalculateMatchScore(match, subTitle, calories, protein, carbs, fat);
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMatch = match;
+                }
+            }
+
+            return bestMatch;
+        }
+
+        private static int CalculateMatchScore(ConsumableItem dbItem, string? subTitle, int calories, double protein, double carbs, double fat)
+        {
+            var score = 0;
+
+            // SubTitle match (highest priority)
+            if (dbItem.SubTitle == subTitle) score += 100;
+            else if (string.IsNullOrEmpty(dbItem.SubTitle) && string.IsNullOrEmpty(subTitle)) score += 50;
+            else if (string.IsNullOrEmpty(dbItem.SubTitle) || string.IsNullOrEmpty(subTitle)) score += 25;
+
+            // Macronutrient matches (tolerance for small differences)
+            if (Math.Abs(dbItem.CaloriesPer100g - calories) <= 1) score += 20;
+            else if (Math.Abs(dbItem.CaloriesPer100g - calories) <= 5) score += 10;
+
+            if (Math.Abs(dbItem.ProteinPer100g - protein) <= 0.1) score += 20;
+            else if (Math.Abs(dbItem.ProteinPer100g - protein) <= 0.5) score += 10;
+
+            if (Math.Abs(dbItem.CarbohydratePer100g - carbs) <= 0.1) score += 20;
+            else if (Math.Abs(dbItem.CarbohydratePer100g - carbs) <= 0.5) score += 10;
+
+            if (Math.Abs(dbItem.FatPer100g - fat) <= 0.1) score += 20;
+            else if (Math.Abs(dbItem.FatPer100g - fat) <= 0.5) score += 10;
+
+            return score;
+        }
+
+        private static async Task<(ConsumableItem? Item, string MatchStrategy)> GuaranteedFindMatch(ApplicationDbContext context, string name, string? subTitle, int calories, double protein, double carbs, double fat)
+        {
+            // First try: exact match by name + subtitle + macronutrients
+            var exactMatch = await context.ConsumableItems.FirstOrDefaultAsync(c => 
+                c.Name == name && 
+                c.SubTitle == subTitle &&
+                c.CaloriesPer100g == calories &&
+                c.ProteinPer100g == protein &&
+                c.CarbohydratePer100g == carbs &&
+                c.FatPer100g == fat);
+
+            if (exactMatch != null) return (exactMatch, "exact");
+
+            // Second try: match by name + subtitle (ignore macronutrients)
+            var subtitleMatch = await context.ConsumableItems.FirstOrDefaultAsync(c => 
+                c.Name == name && 
+                c.SubTitle == subTitle);
+
+            if (subtitleMatch != null) return (subtitleMatch, "subtitle");
+
+            // Third try: match by name only (take the first one without MainCategory)
+            var nameMatch = await context.ConsumableItems
+                .Where(c => c.Name == name)
+                .OrderBy(c => string.IsNullOrEmpty(c.MainCategory) ? 0 : 1) // Prioritize items without MainCategory
+                .FirstOrDefaultAsync();
+
+            if (nameMatch != null) return (nameMatch, "name-only");
+
+            return (null, "none");
+        }
+
+        private static async Task AnalyzeMainCategoryStatus(ApplicationDbContext context, List<JsonElement> jsonItems)
+        {
+            Console.WriteLine($"[MainCategory Seeder] === ANALYSIS ===");
+            
+            // Count JSON items with MainCategory
+            int jsonItemsWithMainCategory = 0;
+            var jsonMainCategories = new HashSet<string>();
+            
+            foreach (var item in jsonItems)
+            {
+                if (item.TryGetProperty("MainCategory", out var mainCatProp) && 
+                    mainCatProp.ValueKind == JsonValueKind.String && 
+                    !string.IsNullOrWhiteSpace(mainCatProp.GetString()))
+                {
+                    jsonItemsWithMainCategory++;
+                    jsonMainCategories.Add(mainCatProp.GetString()!);
+                }
+            }
+            
+            Console.WriteLine($"[MainCategory Seeder] JSON Analysis:");
+            Console.WriteLine($"[MainCategory Seeder]   Total JSON items: {jsonItems.Count}");
+            Console.WriteLine($"[MainCategory Seeder]   JSON items with MainCategory: {jsonItemsWithMainCategory}");
+            Console.WriteLine($"[MainCategory Seeder]   Unique MainCategories in JSON: {jsonMainCategories.Count}");
+            
+            // Show some sample MainCategories from JSON
+            Console.WriteLine($"[MainCategory Seeder]   Sample MainCategories: {string.Join(", ", jsonMainCategories.Take(10))}");
+            
+            // Database analysis
+            var totalDbItems = await context.ConsumableItems.CountAsync();
+            var dbItemsWithMainCategory = await context.ConsumableItems.CountAsync(c => !string.IsNullOrEmpty(c.MainCategory));
+            var dbItemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+            
+            Console.WriteLine($"[MainCategory Seeder] Database Analysis:");
+            Console.WriteLine($"[MainCategory Seeder]   Total DB items: {totalDbItems}");
+            Console.WriteLine($"[MainCategory Seeder]   DB items with MainCategory: {dbItemsWithMainCategory}");
+            Console.WriteLine($"[MainCategory Seeder]   DB items without MainCategory: {dbItemsWithoutMainCategory}");
+            
+            // Show MainCategories in database
+            var dbMainCategories = await context.ConsumableItems
+                .Where(c => !string.IsNullOrEmpty(c.MainCategory))
+                .Select(c => c.MainCategory)
+                .Distinct()
+                .ToListAsync();
+            
+            Console.WriteLine($"[MainCategory Seeder]   Unique MainCategories in DB: {dbMainCategories.Count}");
+            Console.WriteLine($"[MainCategory Seeder]   Sample DB MainCategories: {string.Join(", ", dbMainCategories.Take(10))}");
+            
+            Console.WriteLine($"[MainCategory Seeder] === END ANALYSIS ===");
+        }
+
+        private static async Task<bool> ShouldSkipSeeding(ApplicationDbContext context, List<JsonElement> jsonItems, string operationType = "MainCategory")
+        {
+            Console.WriteLine($"[Hash Check] Checking if {operationType} seeding is needed...");
+            
+            try
+            {
+                // Get the stored database hash from the database
+                var storedDbHash = await GetStoredHash(context, operationType);
+                
+                if (string.IsNullOrEmpty(storedDbHash))
+                {
+                    Console.WriteLine($"[Hash Check] No stored database hash found for {operationType} - seeding needed");
+                    return false;
+                }
+
+                // Calculate current database hash
+                var currentDbHash = await CalculateDatabaseHash(context);
+                Console.WriteLine($"[Hash Check] Current database hash: {currentDbHash}");
+                Console.WriteLine($"[Hash Check] Stored {operationType} hash: {storedDbHash}");
+                
+                // Compare database hashes - if they match, no changes were made, so skip seeding
+                if (currentDbHash == storedDbHash)
+                {
+                    Console.WriteLine($"[Hash Check] Database hashes match - no changes detected, skipping {operationType} seeding");
+                    return true;
+                }
+                
+                Console.WriteLine($"[Hash Check] Database hashes differ - changes detected, {operationType} seeding needed");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Hash Check] Error during {operationType} hash check: {ex.Message}");
+                return false; // If hash check fails, proceed with seeding
+            }
+        }
+
+        private static async Task<bool> ShouldSkipAllSeeding(ApplicationDbContext context, List<JsonElement> jsonItems)
+        {
+            Console.WriteLine($"[Master Hash Check] Checking if any seeding operations are needed...");
+            
+            try
+            {
+                // Check if we have stored hashes for both operations
+                var storedSubTitleHash = await GetStoredHash(context, "SubTitle");
+                var storedMainCategoryHash = await GetStoredHash(context, "MainCategory");
+                
+                if (string.IsNullOrEmpty(storedSubTitleHash) && string.IsNullOrEmpty(storedMainCategoryHash))
+                {
+                    Console.WriteLine($"[Master Hash Check] No stored hashes found - seeding operations needed");
+                    return false;
+                }
+
+                // Calculate current database hash once for efficiency
+                var currentDbHash = await CalculateDatabaseHash(context);
+                Console.WriteLine($"[Master Hash Check] Current database hash: {currentDbHash}");
+                
+                // Check if both operations can be skipped
+                bool skipSubTitle = !string.IsNullOrEmpty(storedSubTitleHash) && currentDbHash == storedSubTitleHash;
+                bool skipMainCategory = !string.IsNullOrEmpty(storedMainCategoryHash) && currentDbHash == storedMainCategoryHash;
+                
+                if (skipSubTitle && skipMainCategory)
+                {
+                    Console.WriteLine($"[Master Hash Check] All seeding operations can be skipped - no changes detected");
+                    return true;
+                }
+                
+                Console.WriteLine($"[Master Hash Check] Some seeding operations needed - proceeding with individual checks");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Master Hash Check] Error during master hash check: {ex.Message}");
+                return false; // If hash check fails, proceed with seeding
+            }
+        }
+
+        private static async Task<string> GetStoredHash(ApplicationDbContext context, string operationType = "MainCategory")
+        {
+            // Store the database hash in a special consumable item
+            // In a production system, you might want a dedicated table for this
+            try
+            {
+                // Check if we have any items with a special marker
+                var hashItem = await context.ConsumableItems
+                    .Where(c => c.Name == "__DATABASE_HASH__" && c.SubTitle == $"__{operationType.ToUpper()}_SEEDER__")
+                    .FirstOrDefaultAsync();
+                
+                return hashItem?.MainCategory ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static async Task StoreHash(ApplicationDbContext context, string hash, string operationType = "MainCategory")
+        {
+            try
+            {
+                // Store the database hash in a special consumable item
+                var hashItem = await context.ConsumableItems
+                    .Where(c => c.Name == "__DATABASE_HASH__" && c.SubTitle == $"__{operationType.ToUpper()}_SEEDER__")
+                    .FirstOrDefaultAsync();
+                
+                if (hashItem == null)
+                {
+                    // Create the hash storage item
+                    hashItem = new ConsumableItem
+                    {
+                        Name = "__DATABASE_HASH__",
+                        SubTitle = $"__{operationType.ToUpper()}_SEEDER__",
+                        MainCategory = hash,
+                        CaloriesPer100g = 0,
+                        ProteinPer100g = 0,
+                        CarbohydratePer100g = 0,
+                        FatPer100g = 0,
+                        Type = TypeOfConsumable.Food,
+                        IsPublic = false,
+                        UserId = null
+                    };
+                    context.ConsumableItems.Add(hashItem);
+                }
+                else
+                {
+                    hashItem.MainCategory = hash;
+                }
+                
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[Hash Check] Stored new {operationType} database hash: {hash}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Hash Check] Error storing {operationType} database hash: {ex.Message}");
+            }
+        }
+
+        private static async Task<string> CalculateDatabaseHash(ApplicationDbContext context)
+        {
+            // Get all consumable items with their key properties
+            var items = await context.ConsumableItems
+                .Where(c => c.Name != "__DATABASE_HASH__") // Exclude our hash storage item
+                .Select(c => new
+                {
+                    c.Name,
+                    c.SubTitle,
+                    c.MainCategory,
+                    c.CaloriesPer100g,
+                    c.ProteinPer100g,
+                    c.CarbohydratePer100g,
+                    c.FatPer100g
+                })
+                .OrderBy(c => c.Name)
+                .ThenBy(c => c.SubTitle)
+                .ToListAsync();
+
+            // Create a string representation for hashing
+            var dbContent = string.Join("|", items.Select(i => 
+                $"{i.Name}|{i.SubTitle ?? ""}|{i.MainCategory ?? ""}|{i.CaloriesPer100g}|{i.ProteinPer100g}|{i.CarbohydratePer100g}|{i.FatPer100g}"));
+
+            // Calculate SHA256 hash
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(dbContent);
+            var hashBytes = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hashBytes);
+        }
+
+        private static string GetSafeIntegerString(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Number)
+                return "0";
+            
+            try
+            {
+                // Try to get as integer first
+                return prop.GetInt32().ToString();
+            }
+            catch (FormatException)
+            {
+                try
+                {
+                    // If it fails, try as double and convert to int
+                    return ((int)prop.GetDouble()).ToString();
+                }
+                catch
+                {
+                    return "0";
+                }
+            }
+        }
+
+        private static string GetSafeDoubleString(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Number)
+                return "0";
+            
+            try
+            {
+                return prop.GetDouble().ToString();
+            }
+            catch
+            {
+                return "0";
+            }
+        }
+
+        private static int GetSafeInteger(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Number)
+                return 0;
+            
+            try
+            {
+                // Try to get as integer first
+                return prop.GetInt32();
+            }
+            catch (FormatException)
+            {
+                try
+                {
+                    // If it fails, try as double and convert to int
+                    return (int)prop.GetDouble();
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
+        private static double GetSafeDouble(JsonElement item, string propertyName)
+        {
+            if (!item.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Number)
+                return 0;
+            
+            try
+            {
+                return prop.GetDouble();
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private static string CalculateJsonHash(List<JsonElement> jsonItems)
+        {
+            // Create a string representation of JSON items for hashing
+            var jsonContent = string.Join("|", jsonItems.Select(item =>
+            {
+                var name = item.TryGetProperty("Title", out var titleProp) && titleProp.ValueKind == JsonValueKind.String ? titleProp.GetString() ?? "" : "";
+                var subTitle = item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String ? subTitleProp.GetString() ?? "" : "";
+                var mainCategory = item.TryGetProperty("MainCategory", out var mainCatProp) && mainCatProp.ValueKind == JsonValueKind.String ? mainCatProp.GetString() ?? "" : "";
+                var calories = GetSafeIntegerString(item, "CaloriesPer100g");
+                var protein = GetSafeDoubleString(item, "ProteinPer100g");
+                var carbs = GetSafeDoubleString(item, "CarbohydratesPer100g");
+                var fat = GetSafeDoubleString(item, "FatsPer100g");
+                
+                return $"{name}|{subTitle}|{mainCategory}|{calories}|{protein}|{carbs}|{fat}";
+            }).OrderBy(s => s));
+
+            // Calculate SHA256 hash
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(jsonContent);
+            var hashBytes = sha256.ComputeHash(bytes);
+            return Convert.ToBase64String(hashBytes);
+        }
+
+        public static async Task SeedAllConsumableItemUpdatesAsync(IServiceProvider serviceProvider)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var filePath = "consumableItem.json";
+            Console.WriteLine($"[Unified Seeder] Looking for file at: {filePath}");
+            
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[Unified Seeder] File not found: {filePath}");
+                return;
+            }
+
+            using var stream = File.OpenRead(filePath);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var items = await JsonSerializer.DeserializeAsync<List<JsonElement>>(stream, options);
+            
+            if (items == null)
+            {
+                Console.WriteLine("[Unified Seeder] No items found in JSON file.");
+                return;
+            }
+
+            // Master hash check - determine what seeding operations are needed
+            if (await ShouldSkipAllSeeding(context, items))
+            {
+                Console.WriteLine($"[Unified Seeder] All seeding operations can be skipped - no changes detected");
+                return;
+            }
+
+            // Check and run SubTitle seeder if needed
+            if (!await ShouldSkipSeeding(context, items, "SubTitle"))
+            {
+                Console.WriteLine($"[Unified Seeder] Running SubTitle seeder...");
+                await SeedConsumableItemSubtitlesAsync(context, items);
+            }
+            else
+            {
+                Console.WriteLine($"[Unified Seeder] Skipping SubTitle seeder - no changes detected");
+            }
+            
+            // Check and run MainCategory seeder if needed
+            if (!await ShouldSkipSeeding(context, items, "MainCategory"))
+            {
+                Console.WriteLine($"[Unified Seeder] Running MainCategory seeder...");
+                await SeedConsumableItemMainCategoriesAsync(context, items);
+            }
+            else
+            {
+                Console.WriteLine($"[Unified Seeder] Skipping MainCategory seeder - no changes detected");
+            }
+        }
+
+        private static async Task SeedConsumableItemMainCategoriesAsync(ApplicationDbContext context, List<JsonElement> items)
+        {
+            // Analyze the current state
+            await AnalyzeMainCategoryStatus(context, items);
+
+            // Get current database state for comparison
+            var totalItemsInDb = await context.ConsumableItems.CountAsync();
+            var itemsWithMainCategory = await context.ConsumableItems.CountAsync(c => !string.IsNullOrEmpty(c.MainCategory));
+            var itemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+
+            int updated = 0;
+            int skipped = 0;
+            int errors = 0;
+            int notFound = 0;
+            int skippedNoMainCategory = 0;
+            Console.WriteLine($"[MainCategory Seeder] Starting to update main categories for {items.Count} items...");
+
+            foreach (var item in items)
+            {
+                string? name = null;
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    name = titleProp.GetString();
+                    string? subTitle = null;
+                    string? mainCategory = null;
+                    
+                    // Get SubTitle
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
+
+                    // Get MainCategory
+                    if (item.TryGetProperty("MainCategory", out var mainCategoryProp) && mainCategoryProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = mainCategoryProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            mainCategory = val;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(mainCategory))
+                    {
+                        skippedNoMainCategory++;
+                        continue;
+                    }
+
+                    // Get macronutrients for precise matching
+                    int calories = GetSafeInteger(item, "CaloriesPer100g");
+                    double protein = GetSafeDouble(item, "ProteinPer100g");
+                    double carbs = GetSafeDouble(item, "CarbohydratesPer100g");
+                    double fat = GetSafeDouble(item, "FatsPer100g");
+
+                    // Use guaranteed matching to find the best database row for this JSON item
+                    var (existingItem, matchStrategy) = await GuaranteedFindMatch(context, name, subTitle, calories, protein, carbs, fat);
+
+                    if (existingItem == null)
+                    {
+                        notFound++;
+                        if (notFound <= 10) // Only show first 10 not found items to avoid spam
+                        {
+                            Console.WriteLine($"[MainCategory Seeder] NOT FOUND: {name} | {subTitle}");
+                        }
+                        continue;
+                    }
+
+                    // Always update with the MainCategory from JSON (this handles both new and existing values)
+                    var oldMainCategory = existingItem.MainCategory;
+                    existingItem.MainCategory = mainCategory;
+                    
+                    if (string.IsNullOrEmpty(oldMainCategory))
+                    {
+                        updated++;
+                        Console.WriteLine($"[MainCategory Seeder] Updated ({matchStrategy}): {name} | {subTitle} | {mainCategory}");
+                    }
+                    else if (oldMainCategory != mainCategory)
+                    {
+                        updated++;
+                        Console.WriteLine($"[MainCategory Seeder] Updated ({matchStrategy}): {name} | {subTitle} | '{oldMainCategory}' -> '{mainCategory}'");
+                    }
+                    else
+                    {
+                        skipped++;
+                        Console.WriteLine($"[MainCategory Seeder] Skipped (same main category): {name} | {subTitle} | {mainCategory}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[MainCategory Seeder] Error processing {name}: {ex.Message}");
+                }
+            }
+
+            if (updated > 0)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[MainCategory Seeder] Saved {updated} updates to database.");
+            }
+
+            // Show final statistics
+            var finalItemsWithMainCategory = await context.ConsumableItems.CountAsync(c => !string.IsNullOrEmpty(c.MainCategory));
+            var finalItemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+            
+            Console.WriteLine($"[MainCategory Seeder] Final Database Status:");
+            Console.WriteLine($"[MainCategory Seeder] Items with MainCategory: {finalItemsWithMainCategory} (was: {itemsWithMainCategory})");
+            Console.WriteLine($"[MainCategory Seeder] Items without MainCategory: {finalItemsWithoutMainCategory} (was: {itemsWithoutMainCategory})");
+            
+            Console.WriteLine($"[MainCategory Seeder] Done. Updated: {updated}, Skipped: {skipped}, Skipped (no MainCategory in JSON): {skippedNoMainCategory}, Errors: {errors}, Not Found: {notFound}");
+
+            // Now handle orphaned database items (items in DB that don't match any JSON items)
+            Console.WriteLine($"\n[MainCategory Seeder] === HANDLING ORPHANED DATABASE ITEMS ===");
+            await HandleOrphanedDatabaseItems(context, items);
+
+            // Store the final database hash for future comparisons
+            var finalDbHash = await CalculateDatabaseHash(context);
+            await StoreHash(context, finalDbHash, "MainCategory");
+            Console.WriteLine($"[Hash Check] Stored final MainCategory database hash for future comparisons");
+        }
+
+        public static async Task SeedConsumableItemMainCategoriesAsync(IServiceProvider serviceProvider)
+        {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            var filePath = "consumableItem.json";
+            Console.WriteLine($"[MainCategory Seeder] Looking for file at: {filePath}");
+            
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[MainCategory Seeder] File not found: {filePath}");
+                return;
+            }
+
+            using var stream = File.OpenRead(filePath);
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var items = await JsonSerializer.DeserializeAsync<List<JsonElement>>(stream, options);
+            
+            if (items == null)
+            {
+                Console.WriteLine("[MainCategory Seeder] No items found in JSON file.");
+                return;
+            }
+
+            // Check if seeding is needed using hash comparison
+            if (await ShouldSkipSeeding(context, items, "MainCategory"))
+            {
+                Console.WriteLine($"[MainCategory Seeder] Skipping seeding - no changes detected");
+                return;
+            }
+
+            // Analyze the current state
+            await AnalyzeMainCategoryStatus(context, items);
+
+            // Get current database state for comparison
+            var totalItemsInDb = await context.ConsumableItems.CountAsync();
+            var itemsWithMainCategory = await context.ConsumableItems.CountAsync(c => !string.IsNullOrEmpty(c.MainCategory));
+            var itemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+
+            int updated = 0;
+            int skipped = 0;
+            int errors = 0;
+            int notFound = 0;
+            int skippedNoMainCategory = 0;
+            Console.WriteLine($"[MainCategory Seeder] Starting to update main categories for {items.Count} items...");
+
+            foreach (var item in items)
+            {
+                string? name = null;
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    name = titleProp.GetString();
+                    string? subTitle = null;
+                    string? mainCategory = null;
+                    
+                    // Get SubTitle
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
+
+                    // Get MainCategory
+                    if (item.TryGetProperty("MainCategory", out var mainCategoryProp) && mainCategoryProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = mainCategoryProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            mainCategory = val;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(mainCategory))
+                    {
+                        skippedNoMainCategory++;
+                        continue;
+                    }
+
+                    // Get macronutrients for precise matching
+                    int calories = GetSafeInteger(item, "CaloriesPer100g");
+                    double protein = GetSafeDouble(item, "ProteinPer100g");
+                    double carbs = GetSafeDouble(item, "CarbohydratesPer100g");
+                    double fat = GetSafeDouble(item, "FatsPer100g");
+
+                    // Use guaranteed matching to find the best database row for this JSON item
+                    var (existingItem, matchStrategy) = await GuaranteedFindMatch(context, name, subTitle, calories, protein, carbs, fat);
+
+                    if (existingItem == null)
+                    {
+                        notFound++;
+                        if (notFound <= 10) // Only show first 10 not found items to avoid spam
+                        {
+                            Console.WriteLine($"[MainCategory Seeder] NOT FOUND: {name} | {subTitle}");
+                        }
+                        continue;
+                    }
+
+                    // Always update with the MainCategory from JSON (this handles both new and existing values)
+                    var oldMainCategory = existingItem.MainCategory;
+                    existingItem.MainCategory = mainCategory;
+                    
+                    if (string.IsNullOrEmpty(oldMainCategory))
+                    {
+                        updated++;
+                        Console.WriteLine($"[MainCategory Seeder] Updated ({matchStrategy}): {name} | {subTitle} | {mainCategory}");
+                    }
+                    else if (oldMainCategory != mainCategory)
+                    {
+                        updated++;
+                        Console.WriteLine($"[MainCategory Seeder] Updated ({matchStrategy}): {name} | {subTitle} | '{oldMainCategory}' -> '{mainCategory}'");
+                    }
+                    else
+                    {
+                        skipped++;
+                        Console.WriteLine($"[MainCategory Seeder] Skipped (same main category): {name} | {subTitle} | {mainCategory}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[MainCategory Seeder] Error processing {name}: {ex.Message}");
+                }
+            }
+
+            if (updated > 0)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[MainCategory Seeder] Saved {updated} updates to database.");
+            }
+
+            // Show final statistics
+            var finalItemsWithMainCategory = await context.ConsumableItems.CountAsync(c => !string.IsNullOrEmpty(c.MainCategory));
+            var finalItemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+            
+            Console.WriteLine($"[MainCategory Seeder] Final Database Status:");
+            Console.WriteLine($"[MainCategory Seeder] Items with MainCategory: {finalItemsWithMainCategory} (was: {itemsWithMainCategory})");
+            Console.WriteLine($"[MainCategory Seeder] Items without MainCategory: {finalItemsWithoutMainCategory} (was: {itemsWithoutMainCategory})");
+            
+            Console.WriteLine($"[MainCategory Seeder] Done. Updated: {updated}, Skipped: {skipped}, Skipped (no MainCategory in JSON): {skippedNoMainCategory}, Errors: {errors}, Not Found: {notFound}");
+
+            // Now handle orphaned database items (items in DB that don't match any JSON items)
+            Console.WriteLine($"\n[MainCategory Seeder] === HANDLING ORPHANED DATABASE ITEMS ===");
+            await HandleOrphanedDatabaseItems(context, items);
+
+            // Store the final database hash for future comparisons
+            var finalDbHash = await CalculateDatabaseHash(context);
+            await StoreHash(context, finalDbHash, "MainCategory");
+            Console.WriteLine($"[Hash Check] Stored final MainCategory database hash for future comparisons");
+        }
+
+        private static async Task HandleOrphanedDatabaseItems(ApplicationDbContext context, List<JsonElement> jsonItems)
+        {
+            Console.WriteLine($"[Orphaned Handler] Checking for database items without MainCategory that don't match JSON items...");
+            
+            // Get all database items without MainCategory
+            var dbItemsWithoutMainCategory = await context.ConsumableItems
+                .Where(c => string.IsNullOrEmpty(c.MainCategory))
+                .ToListAsync();
+
+            Console.WriteLine($"[Orphaned Handler] Found {dbItemsWithoutMainCategory.Count} database items without MainCategory");
+
+            if (dbItemsWithoutMainCategory.Count == 0)
+            {
+                Console.WriteLine($"[Orphaned Handler] No orphaned items to handle.");
+                return;
+            }
+
+            // Create a lookup of JSON items for faster matching
+            var jsonLookup = new Dictionary<string, List<JsonElement>>();
+            foreach (var jsonItem in jsonItems)
+            {
+                if (jsonItem.TryGetProperty("Title", out var titleProp) && 
+                    titleProp.ValueKind == JsonValueKind.String && 
+                    !string.IsNullOrWhiteSpace(titleProp.GetString()))
+                {
+                    var title = titleProp.GetString()!;
+                    if (!jsonLookup.ContainsKey(title))
+                        jsonLookup[title] = new List<JsonElement>();
+                    jsonLookup[title].Add(jsonItem);
+                }
+            }
+
+            int orphanedUpdated = 0;
+            int orphanedSkipped = 0;
+            
+            foreach (var dbItem in dbItemsWithoutMainCategory)
+            {
+                try
+                {
+                    // Try to find a matching JSON item for this database item
+                    if (jsonLookup.TryGetValue(dbItem.Name, out var potentialJsonMatches))
+                    {
+                        // Find the best matching JSON item using reverse matching
+                        var bestJsonMatch = FindBestJsonMatch(dbItem, potentialJsonMatches);
+                        
+                        if (bestJsonMatch != null && 
+                            bestJsonMatch.Value.TryGetProperty("MainCategory", out var mainCatProp) &&
+                            mainCatProp.ValueKind == JsonValueKind.String &&
+                            !string.IsNullOrWhiteSpace(mainCatProp.GetString()))
+                        {
+                            dbItem.MainCategory = mainCatProp.GetString();
+                            orphanedUpdated++;
+                            Console.WriteLine($"[Orphaned Handler] Updated orphaned item: {dbItem.Name} | {dbItem.SubTitle} | {dbItem.MainCategory}");
+                        }
+                        else
+                        {
+                            orphanedSkipped++;
+                        }
+                    }
+                    else
+                    {
+                        orphanedSkipped++;
+                        if (orphanedSkipped <= 20) // Show first 20 orphaned items
+                        {
+                            Console.WriteLine($"[Orphaned Handler] No JSON match for: {dbItem.Name} | {dbItem.SubTitle}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Orphaned Handler] Error processing {dbItem.Name}: {ex.Message}");
+                }
+            }
+
+            if (orphanedUpdated > 0)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[Orphaned Handler] Saved {orphanedUpdated} orphaned item updates to database.");
+            }
+
+            // Final status
+            var finalDbItemsWithoutMainCategory = await context.ConsumableItems.CountAsync(c => string.IsNullOrEmpty(c.MainCategory));
+            Console.WriteLine($"[Orphaned Handler] Done. Updated: {orphanedUpdated}, Skipped: {orphanedSkipped}");
+            Console.WriteLine($"[Orphaned Handler] Remaining items without MainCategory: {finalDbItemsWithoutMainCategory}");
+        }
+
+        private static JsonElement? FindBestJsonMatch(ConsumableItem dbItem, List<JsonElement> jsonCandidates)
+        {
+            JsonElement? bestMatch = null;
+            var bestScore = -1;
+
+            foreach (var jsonItem in jsonCandidates)
+            {
+                var score = 0;
+
+                // Check SubTitle match
+                if (jsonItem.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                {
+                    var jsonSubTitle = subTitleProp.GetString();
+                    if (dbItem.SubTitle == jsonSubTitle) score += 100;
+                    else if (string.IsNullOrEmpty(dbItem.SubTitle) && string.IsNullOrEmpty(jsonSubTitle)) score += 50;
+                }
+                else if (string.IsNullOrEmpty(dbItem.SubTitle))
+                {
+                    score += 50; // Both have no subtitle
+                }
+
+                // Check macronutrients
+                var jsonCalories = GetSafeInteger(jsonItem, "CaloriesPer100g");
+                if (Math.Abs(dbItem.CaloriesPer100g - jsonCalories) <= 1) score += 20;
+                else if (Math.Abs(dbItem.CaloriesPer100g - jsonCalories) <= 5) score += 10;
+
+                var jsonProtein = GetSafeDouble(jsonItem, "ProteinPer100g");
+                if (Math.Abs(dbItem.ProteinPer100g - jsonProtein) <= 0.1) score += 20;
+                else if (Math.Abs(dbItem.ProteinPer100g - jsonProtein) <= 0.5) score += 10;
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestMatch = jsonItem;
+                }
+            }
+
+            return bestMatch;
         }
     }
 }
