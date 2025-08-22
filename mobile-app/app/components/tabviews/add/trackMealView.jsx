@@ -47,6 +47,7 @@ const FoodItem = ({
   favoriteConsumableIds = [],
   onFavoriteToggle,
   disableAnimations = false, // Add this prop
+  subTitle, // Add subtitle prop
 }) => {
   // Heart animation state and logic (copied from trackExerciseView.jsx, local only)
   const [isFavorite, setIsFavorite] = React.useState(
@@ -331,6 +332,7 @@ const FoodItem = ({
       </TouchableOpacity>
       <View style={styles.foodItemLeft}>
         <Text style={styles.foodName}>{name}</Text>
+        {subTitle && <Text style={styles.foodSubtitle}>{subTitle}</Text>}
         <View style={styles.macrosContainer}>
           <Text style={[styles.macroText, styles.caloriesText]}>
             <Text style={styles.macroLabel}>Calories:</Text> {calories}kcal
@@ -1086,6 +1088,7 @@ const TrackMealView = () => {
               <FoodItem
                 key={`${food.id}-${currentPage}-${activeTab}`}
                 name={food.name}
+                subTitle={food.subTitle || food.SubTitle || food.subtitle || ""}
                 calories={food.caloriesPer100g}
                 protein={food.proteinPer100g}
                 carbs={food.carbohydratePer100g}
@@ -1179,7 +1182,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 16,
     marginBottom: 12,
-    padding: 12,
+    padding: 10,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -1196,23 +1199,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   foodName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 6,
+    marginBottom: 2,
+  },
+  foodSubtitle: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 4,
+    fontStyle: "italic",
   },
   macrosContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: 4,
   },
   macroText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#666",
     backgroundColor: "#f5f5f5",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   addFoodButton: {
     padding: 5,
