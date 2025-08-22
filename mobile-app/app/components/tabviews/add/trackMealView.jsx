@@ -1024,8 +1024,8 @@ const TrackMealView = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Categories - horizontally scrollable */}
-        {categories && categories.length > 0 && (
+        {/* Categories - horizontally scrollable - only visible in All tab */}
+        {activeTab === "all" && categories && categories.length > 0 && (
           <View style={styles.categoriesTabs}>
             <ScrollView
               horizontal
