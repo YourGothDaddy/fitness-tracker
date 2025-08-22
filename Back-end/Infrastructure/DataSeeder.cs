@@ -755,7 +755,9 @@
             int updated = 0;
             int skipped = 0;
             int errors = 0;
+            int notFound = 0;
             Console.WriteLine($"[SubTitle Seeder] Starting to update subtitles for {items.Count} items...");
+            var usedItemIds = new HashSet<int>();
 
             foreach (var item in items)
             {
@@ -783,22 +785,46 @@
                         continue;
                     }
 
-                    var existingItem = await context.ConsumableItems.FirstOrDefaultAsync(c => c.Name == name);
-                    if (existingItem != null && string.IsNullOrEmpty(existingItem.SubTitle))
+                    // Use macronutrients to disambiguate duplicate titles
+                    int calories = GetSafeInteger(item, "CaloriesPer100g");
+                    double protein = GetSafeDouble(item, "ProteinPer100g");
+                    double carbs = GetSafeDouble(item, "CarbohydratesPer100g");
+                    double fat = GetSafeDouble(item, "FatsPer100g");
+
+                    var potentialMatches = await context.ConsumableItems
+                        .Where(c => c.Name == name)
+                        .ToListAsync();
+
+                    if (potentialMatches.Count == 0)
                     {
-                        existingItem.SubTitle = subTitle;
-                        updated++;
-                        Console.WriteLine($"[SubTitle Seeder] Updated: {name} | {subTitle}");
+                        notFound++;
+                        if (notFound <= 10)
+                            Console.WriteLine($"[SubTitle Seeder] NOT FOUND in DB: {name}");
+                        continue;
                     }
-                    else if (existingItem != null && !string.IsNullOrEmpty(existingItem.SubTitle))
+
+                    var candidates = potentialMatches
+                        .Where(c => string.IsNullOrEmpty(c.SubTitle) && !usedItemIds.Contains(c.Id))
+                        .ToList();
+
+                    if (candidates.Count == 0)
                     {
                         skipped++;
-                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                        continue;
+                    }
+
+                    var bestMatch = FindBestMatch(candidates, subTitle, calories, protein, carbs, fat);
+                    if (bestMatch != null)
+                    {
+                        bestMatch.SubTitle = subTitle;
+                        usedItemIds.Add(bestMatch.Id);
+                        updated++;
+                        if (updated <= 20)
+                            Console.WriteLine($"[SubTitle Seeder] Updated: {name} | {subTitle}");
                     }
                     else
                     {
                         skipped++;
-                        Console.WriteLine($"[SubTitle Seeder] Skipped (not found in DB): {name}");
                     }
                 }
                 catch (Exception ex)
@@ -812,14 +838,9 @@
             {
                 await context.SaveChangesAsync();
                 Console.WriteLine($"[SubTitle Seeder] Saved {updated} updates to database.");
-                
-                // Store the final hash for future comparisons
-                var finalDbHash = await CalculateDatabaseHash(context);
-                await StoreHash(context, finalDbHash, "SubTitle");
-                Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
             }
 
-            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}, Not Found: {notFound}");
         }
 
         private static async Task SeedConsumableItemSubtitlesAsync(ApplicationDbContext context, List<JsonElement> items)
@@ -829,6 +850,8 @@
             int updated = 0;
             int skipped = 0;
             int errors = 0;
+            int notFound = 0;
+            var usedItemIds = new HashSet<int>();
 
             foreach (var item in items)
             {
@@ -856,22 +879,46 @@
                         continue;
                     }
 
-                    var existingItem = await context.ConsumableItems.FirstOrDefaultAsync(c => c.Name == name);
-                    if (existingItem != null && string.IsNullOrEmpty(existingItem.SubTitle))
+                    // Use macronutrients to disambiguate duplicate titles
+                    int calories = GetSafeInteger(item, "CaloriesPer100g");
+                    double protein = GetSafeDouble(item, "ProteinPer100g");
+                    double carbs = GetSafeDouble(item, "CarbohydratesPer100g");
+                    double fat = GetSafeDouble(item, "FatsPer100g");
+
+                    var potentialMatches = await context.ConsumableItems
+                        .Where(c => c.Name == name)
+                        .ToListAsync();
+
+                    if (potentialMatches.Count == 0)
                     {
-                        existingItem.SubTitle = subTitle;
-                        updated++;
-                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                        notFound++;
+                        if (notFound <= 10)
+                            Console.WriteLine($"[SubTitle Seeder] NOT FOUND in DB: {name}");
+                        continue;
                     }
-                    else if (existingItem != null && !string.IsNullOrEmpty(existingItem.SubTitle))
+
+                    var candidates = potentialMatches
+                        .Where(c => string.IsNullOrEmpty(c.SubTitle) && !usedItemIds.Contains(c.Id))
+                        .ToList();
+
+                    if (candidates.Count == 0)
                     {
                         skipped++;
-                        Console.WriteLine($"[SubTitle Seeder] Skipped (already has subtitle): {name}");
+                        continue;
+                    }
+
+                    var bestMatch = FindBestMatch(candidates, subTitle, calories, protein, carbs, fat);
+                    if (bestMatch != null)
+                    {
+                        bestMatch.SubTitle = subTitle;
+                        usedItemIds.Add(bestMatch.Id);
+                        updated++;
+                        if (updated <= 20)
+                            Console.WriteLine($"[SubTitle Seeder] Updated: {name} | {subTitle}");
                     }
                     else
                     {
                         skipped++;
-                        Console.WriteLine($"[SubTitle Seeder] Skipped (not found in DB): {name}");
                     }
                 }
                 catch (Exception ex)
@@ -886,13 +933,8 @@
                 await context.SaveChangesAsync();
                 Console.WriteLine($"[SubTitle Seeder] Saved {updated} updates to database.");
             }
-            
-            // Always store the final hash for future comparisons (even if no updates were made)
-            var finalDbHash = await CalculateDatabaseHash(context);
-            await StoreHash(context, finalDbHash, "SubTitle");
-            Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
 
-            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+            Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}, Not Found: {notFound}");
         }
 
         private static ConsumableItem? FindBestMatch(List<ConsumableItem> potentialMatches, string? subTitle, int calories, double protein, double carbs, double fat)
