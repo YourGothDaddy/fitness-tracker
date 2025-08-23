@@ -45,8 +45,8 @@
                 Height = model.Height,
                 Age = model.Age,
                 ActivityLevelId = model.ActivityLevelId,
-                WeeklyWeightChangeGoal = model.WeeklyWeightChangeGoal,
-                GoalWeight = model.GoalWeight
+                WeeklyWeightChangeGoal = model.WeeklyWeightChangeGoal ?? 0,
+                GoalWeight = model.GoalWeight ?? 0
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);

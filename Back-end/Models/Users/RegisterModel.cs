@@ -7,11 +7,15 @@
     public class RegisterModel
     {
         [Required]
+        [StringLength(100, MinimumLength = 2)]
         public string FullName { get; set; }
+
         [Required]
+        [EmailAddress]
         public string Email { get; set; }
 
         [Required]
+        [StringLength(100, MinimumLength = 6)]
         public string Password { get; set; }
         [Required]
         public Gender Gender { get; set; }
@@ -23,10 +27,8 @@
         public int Age { get; set; }
         [Required]
         public int ActivityLevelId { get; set; }
-        [Required]
-        public float WeeklyWeightChangeGoal { get; set; }
-        [Required]
-        public float GoalWeight { get; set; }
+        public float? WeeklyWeightChangeGoal { get; set; }
+        public float? GoalWeight { get; set; }
 
     }
 }

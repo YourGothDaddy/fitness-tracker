@@ -10,6 +10,9 @@ const CustomField = ({
   value,
   onChangeText,
   textInputStyle,
+  secureTextEntry = false,
+  keyboardType,
+  maxLength,
 }) => {
   const handleTextChange = (text) => {
     if (numeric) {
@@ -34,11 +37,22 @@ const CustomField = ({
         placeholder={placeholder}
         placeholderTextColor={placeHolderTextColor}
         keyboardType={
-          numeric ? (allowDecimal ? "decimal-pad" : "number-pad") : "default"
+          keyboardType
+            ? keyboardType
+            : numeric
+            ? allowDecimal
+              ? "decimal-pad"
+              : "number-pad"
+            : "default"
         }
         value={value}
         onChangeText={handleTextChange}
         style={textInputStyle}
+        secureTextEntry={secureTextEntry === true}
+        maxLength={maxLength}
+        autoCapitalize="none"
+        autoCorrect={false}
+        passwordRules={secureTextEntry ? "minlength: 6;" : undefined}
       />
     </View>
   );

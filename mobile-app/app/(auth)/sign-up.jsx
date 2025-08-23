@@ -39,6 +39,10 @@ const validateStage = (stage, data) => {
       break;
     case 4:
       if (!data.name.trim()) return "Please enter your full name";
+      if (data.name.trim().length < 2)
+        return "Name must be at least 2 characters";
+      if (data.name.trim().length > 100)
+        return "Name must be at most 100 characters";
       if (!data.email.trim()) return "Please enter your email";
       if (!data.password) return "Please enter a password";
       if (!data.confirmPassword) return "Please confirm your password";
@@ -270,6 +274,7 @@ const SignUp = () => {
                       value={weight}
                       onChangeText={setWeight}
                       numeric={true}
+                      allowDecimal={true}
                     />
                   </View>
 
@@ -285,6 +290,7 @@ const SignUp = () => {
                       value={height}
                       onChangeText={setHeight}
                       numeric={true}
+                      allowDecimal={true}
                     />
                   </View>
 
@@ -421,6 +427,7 @@ const SignUp = () => {
                       value={goalWeight}
                       onChangeText={setGoalWeight}
                       numeric={true}
+                      allowDecimal={true}
                     />
                   </View>
 
@@ -500,6 +507,7 @@ const SignUp = () => {
                       placeholder="Full Name"
                       value={name}
                       onChangeText={setName}
+                      maxLength={100}
                     />
                   </View>
 
@@ -514,6 +522,7 @@ const SignUp = () => {
                       placeholder="Email Address"
                       value={email}
                       onChangeText={setEmail}
+                      keyboardType="email-address"
                     />
                   </View>
 
@@ -523,12 +532,16 @@ const SignUp = () => {
                       size={24}
                       color={Colors.darkGreen.color}
                     />
-                    <CustomField
-                      styles={styles.input}
+                    <TextInput
+                      style={styles.input}
                       placeholder="Password"
+                      placeholderTextColor={Colors.darkGreen.color}
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={true}
+                      maxLength={64}
+                      autoCapitalize="none"
+                      autoCorrect={false}
                     />
                   </View>
 
@@ -538,12 +551,16 @@ const SignUp = () => {
                       size={24}
                       color={Colors.darkGreen.color}
                     />
-                    <CustomField
-                      styles={styles.input}
+                    <TextInput
+                      style={styles.input}
                       placeholder="Confirm Password"
+                      placeholderTextColor={Colors.darkGreen.color}
                       value={confirmPassword}
                       onChangeText={setConfirmPassword}
                       secureTextEntry={true}
+                      maxLength={64}
+                      autoCapitalize="none"
+                      autoCorrect={false}
                     />
                   </View>
                 </View>
@@ -577,6 +594,12 @@ const SignUp = () => {
     if (currentStage === 4) {
       try {
         // Prepare registration data
+        const safeGoalWeight = goalWeight === "" ? 0 : parseFloat(goalWeight);
+        const safeWeeklyChange =
+          goalWeight === "" || isNaN(parseFloat(goalWeight))
+            ? 0
+            : weightChangePerWeek || 0;
+
         const registrationData = {
           fullName: name,
           email: email,
@@ -586,8 +609,8 @@ const SignUp = () => {
           height: parseFloat(height),
           age: parseInt(age),
           activityLevelId: activity + 1,
-          goalWeight: parseFloat(goalWeight),
-          weeklyWeightChangeGoal: weightChangePerWeek,
+          goalWeight: safeGoalWeight,
+          weeklyWeightChangeGoal: safeWeeklyChange,
         };
 
         // Register the user
