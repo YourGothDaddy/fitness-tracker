@@ -11,6 +11,26 @@ class MealService {
     }
   }
 
+  async getMealsForDate(date) {
+    try {
+      const d = date instanceof Date ? date : new Date(date);
+      const localMidnight = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate()
+      );
+      const utcIso = new Date(
+        localMidnight.getTime() - localMidnight.getTimezoneOffset() * 60000
+      ).toISOString();
+      const response = await axiosInstance.get(`${API_URL}/api/meal/all`, {
+        params: { date: utcIso },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addMeal(mealData) {
     try {
       const formatDate = (date) => {

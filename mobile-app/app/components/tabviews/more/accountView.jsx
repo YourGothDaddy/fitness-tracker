@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
@@ -18,6 +19,17 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
 import { API_URL } from "../../../../constants/Config";
+import * as Notifications from "expo-notifications";
+import { mealService } from "@/app/services/mealService";
+
+// Configure Android channel for local notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 const Field = React.memo(({ title, value, onPress, icon }) => (
   <TouchableOpacity
@@ -200,11 +212,49 @@ const AccountView = () => {
     fetchUserProfile();
   }, [fetchUserProfile]);
 
+  // Request permissions and check meals for today, send friendly notification if none
+  const checkMealsAndNotify = useCallback(async () => {
+    try {
+      if (!fieldValues.notifications) return;
+
+      const { status } = await Notifications.getPermissionsAsync();
+      let finalStatus = status;
+      if (status !== "granted") {
+        const request = await Notifications.requestPermissionsAsync();
+        finalStatus = request.status;
+      }
+      if (finalStatus !== "granted") {
+        return;
+      }
+
+      const todayMeals = await mealService.getMealsForDate(new Date());
+      if (!Array.isArray(todayMeals) || todayMeals.length === 0) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Friend, aren't you starving?",
+            body: "You haven't logged any meals today.",
+          },
+          trigger: null,
+        });
+      }
+    } catch (e) {
+      // avoid noisy alerts here; this is a silent helper
+      console.warn("Notification check failed", e?.message || e);
+    }
+  }, [fieldValues.notifications]);
+
   useEffect(() => {
     if (hideHeader === "true") {
       router.setParams({ hideHeader: "true" });
     }
   }, [hideHeader]);
+
+  // Run check after profile fetch completes
+  useEffect(() => {
+    if (!isProfileLoading) {
+      checkMealsAndNotify();
+    }
+  }, [isProfileLoading, checkMealsAndNotify]);
 
   const handleFieldPress = useCallback((field) => {
     setActiveField(field);
@@ -255,6 +305,10 @@ const AccountView = () => {
             case "notifications":
               await userService.updateNotifications(newValue);
               await fetchUserProfile();
+              if (newValue) {
+                // When toggled on, run immediate check and notify if zero meals today
+                await checkMealsAndNotify();
+              }
               Alert.alert("Success", "Notification preferences updated");
               break;
           }
