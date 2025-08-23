@@ -17,6 +17,7 @@ namespace Fitness_Tracker
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.IdentityModel.Tokens;
     using System.Text;
+    using Fitness_Tracker.Services.Emails;
 
     public class Program
     {
@@ -38,6 +39,8 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<ITokenService, TokenService>();
             builder.Services.AddTransient<INutritionService, NutritionService>();
             builder.Services.AddTransient<IWeightService, WeightService>();
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddTransient<IActivityService, ActivityService>();
 
             builder.Services.Configure<IdentityOptions>(options =>

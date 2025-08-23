@@ -623,12 +623,14 @@ const SignUp = () => {
           { text: "OK", onPress: () => router.replace("/dashboard") },
         ]);
       } catch (error) {
-        Alert.alert(
-          "Registration Failed",
-          `Error: ${
-            error.response?.data?.message || error.message || "Network error"
-          }`
-        );
+        const backendMessage =
+          error?.response?.data?.Message || error?.response?.data?.message;
+        const fallbackMessage =
+          typeof error?.response?.data === "string"
+            ? error.response.data
+            : error?.message;
+        const message = backendMessage || fallbackMessage || "Network error";
+        Alert.alert("Registration Failed", message);
       }
     } else {
       setCurrentStage(currentStage + 1);

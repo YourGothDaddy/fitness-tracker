@@ -5,8 +5,10 @@
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Tokens;
     using Fitness_Tracker.Services.Users;
+    using Fitness_Tracker.Services.Emails;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.Extensions.Logging;
     using static Constants.AuthController;
 
     public class AuthController : BaseApiController
@@ -14,12 +16,16 @@
         private readonly UserManager<User> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(UserManager<User> userManager, ITokenService tokenService, IUserService userService)
+        public AuthController(UserManager<User> userManager, ITokenService tokenService, IUserService userService, IEmailService emailService, ILogger<AuthController> logger)
         {
             _userManager = userManager;
             _tokenService = tokenService;
             _userService = userService;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         [HttpPost(RegisterHttpAttributeName)]
@@ -49,14 +55,27 @@
                 GoalWeight = model.GoalWeight ?? 0
             };
 
+            _logger.LogInformation("Attempting to register user with email {Email}", model.Email);
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
             {
+                _logger.LogWarning("User creation failed for {Email}. Errors: {Errors}", model.Email, string.Join(';', result.Errors.Select(e => $"{e.Code}:{e.Description}")));
                 return BadRequest(result.Errors);
             }
 
             // Initialize DailyCaloriesGoal based on provided data
             await _userService.RecalculateDailyCaloriesAsync(user.Id);
+            _logger.LogInformation("Recalculated daily calories for user {UserId}", user.Id);
+
+            // Await email send with safe error handling in dev to diagnose issues
+            try
+            {
+                await _emailService.SendRegistrationConfirmationEmailAsync(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send registration email to {Email}", user.Email);
+            }
 
             return Ok();
         }

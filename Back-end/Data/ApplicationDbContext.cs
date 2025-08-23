@@ -34,6 +34,12 @@
         {
             base.OnModelCreating(builder);
 
+            // Ensure unique email at the database level to prevent duplicates
+            builder.Entity<User>()
+                .HasIndex(u => u.NormalizedEmail)
+                .HasDatabaseName("EmailIndex")
+                .IsUnique();
+
             builder.Entity<User>()
                 .HasMany(u => u.Meals)
                 .WithOne(m => m.User)
