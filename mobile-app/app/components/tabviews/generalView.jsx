@@ -23,10 +23,6 @@ import { useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 
-const formatNumber = (num) => {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-};
-
 const getWeekDates = () => {
   const today = new Date();
   const startDate = new Date(today);
@@ -535,9 +531,7 @@ const GeneralView = () => {
             <View style={styles.labelContainer}>
               <Text style={styles.statLabel}>Daily{"\n"}Average</Text>
             </View>
-            <Text style={styles.statValue}>
-              {formatNumber(calorieOverview.dailyAverage)}
-            </Text>
+            <Text style={styles.statValue}>{calorieOverview.dailyAverage}</Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
 
@@ -551,9 +545,7 @@ const GeneralView = () => {
                 Target
               </Text>
             </View>
-            <Text style={styles.statValue}>
-              {formatNumber(calorieOverview.target)}
-            </Text>
+            <Text style={styles.statValue}>{calorieOverview.target}</Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
 
@@ -574,7 +566,7 @@ const GeneralView = () => {
               ]}
             >
               {calorieOverview.deficit > 0 ? "-" : "+"}
-              {formatNumber(Math.abs(calorieOverview.deficit))}
+              {Math.abs(calorieOverview.deficit)}
             </Text>
             <Text style={styles.statUnit}>kcal</Text>
           </View>
