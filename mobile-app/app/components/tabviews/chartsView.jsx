@@ -511,7 +511,10 @@ const ChartsView = () => {
       </LinearGradient>
 
       {/* Energy Budget Card */}
-      <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
+      <LinearGradient
+        colors={["#ffffff", "#f8faf5"]}
+        style={[styles.card, { marginBottom: 24 }]}
+      >
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
             <MaterialIcons name="account-balance" size={24} color="#619819" />
