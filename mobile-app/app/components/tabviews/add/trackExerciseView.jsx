@@ -38,6 +38,114 @@ function getRandomParticles() {
   });
 }
 
+// Floating sparkles component for category cards
+const FloatingSparkles = () => {
+  const [sparkles, setSparkles] = useState([]);
+  const fadeAnims = useRef([]);
+  const scaleAnims = useRef([]);
+
+  useEffect(() => {
+    const generateSparkles = () => {
+      const newSparkles = Array.from({ length: 8 }, (_, index) => ({
+        id: Math.random(),
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: 2 + Math.random() * 3,
+        opacity: 0.3 + Math.random() * 0.7,
+        animationDelay: Math.random() * 2000,
+        index,
+      }));
+      setSparkles(newSparkles);
+
+      // Initialize animation refs
+      fadeAnims.current = newSparkles.map(() => new Animated.Value(0.3));
+      scaleAnims.current = newSparkles.map(() => new Animated.Value(0.8));
+    };
+
+    generateSparkles();
+  }, []);
+
+  useEffect(() => {
+    if (sparkles.length === 0) return;
+
+    sparkles.forEach((sparkle, index) => {
+      const fadeAnim = fadeAnims.current[index];
+      const scaleAnim = scaleAnims.current[index];
+
+      if (!fadeAnim || !scaleAnim) return;
+
+      const fadeAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 0.8,
+            duration: 1500 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 0.3,
+            duration: 1500 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      const scaleAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.2,
+            duration: 2000 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 0.8,
+            duration: 2000 + Math.random() * 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      const timer = setTimeout(() => {
+        fadeAnimation.start();
+        scaleAnimation.start();
+      }, sparkle.animationDelay);
+
+      return () => {
+        clearTimeout(timer);
+        fadeAnimation.stop();
+        scaleAnimation.stop();
+      };
+    });
+  }, [sparkles]);
+
+  return (
+    <View style={styles.sparkleContainer}>
+      {sparkles.map((sparkle, index) => {
+        const fadeAnim = fadeAnims.current[index];
+        const scaleAnim = scaleAnims.current[index];
+
+        if (!fadeAnim || !scaleAnim) return null;
+
+        return (
+          <Animated.View
+            key={sparkle.id}
+            style={[
+              styles.sparkle,
+              {
+                left: `${sparkle.x}%`,
+                top: `${sparkle.y}%`,
+                width: sparkle.size,
+                height: sparkle.size,
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }],
+              },
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
 const INTENSITY_PRIORITY = [
   "very low",
   "low",
@@ -76,13 +184,13 @@ const getCategoryVisual = (name = "") => {
   const key = name.toLowerCase();
 
   const greenTheme = {
-    gradient: ["#8cc63f", "#7ab82f"],
-    lightGradient: ["rgba(140, 198, 63, 0.1)", "rgba(122, 184, 47, 0.1)"],
+    gradient: ["#2E7D32", "#4CAF50", "#66BB6A"],
+    lightGradient: ["rgba(76, 175, 80, 0.15)", "rgba(102, 187, 106, 0.15)"],
     textColor: "#ffffff",
-    lightTextColor: "#8cc63f",
-    accentColor: "#8cc63f",
-    borderColor: "rgba(140, 198, 63, 0.3)",
-    shadowColor: "#8cc63f",
+    lightTextColor: "#2E7D32",
+    accentColor: "#2E7D32",
+    borderColor: "rgba(76, 175, 80, 0.3)",
+    shadowColor: "#2E7D32",
   };
 
   if (
@@ -238,6 +346,50 @@ const ExerciseItem = ({
       opacity: new Animated.Value(1),
     }))
   ).current;
+
+  // Get unique icon for each exercise type
+  const getExerciseIcon = (exerciseName, categoryName) => {
+    const key = (exerciseName + categoryName).toLowerCase();
+
+    if (key.includes("running") || key.includes("jogging"))
+      return "directions-run";
+    if (key.includes("cycling") || key.includes("bike"))
+      return "directions-bike";
+    if (key.includes("swimming") || key.includes("swim")) return "pool";
+    if (key.includes("walking") || key.includes("hike"))
+      return "directions-walk";
+    if (key.includes("yoga") || key.includes("stretch"))
+      return "self-improvement";
+    if (key.includes("weight") || key.includes("strength"))
+      return "fitness-center";
+    if (key.includes("dance") || key.includes("zumba")) return "music-note";
+    if (key.includes("boxing") || key.includes("kickbox")) return "sports-mma";
+    if (key.includes("tennis") || key.includes("racket"))
+      return "sports-tennis";
+    if (key.includes("basketball") || key.includes("hoops"))
+      return "sports-basketball";
+    if (key.includes("soccer") || key.includes("football"))
+      return "sports-soccer";
+    if (key.includes("skiing") || key.includes("snow")) return "ac-unit";
+    if (key.includes("rowing") || key.includes("boat")) return "rowing";
+    if (key.includes("climbing") || key.includes("rock")) return "terrain";
+    if (key.includes("martial") || key.includes("karate"))
+      return "sports-kabaddi";
+
+    // Default icons based on category
+    if (categoryName.toLowerCase().includes("cardio")) return "favorite";
+    if (categoryName.toLowerCase().includes("strength"))
+      return "fitness-center";
+    if (categoryName.toLowerCase().includes("outdoor")) return "landscape";
+    if (categoryName.toLowerCase().includes("sports")) return "sports";
+    if (categoryName.toLowerCase().includes("water")) return "water";
+    if (categoryName.toLowerCase().includes("winter")) return "ac-unit";
+    if (categoryName.toLowerCase().includes("dance")) return "music-note";
+    if (categoryName.toLowerCase().includes("martial")) return "sports-mma";
+    if (categoryName.toLowerCase().includes("yoga")) return "self-improvement";
+
+    return "fitness-center"; // Default fallback
+  };
 
   useEffect(() => {
     if (isFavorite) {
@@ -527,7 +679,7 @@ const ExerciseItem = ({
             }}
             pointerEvents="none"
           >
-            <Icon name="heart-outline" size={26} color="#bbb" />
+            <Icon name="heart-outline" size={20} color="#bbb" />
           </Animated.View>
           <Animated.View
             style={{
@@ -543,91 +695,78 @@ const ExerciseItem = ({
             }}
             pointerEvents="none"
           >
-            <Icon name="heart" size={26} color="#e74c3c" />
+            <Icon name="heart" size={20} color="#e74c3c" />
           </Animated.View>
         </TouchableOpacity>
       )}
-      <View style={styles.exerciseItemLeft}>
-        <Text style={styles.exerciseName}>{exercise || subcategory}</Text>
-        <View style={styles.caloriesContainer}>
-          <View style={styles.totalCaloriesBox}>
-            <Icon
-              name="local-fire-department"
-              size={22}
-              color="#ff7043"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.totalCaloriesLabel}>Burned</Text>
-            <Text style={styles.totalCaloriesValue}>
-              {loading
-                ? "..."
-                : isCustomWorkout && typeof customCalories === "number"
-                ? customCalories
-                : calories.totalCalories?.toFixed(1)}{" "}
-              kcal
-            </Text>
-          </View>
-          {isCustomWorkout && (
-            <Text style={[styles.calorieText]}>
-              <Text style={styles.calorieLabel}>Duration:</Text> {duration} min
-            </Text>
-          )}
+      {/* Main Content */}
+      <View style={styles.exerciseItemContent}>
+        {/* Header Section */}
+        <View style={styles.exerciseHeader}>
+          <Text style={styles.exerciseName}>{exercise || subcategory}</Text>
+          <Text style={styles.exerciseCalories}>
+            Estimated:{" "}
+            {loading ? "..." : calories.totalCalories?.toFixed(0) || "0"} cal
+          </Text>
         </View>
-        {error ? (
-          <Text style={{ color: "red", fontSize: 12 }}>{error}</Text>
-        ) : null}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 10,
-            marginTop: 10,
-            flexWrap: "nowrap",
-            alignItems: "center",
-          }}
-        >
+
+        {/* Interactive Inputs Section */}
+        <View style={styles.exerciseInputs}>
+          {/* Duration Input with Stepper */}
           {!hideEffortAndDuration && showDuration && (
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Text style={{ fontSize: 14, color: "#333" }}>Duration:</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#ccc",
-                  borderRadius: 8,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  minWidth: 50,
-                  fontSize: 14,
-                  color: "#333",
-                  backgroundColor: "#f5f5f5",
-                }}
-                placeholder="min"
-                value={duration.toString()}
-                onChangeText={(val) => {
-                  const num = parseInt(val.replace(/[^0-9]/g, ""), 10) || 0;
-                  setDuration(num);
-                }}
-                keyboardType="numeric"
-              />
+            <View style={styles.durationContainer}>
+              <Text style={styles.inputLabel}>Duration</Text>
+              <View style={styles.durationStepper}>
+                <TouchableOpacity
+                  style={styles.stepperButton}
+                  onPress={() => setDuration(Math.max(1, duration - 5))}
+                  activeOpacity={0.7}
+                >
+                  <Icon
+                    name="remove"
+                    size={20}
+                    color={Colors.darkGreen.color}
+                  />
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.durationInput}
+                  placeholder="Duration"
+                  value={duration.toString()}
+                  onChangeText={(val) => {
+                    const num = parseInt(val.replace(/[^0-9]/g, ""), 10) || 0;
+                    setDuration(num);
+                  }}
+                  keyboardType="numeric"
+                  textAlign="center"
+                />
+                <TouchableOpacity
+                  style={styles.stepperButton}
+                  onPress={() => setDuration(duration + 5)}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="add" size={20} color={Colors.darkGreen.color} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.durationUnit}>min</Text>
             </View>
           )}
+
+          {/* Effort Level Dropdown */}
           {!hideEffortAndDuration && showEffort && (
-            <>
+            <View style={styles.effortContainer}>
+              <Text style={styles.inputLabel}>Effort Level</Text>
               <TouchableOpacity
-                style={styles.badgeContainer}
+                style={styles.effortDropdown}
                 onPress={() => setEffortModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.badgeText}>
-                  <Text style={styles.calorieLabel}>Effort:</Text>{" "}
-                  {effort || "Effort level"}
+                <Text style={styles.effortDropdownText}>
+                  {effort || "Select effort level"}
                 </Text>
                 <Icon
                   name="arrow-drop-down"
                   size={20}
-                  color="#619819"
-                  style={{ marginLeft: 2 }}
+                  color={Colors.darkGreen.color}
                 />
               </TouchableOpacity>
               <Modal
@@ -650,7 +789,7 @@ const ExerciseItem = ({
                       backgroundColor: "#fff",
                       borderRadius: 12,
                       padding: 16,
-                      minWidth: 180,
+                      minWidth: 200,
                       elevation: 5,
                     }}
                   >
@@ -666,7 +805,10 @@ const ExerciseItem = ({
                         <Text
                           style={{
                             fontSize: 16,
-                            color: option === effort ? "#619819" : "#2d3436",
+                            color:
+                              option === effort
+                                ? Colors.darkGreen.color
+                                : "#2d3436",
                             fontWeight: option === effort ? "700" : "500",
                           }}
                         >
@@ -677,23 +819,25 @@ const ExerciseItem = ({
                   </View>
                 </Pressable>
               </Modal>
-            </>
+            </View>
           )}
+
+          {/* Terrain Type Dropdown */}
           {showTerrain && (
-            <>
+            <View style={styles.terrainContainer}>
+              <Text style={styles.inputLabel}>Terrain Type</Text>
               <TouchableOpacity
-                style={styles.badgeContainer}
+                style={styles.terrainDropdown}
                 onPress={() => setTerrainModalVisible(true)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.badgeText}>
-                  {terrain || "Terrain type"}
+                <Text style={styles.terrainDropdownText}>
+                  {terrain || "Select terrain type"}
                 </Text>
                 <Icon
                   name="arrow-drop-down"
                   size={20}
                   color={Colors.darkGreen.color}
-                  style={{ marginLeft: 2 }}
                 />
               </TouchableOpacity>
               <Modal
@@ -716,7 +860,7 @@ const ExerciseItem = ({
                       backgroundColor: "#fff",
                       borderRadius: 12,
                       padding: 16,
-                      minWidth: 180,
+                      minWidth: 200,
                       elevation: 5,
                     }}
                   >
@@ -746,19 +890,27 @@ const ExerciseItem = ({
                   </View>
                 </Pressable>
               </Modal>
-            </>
+            </View>
           )}
         </View>
+
+        {/* Error Message */}
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        {/* Action Buttons Section */}
+        <View style={styles.exerciseActions}>
+          <TouchableOpacity
+            style={styles.addExerciseButton}
+            onPress={handleAddPress}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Icon name="add" size={24} color="#ffffff" />
+            <Text style={styles.addButtonText}>Add Exercise</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View style={styles.rightButtonsContainer}>
-        <TouchableOpacity
-          style={styles.addExerciseButton}
-          onPress={handleAddPress}
-          disabled={loading}
-        >
-          <Icon name="add-circle" size={28} color={Colors.darkGreen.color} />
-        </TouchableOpacity>
-      </View>
+
       {Platform.OS === "ios" && showIOSPicker && (
         <Modal
           visible={showIOSPicker}
@@ -1149,13 +1301,13 @@ const TrackExerciseView = () => {
                       setPressedCategory(cat);
                       Animated.parallel([
                         Animated.timing(categoryAnimRefs[cat].scale, {
-                          toValue: 0.95,
-                          duration: 150,
+                          toValue: 0.92,
+                          duration: 120,
                           useNativeDriver: true,
                         }),
                         Animated.timing(categoryAnimRefs[cat].opacity, {
-                          toValue: 0.8,
-                          duration: 150,
+                          toValue: 0.85,
+                          duration: 120,
                           useNativeDriver: true,
                         }),
                       ]).start();
@@ -1166,12 +1318,12 @@ const TrackExerciseView = () => {
                       Animated.parallel([
                         Animated.timing(categoryAnimRefs[cat].scale, {
                           toValue: 1,
-                          duration: 150,
+                          duration: 120,
                           useNativeDriver: true,
                         }),
                         Animated.timing(categoryAnimRefs[cat].opacity, {
                           toValue: 1,
-                          duration: 150,
+                          duration: 120,
                           useNativeDriver: true,
                         }),
                       ]).start();
@@ -1223,11 +1375,12 @@ const TrackExerciseView = () => {
                             end={{ x: 1, y: 1 }}
                             style={styles.categoryGradientBackground}
                           >
+                            <FloatingSparkles />
                             <View style={styles.categoryIconContainer}>
                               <Icon
                                 name={visual.icon}
-                                size={24}
-                                color="rgba(255, 255, 255, 0.9)"
+                                size={20}
+                                color={visual.accentColor}
                               />
                             </View>
                             <View style={styles.categoryTileContent}>
@@ -1252,7 +1405,7 @@ const TrackExerciseView = () => {
                               <LinearGradient
                                 colors={[
                                   "rgba(255, 255, 255, 0)",
-                                  "rgba(255, 255, 255, 0.1)",
+                                  "rgba(255, 255, 255, 0.15)",
                                   "rgba(255, 255, 255, 0)",
                                 ]}
                                 start={{ x: 0, y: 0 }}
@@ -1264,7 +1417,7 @@ const TrackExerciseView = () => {
                               <Icon
                                 name="arrow-forward-ios"
                                 size={14}
-                                color="rgba(255, 255, 255, 0.7)"
+                                color={visual.accentColor}
                               />
                             </View>
                           </LinearGradient>
@@ -1321,13 +1474,13 @@ const TrackExerciseView = () => {
                         setPressedSubcategory(name);
                         Animated.parallel([
                           Animated.timing(subcategoryAnimRefs[name].scale, {
-                            toValue: 0.97,
-                            duration: 120,
+                            toValue: 0.95,
+                            duration: 100,
                             useNativeDriver: true,
                           }),
                           Animated.timing(subcategoryAnimRefs[name].opacity, {
-                            toValue: 0.85,
-                            duration: 120,
+                            toValue: 0.9,
+                            duration: 100,
                             useNativeDriver: true,
                           }),
                         ]).start();
@@ -1338,12 +1491,12 @@ const TrackExerciseView = () => {
                         Animated.parallel([
                           Animated.timing(subcategoryAnimRefs[name].scale, {
                             toValue: 1,
-                            duration: 120,
+                            duration: 100,
                             useNativeDriver: true,
                           }),
                           Animated.timing(subcategoryAnimRefs[name].opacity, {
                             toValue: 1,
-                            duration: 120,
+                            duration: 100,
                             useNativeDriver: true,
                           }),
                         ]).start();
@@ -1401,7 +1554,7 @@ const TrackExerciseView = () => {
                               <View style={styles.subcategoryIconContainer}>
                                 <Icon
                                   name={visual.icon}
-                                  size={18}
+                                  size={20}
                                   color={visual.accentColor}
                                 />
                               </View>
@@ -1426,7 +1579,7 @@ const TrackExerciseView = () => {
                               <View style={styles.subcategoryArrow}>
                                 <Icon
                                   name="arrow-forward-ios"
-                                  size={12}
+                                  size={14}
                                   color={visual.accentColor}
                                 />
                               </View>
@@ -1630,7 +1783,7 @@ const styles = StyleSheet.create({
   },
   categoryGrid: {
     flexDirection: "column",
-    gap: 12,
+    gap: 16,
     marginBottom: 12,
     paddingHorizontal: 0,
     alignItems: "center",
@@ -1638,120 +1791,30 @@ const styles = StyleSheet.create({
   },
   categoryTile: {
     backgroundColor: "transparent",
-    borderRadius: 20,
+    borderRadius: 24,
     marginBottom: 12,
     width: "95%",
-    height: 60,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    height: 80,
+    borderWidth: 0,
     overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
       },
-      android: { elevation: 6 },
+      android: { elevation: 8 },
     }),
   },
   categoryIconContainer: {
     position: "absolute",
-    top: 12,
+    top: 10,
     left: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: { elevation: 2 },
-    }),
-  },
-  categoryTileContent: {
-    flex: 1,
-    paddingLeft: 60,
-    paddingRight: 50,
-    paddingVertical: 8,
-    justifyContent: "center",
-  },
-  categoryTileText: {
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "left",
-    letterSpacing: -0.4,
-    marginBottom: 0,
-    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
-    textShadowColor: "rgba(0, 0, 0, 0.2)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  categoryDescription: {
-    fontSize: 11,
-    fontWeight: "500",
-    textAlign: "left",
-    opacity: 0.8,
-    letterSpacing: 0.1,
-    marginTop: 1,
-    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
-  },
-  categoryShimmer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    overflow: "hidden",
-  },
-  shimmerGradient: {
-    flex: 1,
-    opacity: 0.6,
-  },
-  categoryArrow: {
-    position: "absolute",
-    top: 12,
-    right: 16,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  subcategoryTile: {
-    backgroundColor: "#ffffff",
+    width: 32,
+    height: 32,
     borderRadius: 16,
-    marginBottom: 12,
-    width: "95%",
-    height: 45,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-      },
-      android: { elevation: 3 },
-    }),
-  },
-  subcategoryIconContainer: {
-    position: "absolute",
-    top: 6,
-    left: 12,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
@@ -1764,25 +1827,129 @@ const styles = StyleSheet.create({
       android: { elevation: 1 },
     }),
   },
+  categoryTileContent: {
+    flex: 1,
+    paddingLeft: 56,
+    paddingRight: 40,
+    paddingVertical: 12,
+    justifyContent: "center",
+  },
+  categoryTileText: {
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "left",
+    letterSpacing: -0.4,
+    marginBottom: 4,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+    color: "#ffffff",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  categoryDescription: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "left",
+    opacity: 0.9,
+    letterSpacing: 0.2,
+    marginTop: 2,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+    color: "#ffffff",
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  categoryShimmer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden",
+  },
+  shimmerGradient: {
+    flex: 1,
+    opacity: 0.4,
+  },
+  categoryArrow: {
+    position: "absolute",
+    top: "50%",
+    right: 16,
+    marginTop: -12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: { elevation: 1 },
+    }),
+  },
+  subcategoryTile: {
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    marginBottom: 12,
+    width: "95%",
+    height: 60,
+    borderWidth: 0,
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: { elevation: 4 },
+    }),
+  },
+  subcategoryIconContainer: {
+    position: "absolute",
+    top: 10,
+    left: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: { elevation: 2 },
+    }),
+  },
   subcategoryTileContent: {
     flex: 1,
-    paddingLeft: 48,
-    paddingRight: 32,
-    paddingVertical: 6,
+    paddingLeft: 56,
+    paddingRight: 40,
+    paddingVertical: 8,
     justifyContent: "center",
   },
   subcategoryTileText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     textAlign: "left",
     letterSpacing: -0.2,
     marginBottom: 6,
     fontFamily: Platform.OS === "ios" ? "System" : "sans-serif-medium",
+    color: "#2d3436",
   },
   subcategoryAccentBar: {
-    width: "70%",
-    height: 2,
-    borderRadius: 1,
+    width: "75%",
+    height: 3,
+    borderRadius: 2,
     overflow: "hidden",
   },
   accentBarGradient: {
@@ -1791,12 +1958,12 @@ const styles = StyleSheet.create({
   subcategoryArrow: {
     position: "absolute",
     top: "50%",
-    right: 12,
-    marginTop: -10,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    right: 16,
+    marginTop: -12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({
@@ -1811,7 +1978,7 @@ const styles = StyleSheet.create({
   },
   subcategoryGradientBackground: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 20,
   },
   breadcrumbRow: {
     flexDirection: "row",
@@ -1843,55 +2010,180 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   exerciseItemContainer: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 20,
-    marginBottom: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#f1f3f4",
+    borderRadius: 16,
+    marginBottom: 12,
+    padding: 12,
+    borderWidth: 0,
     position: "relative",
     overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
       },
-      android: { elevation: 6 },
+      android: { elevation: 4 },
     }),
   },
-  exerciseItemLeft: {
+  exerciseItemContent: {
     flex: 1,
   },
+  exerciseHeader: {
+    marginBottom: 12,
+  },
   exerciseName: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1a1a1a",
-    marginBottom: 10,
-    letterSpacing: -0.3,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2d3436",
+    marginBottom: 4,
+    letterSpacing: -0.2,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
   },
-  caloriesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  exerciseCalories: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#636e72",
+    letterSpacing: 0.1,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
   },
-  calorieText: {
+  exerciseInputs: {
+    marginBottom: 16,
+  },
+  inputLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#5a6c7d",
-    backgroundColor: "#f8fafc",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+    color: "#2d3436",
+    marginBottom: 6,
+    letterSpacing: 0.1,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  durationContainer: {
+    marginBottom: 12,
+  },
+  durationStepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    padding: 2,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#e9ecef",
+  },
+  stepperButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: { elevation: 1 },
+    }),
+  },
+  durationInput: {
+    flex: 1,
+    height: 28,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2d3436",
+    textAlign: "center",
+    backgroundColor: "transparent",
+    marginHorizontal: 6,
+  },
+  durationUnit: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: "#636e72",
+    marginTop: 4,
+    textAlign: "center",
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  effortContainer: {
+    marginBottom: 12,
+  },
+  effortDropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f8f9fa",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  effortDropdownText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2d3436",
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  terrainContainer: {
+    marginBottom: 12,
+  },
+  terrainDropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f8f9fa",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  terrainDropdownText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2d3436",
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  errorText: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: "#e74c3c",
+    marginBottom: 12,
+    textAlign: "center",
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  exerciseActions: {
+    alignItems: "stretch",
   },
   addExerciseButton: {
-    padding: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.darkGreen.color,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 6,
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.darkGreen.color,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+      },
+      android: { elevation: 3 },
+    }),
   },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ffffff",
+    letterSpacing: 0.1,
+    fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+
   tabsContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
@@ -1946,18 +2238,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 2,
   },
-  rightButtonsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginLeft: 8,
-  },
+
   heartButtonAbsolute: {
     position: "absolute",
     top: 8,
     right: 8,
     zIndex: 10,
-    borderRadius: 20,
+    borderRadius: 16,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#eee",
@@ -1966,10 +2253,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 2,
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
   },
   calorieLabel: {
     fontWeight: "bold",
@@ -1990,42 +2277,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3E5F5",
     color: "#8E24AA",
   },
-  totalCaloriesBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#8cc63f",
-    borderRadius: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginBottom: 6,
-    marginRight: 6,
-    shadowColor: "#8cc63f",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  totalCaloriesLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#fff",
-    marginRight: 8,
-    letterSpacing: 0.3,
-  },
-  totalCaloriesValue: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.3,
-  },
+
   categoryGradientBackground: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 24,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
     paddingVertical: 0,
     paddingHorizontal: 0,
+  },
+  // New styles for floating sparkles
+  sparkleContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden",
+  },
+  sparkle: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
 });
 
