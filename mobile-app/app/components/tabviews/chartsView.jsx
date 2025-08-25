@@ -47,6 +47,7 @@ const ChartsView = () => {
     target: 0,
     consumed: 0,
     remaining: 0,
+    overLimit: 0,
   });
 
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -115,7 +116,8 @@ const ChartsView = () => {
       setEnergyBudget({
         target: budgetData.target,
         consumed: budgetData.consumed,
-        remaining: budgetData.remaining,
+        remaining: Math.max(0, budgetData.remaining),
+        overLimit: Math.max(0, -budgetData.remaining),
       });
     } catch (error) {
       // Optionally handle error
@@ -157,19 +159,6 @@ const ChartsView = () => {
     },
   ];
 
-  const energyBudgetData = [
-    {
-      key: 1,
-      value: energyBudget.consumed,
-      svg: { fill: Colors.green.color },
-    },
-    {
-      key: 2,
-      value: energyBudget.remaining,
-      svg: { fill: Colors.blue.color },
-    },
-  ];
-
   const screenWidth = Dimensions.get("window").width * 0.9;
 
   const chartConfig = {
@@ -197,7 +186,11 @@ const ChartsView = () => {
   };
 
   const hasEnergyBudgetData = () => {
-    return energyBudget.consumed > 0 || energyBudget.remaining > 0;
+    return (
+      energyBudget.consumed > 0 ||
+      energyBudget.remaining > 0 ||
+      energyBudget.overLimit > 0
+    );
   };
 
   // Default grey chart data
@@ -288,12 +281,26 @@ const ChartsView = () => {
           color: Colors.green.color,
           legendFontColor: "#7F7F7F",
         },
-        {
-          name: "Remaining",
-          population: energyBudget.remaining,
-          color: Colors.blue.color,
-          legendFontColor: "#7F7F7F",
-        },
+        ...(energyBudget.remaining > 0
+          ? [
+              {
+                name: "Remaining",
+                population: energyBudget.remaining,
+                color: Colors.blue.color,
+                legendFontColor: "#7F7F7F",
+              },
+            ]
+          : []),
+        ...(energyBudget.overLimit > 0
+          ? [
+              {
+                name: "Over Limit",
+                population: energyBudget.overLimit,
+                color: Colors.brightRed.color,
+                legendFontColor: "#7F7F7F",
+              },
+            ]
+          : []),
       ]
     : getDefaultEnergyBudgetData();
 
@@ -561,12 +568,26 @@ const ChartsView = () => {
               icon: "restaurant",
               color: Colors.green.color,
             },
-            {
-              title: "Remaining",
-              value: energyBudget.remaining,
-              icon: "hourglass-empty",
-              color: Colors.blue.color,
-            },
+            ...(energyBudget.remaining > 0
+              ? [
+                  {
+                    title: "Remaining",
+                    value: energyBudget.remaining,
+                    icon: "hourglass-empty",
+                    color: Colors.blue.color,
+                  },
+                ]
+              : []),
+            ...(energyBudget.overLimit > 0
+              ? [
+                  {
+                    title: "Over Limit",
+                    value: energyBudget.overLimit,
+                    icon: "warning",
+                    color: Colors.brightRed.color,
+                  },
+                ]
+              : []),
           ].map((item) => (
             <View key={item.title} style={styles.budgetRow}>
               <View style={styles.budgetIconContainer}>
@@ -579,7 +600,17 @@ const ChartsView = () => {
               </View>
               <View style={styles.budgetInfo}>
                 <Text style={styles.budgetTitle}>{item.title}</Text>
-                <Text style={styles.budgetValue}>{item.value} kcal</Text>
+                <Text
+                  style={[
+                    styles.budgetValue,
+                    item.title === "Over Limit" && {
+                      color: Colors.brightRed.color,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {item.value} kcal
+                </Text>
               </View>
             </View>
           ))}
