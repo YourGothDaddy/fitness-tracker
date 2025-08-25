@@ -1141,6 +1141,207 @@
             }
         }
 
+        private static async Task<string> CalculateJsonFileHash(string filePath)
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            using var fs = File.OpenRead(filePath);
+            var hashBytes = await Task.Run(() => sha256.ComputeHash(fs));
+            return Convert.ToBase64String(hashBytes);
+        }
+
+        private static async Task<string> GetStoredJsonFileHash(ApplicationDbContext context)
+        {
+            try
+            {
+                var hashItem = await context.ConsumableItems
+                    .Where(c => c.Name == "__JSON_HASH__" && c.SubTitle == "__CONSUMABLE_ITEMS__")
+                    .FirstOrDefaultAsync();
+                return hashItem?.MainCategory ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static async Task StoreJsonFileHash(ApplicationDbContext context, string hash)
+        {
+            try
+            {
+                var hashItem = await context.ConsumableItems
+                    .Where(c => c.Name == "__JSON_HASH__" && c.SubTitle == "__CONSUMABLE_ITEMS__")
+                    .FirstOrDefaultAsync();
+
+                if (hashItem == null)
+                {
+                    hashItem = new ConsumableItem
+                    {
+                        Name = "__JSON_HASH__",
+                        SubTitle = "__CONSUMABLE_ITEMS__",
+                        MainCategory = hash,
+                        CaloriesPer100g = 0,
+                        ProteinPer100g = 0,
+                        CarbohydratePer100g = 0,
+                        FatPer100g = 0,
+                        Type = TypeOfConsumable.Food,
+                        IsPublic = false,
+                        UserId = null
+                    };
+                    context.ConsumableItems.Add(hashItem);
+                }
+                else
+                {
+                    hashItem.MainCategory = hash;
+                }
+
+                await context.SaveChangesAsync();
+                Console.WriteLine($"[JSON Hash] Stored new JSON file hash: {hash}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JSON Hash] Error storing JSON file hash: {ex.Message}");
+            }
+        }
+
+        private static async Task EnsureJsonItemsInsertedOrUpdatedAsync(ApplicationDbContext context, List<JsonElement> items)
+        {
+            int inserted = 0;
+            int updated = 0;
+            int skipped = 0;
+            int errors = 0;
+            Console.WriteLine($"[JSON Sync] Processing {items.Count} JSON items to ensure presence in DB...");
+
+            foreach (var item in items)
+            {
+                try
+                {
+                    if (!item.TryGetProperty("Title", out var titleProp) || titleProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(titleProp.GetString()))
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var name = titleProp.GetString()!;
+
+                    string? subTitle = null;
+                    if (item.TryGetProperty("SubTitle", out var subTitleProp) && subTitleProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = subTitleProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            subTitle = val;
+                    }
+
+                    string? mainCategory = null;
+                    if (item.TryGetProperty("MainCategory", out var mainCategoryProp) && mainCategoryProp.ValueKind == JsonValueKind.String)
+                    {
+                        var val = mainCategoryProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(val))
+                            mainCategory = val;
+                    }
+
+                    int calories = GetSafeInteger(item, "CaloriesPer100g");
+                    double protein = GetSafeDouble(item, "ProteinPer100g");
+                    double carbs = GetSafeDouble(item, "CarbohydratesPer100g");
+                    double fat = GetSafeDouble(item, "FatsPer100g");
+
+                    var existing = await context.ConsumableItems
+                        .Where(c => c.Name == name && c.SubTitle == subTitle)
+                        .OrderBy(c => c.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (existing == null)
+                    {
+                        var newItem = new ConsumableItem
+                        {
+                            Name = name,
+                            SubTitle = subTitle,
+                            MainCategory = mainCategory,
+                            CaloriesPer100g = calories,
+                            ProteinPer100g = protein,
+                            CarbohydratePer100g = carbs,
+                            FatPer100g = fat,
+                            Type = TypeOfConsumable.Food,
+                            IsPublic = true,
+                            NutritionalInformation = new List<Nutrient>()
+                        };
+
+                        void AddNutrients(string category, JsonElement? group)
+                        {
+                            if (group == null || group.Value.ValueKind != JsonValueKind.Object) return;
+                            foreach (var prop in group.Value.EnumerateObject())
+                            {
+                                if (prop.Value.ValueKind == JsonValueKind.Null) continue;
+                                if (double.TryParse(prop.Value.ToString(), out var val))
+                                {
+                                    newItem.NutritionalInformation.Add(new Nutrient
+                                    {
+                                        Category = category,
+                                        Name = prop.Name,
+                                        Amount = val
+                                    });
+                                }
+                            }
+                        }
+
+                        AddNutrients("Carbohydrates", item.TryGetProperty("Carbohydrates", out var carbsGroupIns) ? carbsGroupIns : (JsonElement?)null);
+                        AddNutrients("AminoAcids", item.TryGetProperty("AminoAcids", out var aminosIns) ? aminosIns : (JsonElement?)null);
+                        AddNutrients("Fats", item.TryGetProperty("Fats", out var fatsIns) ? fatsIns : (JsonElement?)null);
+                        AddNutrients("Minerals", item.TryGetProperty("Minerals", out var mineralsIns) ? mineralsIns : (JsonElement?)null);
+                        AddNutrients("Other", item.TryGetProperty("Other", out var otherIns) ? otherIns : (JsonElement?)null);
+                        AddNutrients("Sterols", item.TryGetProperty("Sterols", out var sterolsIns) ? sterolsIns : (JsonElement?)null);
+                        AddNutrients("Vitamins", item.TryGetProperty("Vitamins", out var vitaminsIns) ? vitaminsIns : (JsonElement?)null);
+
+                        await context.ConsumableItems.AddAsync(newItem);
+                        inserted++;
+                        if (inserted <= 20)
+                        {
+                            Console.WriteLine($"[JSON Sync] Inserted: {name} | {subTitle}");
+                        }
+                    }
+                    else
+                    {
+                        // Update missing fields only; don't overwrite existing non-empty fields
+                        bool changed = false;
+                        if (string.IsNullOrWhiteSpace(existing.MainCategory) && !string.IsNullOrWhiteSpace(mainCategory))
+                        { existing.MainCategory = mainCategory; changed = true; }
+                        if (existing.CaloriesPer100g == 0 && calories != 0)
+                        { existing.CaloriesPer100g = calories; changed = true; }
+                        if (existing.ProteinPer100g == 0 && protein != 0)
+                        { existing.ProteinPer100g = protein; changed = true; }
+                        if (existing.CarbohydratePer100g == 0 && carbs != 0)
+                        { existing.CarbohydratePer100g = carbs; changed = true; }
+                        if (existing.FatPer100g == 0 && fat != 0)
+                        { existing.FatPer100g = fat; changed = true; }
+
+                        if (changed)
+                        {
+                            updated++;
+                            if (updated <= 20)
+                            {
+                                Console.WriteLine($"[JSON Sync] Updated missing fields: {name} | {subTitle}");
+                            }
+                        }
+                        else
+                        {
+                            skipped++;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    Console.WriteLine($"[JSON Sync] Error: {ex.Message}");
+                }
+            }
+
+            if (inserted + updated > 0)
+            {
+                await context.SaveChangesAsync();
+            }
+
+            Console.WriteLine($"[JSON Sync] Done. Inserted: {inserted}, Updated: {updated}, Skipped: {skipped}, Errors: {errors}");
+        }
+
         private static async Task<string> GetStoredHash(ApplicationDbContext context, string operationType = "MainCategory")
         {
             // Store the database hash in a special consumable item
@@ -1357,6 +1558,16 @@
                 return;
             }
 
+            // First: check if JSON file changed and ensure new items/missing fields are inserted/updated
+            var currentJsonHash = await CalculateJsonFileHash(filePath);
+            var storedJsonHash = await GetStoredJsonFileHash(context);
+            if (string.IsNullOrEmpty(storedJsonHash) || storedJsonHash != currentJsonHash)
+            {
+                Console.WriteLine($"[Unified Seeder] JSON changed - inserting new items and filling missing fields...");
+                await EnsureJsonItemsInsertedOrUpdatedAsync(context, items);
+                await StoreJsonFileHash(context, currentJsonHash);
+            }
+
             // Master hash check - determine what seeding operations are needed
             if (await ShouldSkipAllSeeding(context, items))
             {
@@ -1452,10 +1663,52 @@
 
                     if (existingItem == null)
                     {
-                        notFound++;
-                        if (notFound <= 10) // Only show first 10 not found items to avoid spam
+                        // Not found in DB -> insert as a new item instead of skipping
+                        var newItem = new ConsumableItem
                         {
-                            Console.WriteLine($"[MainCategory Seeder] NOT FOUND: {name} | {subTitle}");
+                            Name = name!,
+                            SubTitle = subTitle,
+                            MainCategory = mainCategory,
+                            CaloriesPer100g = calories,
+                            ProteinPer100g = protein,
+                            CarbohydratePer100g = carbs,
+                            FatPer100g = fat,
+                            Type = TypeOfConsumable.Food,
+                            IsPublic = true,
+                            NutritionalInformation = new List<Nutrient>()
+                        };
+
+                        void AddNutrients(string category, JsonElement? group)
+                        {
+                            if (group == null || group.Value.ValueKind != JsonValueKind.Object) return;
+                            foreach (var prop in group.Value.EnumerateObject())
+                            {
+                                if (prop.Value.ValueKind == JsonValueKind.Null) continue;
+                                if (double.TryParse(prop.Value.ToString(), out var val))
+                                {
+                                    newItem.NutritionalInformation.Add(new Nutrient
+                                    {
+                                        Category = category,
+                                        Name = prop.Name,
+                                        Amount = val
+                                    });
+                                }
+                            }
+                        }
+
+                        AddNutrients("Carbohydrates", item.TryGetProperty("Carbohydrates", out var carbsGroupIns) ? carbsGroupIns : (JsonElement?)null);
+                        AddNutrients("AminoAcids", item.TryGetProperty("AminoAcids", out var aminosIns) ? aminosIns : (JsonElement?)null);
+                        AddNutrients("Fats", item.TryGetProperty("Fats", out var fatsIns) ? fatsIns : (JsonElement?)null);
+                        AddNutrients("Minerals", item.TryGetProperty("Minerals", out var mineralsIns) ? mineralsIns : (JsonElement?)null);
+                        AddNutrients("Other", item.TryGetProperty("Other", out var otherIns) ? otherIns : (JsonElement?)null);
+                        AddNutrients("Sterols", item.TryGetProperty("Sterols", out var sterolsIns) ? sterolsIns : (JsonElement?)null);
+                        AddNutrients("Vitamins", item.TryGetProperty("Vitamins", out var vitaminsIns) ? vitaminsIns : (JsonElement?)null);
+
+                        await context.ConsumableItems.AddAsync(newItem);
+                        updated++;
+                        if (updated <= 20)
+                        {
+                            Console.WriteLine($"[MainCategory Seeder] Inserted (new): {name} | {subTitle} | {mainCategory}");
                         }
                         continue;
                     }
@@ -1608,10 +1861,52 @@
 
                     if (existingItem == null)
                     {
-                        notFound++;
-                        if (notFound <= 10) // Only show first 10 not found items to avoid spam
+                        // Not found in DB -> insert as a new item instead of skipping
+                        var newItem = new ConsumableItem
                         {
-                            Console.WriteLine($"[MainCategory Seeder] NOT FOUND: {name} | {subTitle}");
+                            Name = name!,
+                            SubTitle = subTitle,
+                            MainCategory = mainCategory,
+                            CaloriesPer100g = calories,
+                            ProteinPer100g = protein,
+                            CarbohydratePer100g = carbs,
+                            FatPer100g = fat,
+                            Type = TypeOfConsumable.Food,
+                            IsPublic = true,
+                            NutritionalInformation = new List<Nutrient>()
+                        };
+
+                        void AddNutrients(string category, JsonElement? group)
+                        {
+                            if (group == null || group.Value.ValueKind != JsonValueKind.Object) return;
+                            foreach (var prop in group.Value.EnumerateObject())
+                            {
+                                if (prop.Value.ValueKind == JsonValueKind.Null) continue;
+                                if (double.TryParse(prop.Value.ToString(), out var val))
+                                {
+                                    newItem.NutritionalInformation.Add(new Nutrient
+                                    {
+                                        Category = category,
+                                        Name = prop.Name,
+                                        Amount = val
+                                    });
+                                }
+                            }
+                        }
+
+                        AddNutrients("Carbohydrates", item.TryGetProperty("Carbohydrates", out var carbsGroupIns) ? carbsGroupIns : (JsonElement?)null);
+                        AddNutrients("AminoAcids", item.TryGetProperty("AminoAcids", out var aminosIns) ? aminosIns : (JsonElement?)null);
+                        AddNutrients("Fats", item.TryGetProperty("Fats", out var fatsIns) ? fatsIns : (JsonElement?)null);
+                        AddNutrients("Minerals", item.TryGetProperty("Minerals", out var mineralsIns) ? mineralsIns : (JsonElement?)null);
+                        AddNutrients("Other", item.TryGetProperty("Other", out var otherIns) ? otherIns : (JsonElement?)null);
+                        AddNutrients("Sterols", item.TryGetProperty("Sterols", out var sterolsIns) ? sterolsIns : (JsonElement?)null);
+                        AddNutrients("Vitamins", item.TryGetProperty("Vitamins", out var vitaminsIns) ? vitaminsIns : (JsonElement?)null);
+
+                        await context.ConsumableItems.AddAsync(newItem);
+                        updated++;
+                        if (updated <= 20)
+                        {
+                            Console.WriteLine($"[MainCategory Seeder] Inserted (new): {name} | {subTitle} | {mainCategory}");
                         }
                         continue;
                     }
