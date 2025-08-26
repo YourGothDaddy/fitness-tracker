@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -43,6 +43,8 @@ const FloatingSparkles = () => {
   const [sparkles, setSparkles] = useState([]);
   const fadeAnims = useRef([]);
   const scaleAnims = useRef([]);
+  const timersRef = useRef([]);
+  const loopsRef = useRef([]);
 
   useEffect(() => {
     const generateSparkles = () => {
@@ -67,6 +69,12 @@ const FloatingSparkles = () => {
 
   useEffect(() => {
     if (sparkles.length === 0) return;
+
+    // stop any previous loops/timers
+    timersRef.current.forEach((t) => clearTimeout(t));
+    timersRef.current = [];
+    loopsRef.current.forEach((anim) => anim.stop());
+    loopsRef.current = [];
 
     sparkles.forEach((sparkle, index) => {
       const fadeAnim = fadeAnims.current[index];
@@ -109,12 +117,16 @@ const FloatingSparkles = () => {
         scaleAnimation.start();
       }, sparkle.animationDelay);
 
-      return () => {
-        clearTimeout(timer);
-        fadeAnimation.stop();
-        scaleAnimation.stop();
-      };
+      timersRef.current.push(timer);
+      loopsRef.current.push(fadeAnimation, scaleAnimation);
     });
+
+    return () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
+      loopsRef.current.forEach((anim) => anim.stop());
+      loopsRef.current = [];
+    };
   }, [sparkles]);
 
   return (
@@ -1041,6 +1053,27 @@ const TrackExerciseView = () => {
   const categoryAnimRefs = useRef({}).current;
   const subcategoryAnimRefs = useRef({}).current;
 
+  // Reset helpers to avoid stuck shrink when navigating back
+  const resetCategoryAnims = useCallback(() => {
+    Object.values(categoryAnimRefs).forEach((anim) => {
+      if (!anim) return;
+      if (anim.scale?.stopAnimation) anim.scale.stopAnimation();
+      if (anim.opacity?.stopAnimation) anim.opacity.stopAnimation();
+      if (anim.scale?.setValue) anim.scale.setValue(1);
+      if (anim.opacity?.setValue) anim.opacity.setValue(1);
+    });
+  }, [categoryAnimRefs]);
+
+  const resetSubcategoryAnims = useCallback(() => {
+    Object.values(subcategoryAnimRefs).forEach((anim) => {
+      if (!anim) return;
+      if (anim.scale?.stopAnimation) anim.scale.stopAnimation();
+      if (anim.opacity?.stopAnimation) anim.opacity.stopAnimation();
+      if (anim.scale?.setValue) anim.scale.setValue(1);
+      if (anim.opacity?.setValue) anim.opacity.setValue(1);
+    });
+  }, [subcategoryAnimRefs]);
+
   // Handle back button press
   useEffect(() => {
     const backAction = () => {
@@ -1048,12 +1081,15 @@ const TrackExerciseView = () => {
       if (activeTab === "all") {
         if (allViewLevel === "exercise") {
           // Go back to subcategory selection
+          resetSubcategoryAnims();
           setAllViewLevel("subcategory");
           setSelectedSubcategory(null);
           setExercisesForSubcategory([]);
           return true; // Prevent default back behavior
         } else if (allViewLevel === "subcategory") {
           // Go back to category selection
+          resetSubcategoryAnims();
+          resetCategoryAnims();
           setAllViewLevel("category");
           setSelectedCategory(null);
           setSubcategoriesForCategory([]);
@@ -1070,7 +1106,7 @@ const TrackExerciseView = () => {
     );
 
     return () => backHandler.remove();
-  }, [activeTab, allViewLevel]);
+  }, [activeTab, allViewLevel, resetCategoryAnims, resetSubcategoryAnims]);
 
   useEffect(() => {
     const fetchMetaData = async () => {
@@ -1350,6 +1386,17 @@ const TrackExerciseView = () => {
                           onPressIn={handlePressIn}
                           onPressOut={handlePressOut}
                           onPress={() => {
+                            // Ensure current tile is restored before navigating deeper
+                            const ref = categoryAnimRefs[cat];
+                            if (ref) {
+                              if (ref.scale?.stopAnimation)
+                                ref.scale.stopAnimation();
+                              if (ref.opacity?.stopAnimation)
+                                ref.opacity.stopAnimation();
+                              if (ref.scale?.setValue) ref.scale.setValue(1);
+                              if (ref.opacity?.setValue)
+                                ref.opacity.setValue(1);
+                            }
                             setSelectedCategory(cat);
                             setSelectedSubcategory(null);
                             setExercisesForSubcategory([]);
@@ -1434,6 +1481,7 @@ const TrackExerciseView = () => {
                 <View style={styles.breadcrumbRow}>
                   <TouchableOpacity
                     onPress={() => {
+                      resetSubcategoryAnims();
                       setAllViewLevel("category");
                       setSelectedCategory(null);
                       setSelectedSubcategory(null);
@@ -1525,6 +1573,17 @@ const TrackExerciseView = () => {
                             onPressIn={handlePressIn}
                             onPressOut={handlePressOut}
                             onPress={() => {
+                              // Ensure subcategory tile resets before navigating
+                              const ref = subcategoryAnimRefs[name];
+                              if (ref) {
+                                if (ref.scale?.stopAnimation)
+                                  ref.scale.stopAnimation();
+                                if (ref.opacity?.stopAnimation)
+                                  ref.opacity.stopAnimation();
+                                if (ref.scale?.setValue) ref.scale.setValue(1);
+                                if (ref.opacity?.setValue)
+                                  ref.opacity.setValue(1);
+                              }
                               setSelectedSubcategory(name);
                               setAllViewLevel("exercise");
                               (async () => {
@@ -1597,6 +1656,7 @@ const TrackExerciseView = () => {
                 <View style={styles.breadcrumbRow}>
                   <TouchableOpacity
                     onPress={() => {
+                      resetSubcategoryAnims();
                       setAllViewLevel("subcategory");
                       setSelectedSubcategory(null);
                       setExercisesForSubcategory([]);
