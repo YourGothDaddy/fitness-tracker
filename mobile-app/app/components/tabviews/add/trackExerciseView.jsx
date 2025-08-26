@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TextInput,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   Animated,
   Platform,
@@ -1037,7 +1038,7 @@ const TrackExerciseView = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [exerciseItems, setExerciseItems] = useState([]);
+  const [allPublicTypes, setAllPublicTypes] = useState([]);
   const [favoriteActivityTypeIds, setFavoriteActivityTypeIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1128,31 +1129,26 @@ const TrackExerciseView = () => {
     fetchFavorites();
   }, []);
 
+  // Load all public activity types once; avoid re-fetch on tab switch
   useEffect(() => {
-    const fetchItems = async () => {
+    let isCancelled = false;
+    const loadAllPublic = async () => {
       setLoading(true);
       setError("");
       try {
-        let items = [];
-        if (activeTab === "all") {
-          items = await activityService.getPublicActivityTypes();
-        } else if (activeTab === "favorites") {
-          const [publicTypes] = await Promise.all([
-            activityService.getPublicActivityTypes(),
-          ]);
-          items = [...publicTypes].filter((t) =>
-            favoriteActivityTypeIds.includes(t.id)
-          );
-        }
-        setExerciseItems(items);
+        const items = await activityService.getPublicActivityTypes();
+        if (!isCancelled) setAllPublicTypes(items);
       } catch (err) {
-        setError("Failed to load exercise data");
+        if (!isCancelled) setError("Failed to load exercise data");
       } finally {
-        setLoading(false);
+        if (!isCancelled) setLoading(false);
       }
     };
-    fetchItems();
-  }, [activeTab, favoriteActivityTypeIds]);
+    loadAllPublic();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "all") {
@@ -1164,19 +1160,39 @@ const TrackExerciseView = () => {
     }
   }, [activeTab]);
 
-  const handleFavoriteToggle = (activityTypeId, isNowFavorite) => {
+  const handleFavoriteToggle = useCallback((activityTypeId, isNowFavorite) => {
     setFavoriteActivityTypeIds((prev) => {
       if (isNowFavorite) return [...prev, activityTypeId];
       return prev.filter((id) => id !== activityTypeId);
     });
-  };
+  }, []);
 
-  const filteredItems = exerciseItems.filter((item) => {
-    return (
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase())
+  // Build a fast lookup for metadata to avoid O(n) scans per item
+  const metaIndex = React.useMemo(() => {
+    const map = new Map();
+    (exerciseMetaData || []).forEach((m) => {
+      if (!m || !m.category || !m.subcategory) return;
+      map.set(`${m.category}|||${m.subcategory}`, m);
+    });
+    return map;
+  }, [exerciseMetaData]);
+
+  // Favorites derived from all public items
+  const favoriteItems = React.useMemo(() => {
+    if (!allPublicTypes?.length || !favoriteActivityTypeIds?.length) return [];
+    const favoriteSet = new Set(favoriteActivityTypeIds);
+    return allPublicTypes.filter((t) => favoriteSet.has(t.id));
+  }, [allPublicTypes, favoriteActivityTypeIds]);
+
+  const filteredFavoriteItems = React.useMemo(() => {
+    const q = (searchQuery || "").toLowerCase();
+    if (!q) return favoriteItems;
+    return favoriteItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
     );
-  });
+  }, [favoriteItems, searchQuery]);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -1197,18 +1213,11 @@ const TrackExerciseView = () => {
     loadCategories();
   }, [activeTab, allViewLevel, searchQuery]);
 
-  const itemsInSelectedCategory = filteredItems.filter(
-    (i) => i.category === selectedCategory
-  );
+  // removed: itemsInSelectedCategory derived from deprecated filteredItems
 
-  // Helper to get effortLevels and terrainTypes from meta
+  // Helper to get effortLevels and terrainTypes from prebuilt index
   const getMetaForItem = (item) => {
-    return (
-      exerciseMetaData.find(
-        (meta) =>
-          meta.category === item.category && meta.subcategory === item.name
-      ) || {}
-    );
+    return metaIndex.get(`${item.category}|||${item.name}`) || {};
   };
 
   // Helper removed: no custom workouts
@@ -1216,6 +1225,9 @@ const TrackExerciseView = () => {
 
   // Determine if the current tab is 'custom'
   const isCustomTab = false;
+
+  // Memoized ExerciseItem to reduce rerenders across list updates
+  const MemoExerciseItem = React.useMemo(() => React.memo(ExerciseItem), []);
 
   return (
     <>
@@ -1725,12 +1737,12 @@ const TrackExerciseView = () => {
                     {"Your saved favorite exercises"}
                   </Text>
                 </View>
-                {filteredItems.map((item, index) => {
+                {filteredFavoriteItems.map((item, index) => {
                   const meta = getMetaForItem(item);
                   const hideEffortAndDuration = isCustomOrFavoriteCustom(item);
                   const isCustomWorkout = false;
                   return (
-                    <ExerciseItem
+                    <MemoExerciseItem
                       key={item.id || index}
                       category={item.category}
                       subcategory={item.name}
