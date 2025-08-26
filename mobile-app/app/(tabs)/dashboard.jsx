@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import { Colors } from "@/constants/Colors";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,7 +23,7 @@ import { FadeInDown } from "react-native-reanimated";
 const { width } = Dimensions.get("window");
 
 const Dashboard = () => {
-  const tabs = ["General", "Charts", "Targets"];
+  const tabs = useMemo(() => ["General", "Charts", "Targets"], []);
   const [activeTab, setActiveTab] = useState("General");
   const translateX = useRef(new Animated.Value(0)).current;
   const lineWidth = useRef(new Animated.Value(0)).current;
@@ -31,39 +31,48 @@ const Dashboard = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [initialLoad, setInitialLoad] = useState(false);
 
-  const onTabPress = (index, tab) => {
-    setSelectedIndex(index);
-    animateLine(index);
-    setActiveTab(tab);
-  };
+  const onTabPress = useCallback(
+    (index, tab) => {
+      setSelectedIndex(index);
+      animateLine(index);
+      setActiveTab(tab);
+    },
+    [animateLine]
+  );
 
-  const animateLine = (index) => {
-    const { x, width } = tabLayouts[index];
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: x,
-        duration: 300,
-        useNativeDriver: false,
-      }),
-      Animated.timing(lineWidth, {
-        toValue: width,
-        duration: 300,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  };
+  const animateLine = useCallback(
+    (index) => {
+      const { x, width } = tabLayouts[index];
+      Animated.parallel([
+        Animated.timing(translateX, {
+          toValue: x,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+        Animated.timing(lineWidth, {
+          toValue: width,
+          duration: 300,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    },
+    [lineWidth, translateX, tabLayouts]
+  );
 
-  const onTabLayout = (event, index) => {
-    const { x, width } = event.nativeEvent.layout;
-    tabLayouts[index] = { x, width };
+  const onTabLayout = useCallback(
+    (event, index) => {
+      const { x, width } = event.nativeEvent.layout;
+      tabLayouts[index] = { x, width };
 
-    if (!initialLoad) {
-      setInitialLoad(true);
-      animateLine(selectedIndex);
-    }
-  };
+      if (!initialLoad) {
+        setInitialLoad(true);
+        animateLine(selectedIndex);
+      }
+    },
+    [animateLine, initialLoad, selectedIndex, tabLayouts]
+  );
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeTab) {
       case "General":
         return <GeneralView />;
@@ -74,7 +83,7 @@ const Dashboard = () => {
       default:
         return <GeneralView />;
     }
-  };
+  }, [activeTab]);
 
   return (
     <SafeAreaView style={styles.container}>

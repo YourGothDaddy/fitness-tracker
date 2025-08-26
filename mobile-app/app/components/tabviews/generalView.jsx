@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -326,14 +326,17 @@ const GeneralView = () => {
   const screenWidth =
     Dimensions.get("window").width - totalHorizontalPadding - cardPadding;
 
-  const calorieData = {
-    labels: calorieOverview.dailyCalories.map((day) => getDayName(day.date)),
-    datasets: [
-      {
-        data: calorieOverview.dailyCalories.map((day) => day.totalCalories),
-      },
-    ],
-  };
+  const calorieData = useMemo(
+    () => ({
+      labels: calorieOverview.dailyCalories.map((day) => getDayName(day.date)),
+      datasets: [
+        {
+          data: calorieOverview.dailyCalories.map((day) => day.totalCalories),
+        },
+      ],
+    }),
+    [calorieOverview.dailyCalories]
+  );
 
   let weightLabels = [],
     weightValues = [];
@@ -359,50 +362,56 @@ const GeneralView = () => {
     }
   }
 
-  const weightData = {
-    labels: weightLabels.length > 0 ? weightLabels : ["No Data"],
-    datasets: [
-      {
-        data: weightValues.length > 0 ? weightValues : [0],
-        color: () => Colors.green.color,
-        strokeWidth: 2,
-      },
-    ],
-  };
+  const weightData = useMemo(
+    () => ({
+      labels: weightLabels.length > 0 ? weightLabels : ["No Data"],
+      datasets: [
+        {
+          data: weightValues.length > 0 ? weightValues : [0],
+          color: () => Colors.green.color,
+          strokeWidth: 2,
+        },
+      ],
+    }),
+    [weightLabels, weightValues]
+  );
 
-  const chartConfig = {
-    backgroundColor: Colors.white.color,
-    backgroundGradientFrom: Colors.white.color,
-    backgroundGradientTo: Colors.white.color,
-    decimalPlaces: 1,
-    color: (opacity = 1) => `rgba(97, 152, 25, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(45, 52, 54, ${opacity})`,
-    style: {
-      borderRadius: 16,
-    },
-    propsForBackgroundLines: {
-      strokeDasharray: "",
-      stroke: "rgba(97, 152, 25, 0.1)",
-      strokeWidth: 1,
-    },
-    propsForLabels: {
-      fontSize: 11,
-      fontWeight: "600",
-    },
-    barPercentage: 0.6,
-    propsForVerticalLabels: {
-      fontSize: 11,
-      rotation: 0,
-    },
-    formatYLabel: (value) => {
-      if (value === undefined || value === null) return "";
-      return Number(value).toFixed(1);
-    },
-    formatXLabel: (value) => {
-      if (!value || value === "") return "";
-      return value;
-    },
-  };
+  const chartConfig = useMemo(
+    () => ({
+      backgroundColor: Colors.white.color,
+      backgroundGradientFrom: Colors.white.color,
+      backgroundGradientTo: Colors.white.color,
+      decimalPlaces: 1,
+      color: (opacity = 1) => `rgba(97, 152, 25, ${opacity})`,
+      labelColor: (opacity = 1) => `rgba(45, 52, 54, ${opacity})`,
+      style: {
+        borderRadius: 16,
+      },
+      propsForBackgroundLines: {
+        strokeDasharray: "",
+        stroke: "rgba(97, 152, 25, 0.1)",
+        strokeWidth: 1,
+      },
+      propsForLabels: {
+        fontSize: 11,
+        fontWeight: "600",
+      },
+      barPercentage: 0.6,
+      propsForVerticalLabels: {
+        fontSize: 11,
+        rotation: 0,
+      },
+      formatYLabel: (value) => {
+        if (value === undefined || value === null) return "";
+        return Number(value).toFixed(1);
+      },
+      formatXLabel: (value) => {
+        if (!value || value === "") return "";
+        return value;
+      },
+    }),
+    []
+  );
 
   const getMealTypeIcon = (mealType) => {
     switch (mealType) {
@@ -440,6 +449,88 @@ const GeneralView = () => {
     }
     return "fitness-center";
   };
+
+  const renderMealItem = useCallback(
+    ({ item }) => (
+      <View style={styles.tableRow}>
+        <TouchableOpacity
+          accessibilityLabel="Delete meal"
+          onPress={() => handleDeleteMeal(item.id)}
+          style={styles.deleteButton}
+        >
+          <Icon name="delete" size={20} color="#e74c3c" />
+        </TouchableOpacity>
+        <View style={styles.rowTop}>
+          <View style={styles.titleContainer}>
+            <Icon
+              name={getMealTypeIcon(item.mealType)}
+              size={20}
+              color="#619819"
+            />
+            <Text style={styles.tableCellTitle} numberOfLines={1}>
+              {item.name}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.rowBottom}>
+          <Text style={styles.calorieText}>{item.calories} kcal</Text>
+          <View style={styles.timeInline}>
+            <Icon
+              name="schedule"
+              size={14}
+              color="#619819"
+              style={styles.timeIcon}
+            />
+            <Text style={styles.timeText}>
+              {activityService.formatTime(item.time)}
+            </Text>
+          </View>
+        </View>
+      </View>
+    ),
+    [handleDeleteMeal]
+  );
+
+  const renderExerciseItem = useCallback(
+    ({ item }) => (
+      <View style={styles.tableRow}>
+        <TouchableOpacity
+          accessibilityLabel="Delete exercise"
+          onPress={() => handleDeleteExercise(item.id)}
+          style={styles.deleteButton}
+        >
+          <Icon name="delete" size={20} color="#e74c3c" />
+        </TouchableOpacity>
+        <View style={styles.rowTop}>
+          <View style={styles.titleContainer}>
+            <Icon
+              name={getExerciseIcon(item.name, item.category)}
+              size={20}
+              color="#619819"
+            />
+            <Text style={styles.tableCellTitle}>{item.name}</Text>
+          </View>
+        </View>
+        <View style={styles.rowBottom}>
+          <Text style={styles.calorieText}>{item.caloriesBurned} kcal</Text>
+          <View style={styles.timeInline}>
+            <Icon
+              name="schedule"
+              size={14}
+              color="#619819"
+              style={styles.timeIcon}
+            />
+            <Text style={styles.timeText}>
+              {activityService.formatTime(item.time)}
+            </Text>
+          </View>
+        </View>
+      </View>
+    ),
+    [handleDeleteExercise]
+  );
+
+  const keyExtractorById = useCallback((x) => String(x.id), []);
 
   return (
     <ScrollView style={styles.container}>
@@ -785,8 +876,11 @@ const GeneralView = () => {
               <Text style={styles.sectionTitle}>Meals</Text>
               <View style={styles.tableContainer}>
                 {activityOverview.meals && activityOverview.meals.length > 0 ? (
-                  activityOverview.meals.map((meal, index) => (
-                    <View key={`meal-${index}`} style={styles.tableRow}>
+                  activityOverview.meals.map((meal, idx) => (
+                    <View
+                      key={`meal-${meal.id ?? idx}`}
+                      style={styles.tableRow}
+                    >
                       <TouchableOpacity
                         accessibilityLabel="Delete meal"
                         onPress={() => handleDeleteMeal(meal.id)}
@@ -839,8 +933,11 @@ const GeneralView = () => {
               <View style={styles.tableContainer}>
                 {activityOverview.exercises &&
                 activityOverview.exercises.length > 0 ? (
-                  activityOverview.exercises.map((exercise, index) => (
-                    <View key={`exercise-${index}`} style={styles.tableRow}>
+                  activityOverview.exercises.map((exercise, idx) => (
+                    <View
+                      key={`exercise-${exercise.id ?? idx}`}
+                      style={styles.tableRow}
+                    >
                       <TouchableOpacity
                         accessibilityLabel="Delete exercise"
                         onPress={() => handleDeleteExercise(exercise.id)}

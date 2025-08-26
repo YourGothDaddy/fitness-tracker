@@ -26,4 +26,4 @@ const Icon = ({ name, size = 24, color = "#000", ...props }) => {
   return <Ionicons name={name} size={size} color={color} {...props} />;
 };
 
-export default Icon;
+export default React.memo(Icon);

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
 import { PieChart } from "react-native-chart-kit";
-import React, { useEffect, useState } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import nutritionService from "@/app/services/nutritionService";
@@ -83,89 +83,103 @@ const ChartsView = () => {
     });
   };
 
-  const fetchData = async (date = selectedDate) => {
-    try {
-      setIsLoading(true);
-      const [macrosData, energyData, budgetData] = await Promise.all([
-        nutritionService.getMacronutrients(date),
-        nutritionService.getEnergyExpenditure(date),
-        nutritionService.getEnergyBudget(date),
-      ]);
-      setMacronutrients({
-        protein: macrosData.protein,
-        carbs: macrosData.carbs,
-        fat: macrosData.fat,
-        totalMacros: macrosData.totalMacros,
-        proteinPercentage: macrosData.proteinPercentage,
-        carbsPercentage: macrosData.carbsPercentage,
-        fatPercentage: macrosData.fatPercentage,
-      });
+  const isMounted = useRef(true);
 
-      setEnergyExpenditure({
-        bmr: energyData.bmr,
-        exerciseCalories: energyData.exerciseCalories,
-        baselineActivityCalories: energyData.baselineActivityCalories,
-        tefCalories: energyData.tefCalories,
-        totalEnergyBurned: energyData.totalEnergyBurned,
-        bmrPercentage: energyData.bmrPercentage,
-        exercisePercentage: energyData.exercisePercentage,
-        baselineActivityPercentage: energyData.baselineActivityPercentage,
-        tefPercentage: energyData.tefPercentage,
-      });
+  const fetchData = useCallback(
+    async (date = selectedDate) => {
+      try {
+        setIsLoading(true);
+        const [macrosData, energyData, budgetData] = await Promise.all([
+          nutritionService.getMacronutrients(date),
+          nutritionService.getEnergyExpenditure(date),
+          nutritionService.getEnergyBudget(date),
+        ]);
+        if (!isMounted.current) return;
+        setMacronutrients({
+          protein: macrosData.protein,
+          carbs: macrosData.carbs,
+          fat: macrosData.fat,
+          totalMacros: macrosData.totalMacros,
+          proteinPercentage: macrosData.proteinPercentage,
+          carbsPercentage: macrosData.carbsPercentage,
+          fatPercentage: macrosData.fatPercentage,
+        });
 
-      setEnergyBudget({
-        target: budgetData.target,
-        consumed: budgetData.consumed,
-        remaining: Math.max(0, budgetData.remaining),
-        overLimit: Math.max(0, -budgetData.remaining),
-      });
-    } catch (error) {
-      // Optionally handle error
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        if (!isMounted.current) return;
+        setEnergyExpenditure({
+          bmr: energyData.bmr,
+          exerciseCalories: energyData.exerciseCalories,
+          baselineActivityCalories: energyData.baselineActivityCalories,
+          tefCalories: energyData.tefCalories,
+          totalEnergyBurned: energyData.totalEnergyBurned,
+          bmrPercentage: energyData.bmrPercentage,
+          exercisePercentage: energyData.exercisePercentage,
+          baselineActivityPercentage: energyData.baselineActivityPercentage,
+          tefPercentage: energyData.tefPercentage,
+        });
 
-  useEffect(() => {
-    fetchData(selectedDate);
-  }, [selectedDate]);
+        if (!isMounted.current) return;
+        setEnergyBudget({
+          target: budgetData.target,
+          consumed: budgetData.consumed,
+          remaining: Math.max(0, budgetData.remaining),
+          overLimit: Math.max(0, -budgetData.remaining),
+        });
+      } catch (error) {
+        // Optionally handle error
+      } finally {
+        if (isMounted.current) setIsLoading(false);
+      }
+    },
+    [selectedDate]
+  );
 
   useFocusEffect(
     React.useCallback(() => {
+      isMounted.current = true;
       fetchData(selectedDate);
-    }, [selectedDate])
+      return () => {
+        isMounted.current = false;
+      };
+    }, [fetchData, selectedDate])
   );
 
-  const burnedData = [
-    {
-      key: 1,
-      value: energyExpenditure.bmr,
-      svg: { fill: Colors.green.color },
-    },
-    {
-      key: 2,
-      value: energyExpenditure.exerciseCalories,
-      svg: { fill: Colors.blue.color },
-    },
-    {
-      key: 3,
-      value: energyExpenditure.baselineActivityCalories,
-      svg: { fill: Colors.brightRed.color },
-    },
-    {
-      key: 4,
-      value: energyExpenditure.tefCalories,
-      svg: { fill: Colors.red.color },
-    },
-  ];
+  const burnedData = useMemo(
+    () => [
+      {
+        key: 1,
+        value: energyExpenditure.bmr,
+        svg: { fill: Colors.green.color },
+      },
+      {
+        key: 2,
+        value: energyExpenditure.exerciseCalories,
+        svg: { fill: Colors.blue.color },
+      },
+      {
+        key: 3,
+        value: energyExpenditure.baselineActivityCalories,
+        svg: { fill: Colors.brightRed.color },
+      },
+      {
+        key: 4,
+        value: energyExpenditure.tefCalories,
+        svg: { fill: Colors.red.color },
+      },
+    ],
+    [energyExpenditure]
+  );
 
   const screenWidth = Dimensions.get("window").width * 0.9;
 
-  const chartConfig = {
-    backgroundGradientFrom: Colors.lightGreen.color,
-    backgroundGradientTo: Colors.lightGreen.color,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-  };
+  const chartConfig = useMemo(
+    () => ({
+      backgroundGradientFrom: Colors.lightGreen.color,
+      backgroundGradientTo: Colors.lightGreen.color,
+      color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    }),
+    []
+  );
 
   // Helper functions to check if data has values
   const hasMacroData = () => {
@@ -221,88 +235,100 @@ const ChartsView = () => {
     },
   ];
 
-  const macroData = hasMacroData()
-    ? [
-        {
-          name: "Protein",
-          population: macronutrients.protein,
-          color: Colors.green.color,
-          legendFontColor: "#7F7F7F",
-        },
-        {
-          name: "Carbs",
-          population: macronutrients.carbs,
-          color: Colors.blue.color,
-          legendFontColor: "#7F7F7F",
-        },
-        {
-          name: "Fat",
-          population: macronutrients.fat,
-          color: Colors.brightRed.color,
-          legendFontColor: "#7F7F7F",
-        },
-      ]
-    : getDefaultMacroData();
+  const macroData = useMemo(
+    () =>
+      hasMacroData()
+        ? [
+            {
+              name: "Protein",
+              population: macronutrients.protein,
+              color: Colors.green.color,
+              legendFontColor: "#7F7F7F",
+            },
+            {
+              name: "Carbs",
+              population: macronutrients.carbs,
+              color: Colors.blue.color,
+              legendFontColor: "#7F7F7F",
+            },
+            {
+              name: "Fat",
+              population: macronutrients.fat,
+              color: Colors.brightRed.color,
+              legendFontColor: "#7F7F7F",
+            },
+          ]
+        : getDefaultMacroData(),
+    [macronutrients]
+  );
 
-  const burnedChartData = hasEnergyExpenditureData()
-    ? [
-        {
-          name: "BMR",
-          population: energyExpenditure.bmr,
-          color: Colors.green.color,
-          legendFontColor: "#7F7F7F",
-        },
-        {
-          name: "Exercise",
-          population: energyExpenditure.exerciseCalories,
-          color: Colors.blue.color,
-          legendFontColor: "#7F7F7F",
-        },
-        {
-          name: "Baseline",
-          population: energyExpenditure.baselineActivityCalories,
-          color: Colors.brightRed.color,
-          legendFontColor: "#7F7F7F",
-        },
-        {
-          name: "TEF",
-          population: energyExpenditure.tefCalories,
-          color: Colors.red.color,
-          legendFontColor: "#7F7F7F",
-        },
-      ]
-    : getDefaultEnergyExpenditureData();
+  const burnedChartData = useMemo(
+    () =>
+      hasEnergyExpenditureData()
+        ? [
+            {
+              name: "BMR",
+              population: energyExpenditure.bmr,
+              color: Colors.green.color,
+              legendFontColor: "#7F7F7F",
+            },
+            {
+              name: "Exercise",
+              population: energyExpenditure.exerciseCalories,
+              color: Colors.blue.color,
+              legendFontColor: "#7F7F7F",
+            },
+            {
+              name: "Baseline",
+              population: energyExpenditure.baselineActivityCalories,
+              color: Colors.brightRed.color,
+              legendFontColor: "#7F7F7F",
+            },
+            {
+              name: "TEF",
+              population: energyExpenditure.tefCalories,
+              color: Colors.red.color,
+              legendFontColor: "#7F7F7F",
+            },
+          ]
+        : getDefaultEnergyExpenditureData(),
+    [energyExpenditure]
+  );
 
-  const budgetData = hasEnergyBudgetData()
-    ? [
-        {
-          name: "Consumed",
-          population: energyBudget.consumed,
-          color: Colors.green.color,
-          legendFontColor: "#7F7F7F",
-        },
-        ...(energyBudget.remaining > 0
-          ? [
-              {
-                name: "Remaining",
-                population: energyBudget.remaining,
-                color: Colors.blue.color,
-                legendFontColor: "#7F7F7F",
-              },
-            ]
-          : []),
-        ...(energyBudget.overLimit > 0
-          ? [
-              {
-                name: "Over Limit",
-                population: energyBudget.overLimit,
-                color: Colors.brightRed.color,
-                legendFontColor: "#7F7F7F",
-              },
-            ]
-          : []),
-      ]
-    : getDefaultEnergyBudgetData();
+  const budgetData = useMemo(
+    () =>
+      hasEnergyBudgetData()
+        ? [
+            {
+              name: "Consumed",
+              population: energyBudget.consumed,
+              color: Colors.green.color,
+              legendFontColor: "#7F7F7F",
+            },
+            ...(energyBudget.remaining > 0
+              ? [
+                  {
+                    name: "Remaining",
+                    population: energyBudget.remaining,
+                    color: Colors.blue.color,
+                    legendFontColor: "#7F7F7F",
+                  },
+                ]
+              : []),
+            ...(energyBudget.overLimit > 0
+              ? [
+                  {
+                    name: "Over Limit",
+                    population: energyBudget.overLimit,
+                    color: Colors.brightRed.color,
+                    legendFontColor: "#7F7F7F",
+                  },
+                ]
+              : []),
+          ]
+        : getDefaultEnergyBudgetData(),
+    [energyBudget]
+  );
 
   return (
     <View style={styles.container}>
