@@ -687,25 +687,23 @@ const TrackMealView = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [foods, setFoods] = useState([]);
-  const [filteredFoods, setFilteredFoods] = useState([]);
   const [favoriteConsumableIds, setFavoriteConsumableIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [favoritesPage, setFavoritesPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(10); // Reduced from 20 to 10 for faster loading
   const [totalPages, setTotalPages] = useState(5);
-  const [favoritesTotalPages, setFavoritesTotalPages] = useState(1);
   const [logFoodModalVisible, setLogFoodModalVisible] = useState(false);
   const [foodToLog, setFoodToLog] = useState(null);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isPageLoading, setIsPageLoading] = useState(false); // For pagination loading state
 
   // Refs for request deduplication and cleanup
   const requestIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
 
-  // Debounce search query changes
+  // Debounce search query changes - reduced from 300ms to 200ms for faster response
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -713,7 +711,7 @@ const TrackMealView = () => {
 
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 300);
+    }, 200);
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -732,11 +730,16 @@ const TrackMealView = () => {
     }
   }, []);
 
-  // Optimized fetchFoods without favorites fetching
+  // Optimized fetchFoods with loading state management
   const fetchFoods = useCallback(
     async (requestId) => {
       try {
-        setLoading(true);
+        // Only show loading on first load or page 1, use subtle loading for pagination
+        if (currentPage === 1) {
+          setLoading(true);
+        } else {
+          setIsPageLoading(true); // Show subtle loading for pagination
+        }
         setError(null);
 
         const filter =
@@ -773,17 +776,14 @@ const TrackMealView = () => {
           throw new Error("Invalid response format from server");
         }
 
+        // Update foods and total pages
         setFoods(searchResult.items);
-        setFilteredFoods(searchResult.items);
         setTotalPages(
           Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
         );
 
-        if (activeTab === "favorites") {
-          setFavoritesTotalPages(
-            Math.max(1, Math.ceil(searchResult.totalCount / pageSize))
-          );
-        }
+        // Clear any previous errors
+        setError(null);
       } catch (err) {
         // Only set error if this is still the latest request
         if (requestId === requestIdRef.current) {
@@ -816,6 +816,7 @@ const TrackMealView = () => {
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false);
+          setIsPageLoading(false);
         }
       }
     },
@@ -849,27 +850,29 @@ const TrackMealView = () => {
     fetchFoods(currentRequestId);
   }, [fetchFoods]);
 
-  // Reset pages when tab changes
+  // Reset page when tab changes - with immediate data fetch
   useEffect(() => {
     setCurrentPage(1);
-    setFavoritesPage(1);
+    // Trigger immediate fetch for new tab
+    setTimeout(() => {
+      requestIdRef.current += 1;
+      fetchFoods(requestIdRef.current);
+    }, 50);
   }, [activeTab]);
 
-  // Reset page when category changes
+  // Reset page when category changes - with immediate data fetch
   useEffect(() => {
     if (activeTab === "category") {
       setCurrentPage(1);
+      // Trigger immediate fetch for new category
+      setTimeout(() => {
+        requestIdRef.current += 1;
+        fetchFoods(requestIdRef.current);
+      }, 50);
     }
   }, [selectedCategory]);
 
-  // Handle favorites pagination (client-side for now)
-  useEffect(() => {
-    if (activeTab === "favorites") {
-      const start = (favoritesPage - 1) * pageSize;
-      const end = start + pageSize;
-      setFilteredFoods(foods.slice(start, end));
-    }
-  }, [favoritesPage, foods, activeTab, pageSize]);
+  // Removed client-side favorites pagination; using backend pagination
 
   const handleFavoriteToggle = (consumableItemId, isNowFavorite) => {
     setFavoriteConsumableIds((prev) => {
@@ -885,13 +888,8 @@ const TrackMealView = () => {
     });
   };
 
-  // Filter for favorites tab
-  const displayedFoods = filteredFoods.filter((food) => {
-    if (activeTab === "favorites") {
-      return favoriteConsumableIds.includes(food.id);
-    }
-    return true;
-  });
+  // Use server-filtered results directly
+  const displayedFoods = foods;
 
   const handleAddMeal = async (food) => {
     setFoodToLog(food);
@@ -910,27 +908,26 @@ const TrackMealView = () => {
     }
   };
 
-  // Pagination controls logic
-  const paginationProps =
-    activeTab === "all"
-      ? {
-          currentPage,
-          totalPages,
-          onPageChange: setCurrentPage,
-        }
-      : activeTab === "favorites"
-      ? {
-          currentPage: favoritesPage,
-          totalPages: favoritesTotalPages,
-          onPageChange: setFavoritesPage,
-        }
-      : activeTab === "category"
-      ? {
-          currentPage,
-          totalPages,
-          onPageChange: setCurrentPage,
-        }
-      : null;
+  // Enhanced pagination with loading state management
+  const handlePageChange = useCallback(
+    (newPage) => {
+      if (newPage === currentPage) return; // Prevent unnecessary changes
+
+      setCurrentPage(newPage);
+      // Trigger fetch for new page
+      setTimeout(() => {
+        requestIdRef.current += 1;
+        fetchFoods(requestIdRef.current);
+      }, 50);
+    },
+    [currentPage, fetchFoods]
+  );
+
+  const paginationProps = {
+    currentPage,
+    totalPages,
+    onPageChange: handlePageChange,
+  };
 
   return (
     <>
@@ -1068,7 +1065,7 @@ const TrackMealView = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.foodsListContent}
         >
-          {loading ? (
+          {loading || isPageLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={Colors.darkGreen.color} />
             </View>

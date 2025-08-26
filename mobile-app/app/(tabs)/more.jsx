@@ -213,21 +213,6 @@ const More = () => {
       <View style={styles.logoutContainer}>
         <TouchableOpacity
           style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
-          onPress={async () => {
-            try {
-              const res = await runMobileBenchmarks();
-              Alert.alert("Benchmarks saved", res.path || "OK");
-            } catch (e) {
-              Alert.alert("Benchmark error", e?.message || "Failed");
-            }
-          }}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="speed" size={24} color={Colors.white.color} />
-          <Text style={styles.logoutText}>Run Mobile Benchmarks</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
           onPress={handleLogout}
           disabled={isLoggingOut}
           activeOpacity={0.8}
