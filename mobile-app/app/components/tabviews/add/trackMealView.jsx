@@ -711,6 +711,13 @@ const TrackMealView = () => {
 
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
+      // Reset to page 1 when search query changes to ensure search works from any page
+      setCurrentPage(1);
+      // Clear category selection when searching to ensure search works across all items
+      if (searchQuery && activeTab === "category") {
+        setSelectedCategory(null);
+        setActiveTab("all");
+      }
     }, 200);
 
     return () => {
@@ -718,7 +725,7 @@ const TrackMealView = () => {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, activeTab]);
 
   // Separate function to fetch only favorites (called once on mount)
   const fetchFavorites = useCallback(async () => {
@@ -755,6 +762,16 @@ const TrackMealView = () => {
 
         const query = debouncedSearchQuery || "";
 
+        // Debug logging for search parameters
+        console.log("[TrackMealView] Search params:", {
+          query,
+          currentPage,
+          pageSize,
+          filter,
+          category: activeTab === "category" ? selectedCategory : null,
+          activeTab,
+        });
+
         const searchResult = await searchConsumableItems(
           query,
           currentPage,
@@ -767,6 +784,14 @@ const TrackMealView = () => {
         if (requestId !== requestIdRef.current) {
           return;
         }
+
+        // Debug logging for search results
+        console.log("[TrackMealView] Search result:", {
+          totalCount: searchResult.totalCount,
+          itemsCount: searchResult.items?.length || 0,
+          currentPage,
+          searchQuery: query,
+        });
 
         if (!searchResult.items) {
           console.warn(
@@ -849,6 +874,19 @@ const TrackMealView = () => {
 
     fetchFoods(currentRequestId);
   }, [fetchFoods]);
+
+  // Effect to handle search query changes - ensure search is triggered
+  useEffect(() => {
+    if (debouncedSearchQuery !== undefined) {
+      requestIdRef.current += 1;
+      const currentRequestId = requestIdRef.current;
+
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        fetchFoods(currentRequestId);
+      }, 100);
+    }
+  }, [debouncedSearchQuery, fetchFoods]);
 
   // Reset page when tab changes - with immediate data fetch
   useEffect(() => {
