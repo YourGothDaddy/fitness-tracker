@@ -16,6 +16,7 @@ import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_URL } from "../../constants/Config";
 import { authService } from "@/app/services/authService";
+import { runMobileBenchmarks } from "@/app/services/benchService";
 import userService from "@/app/services/userService";
 import * as ImagePicker from "expo-image-picker";
 
@@ -210,6 +211,21 @@ const More = () => {
       </View>
 
       <View style={styles.logoutContainer}>
+        <TouchableOpacity
+          style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
+          onPress={async () => {
+            try {
+              const res = await runMobileBenchmarks();
+              Alert.alert("Benchmarks saved", res.path || "OK");
+            } catch (e) {
+              Alert.alert("Benchmark error", e?.message || "Failed");
+            }
+          }}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="speed" size={24} color={Colors.white.color} />
+          <Text style={styles.logoutText}>Run Mobile Benchmarks</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.logoutButton, isLoggingOut && styles.disabledButton]}
           onPress={handleLogout}

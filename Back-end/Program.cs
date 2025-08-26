@@ -11,6 +11,7 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Services.Tokens;
     using Fitness_Tracker.Services.Users;
     using Fitness_Tracker.Services.Weight;
+    using Fitness_Tracker.Services.Benchmarking;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ namespace Fitness_Tracker
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddIdentity<User, IdentityRole>()
@@ -39,9 +40,11 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<ITokenService, TokenService>();
             builder.Services.AddTransient<INutritionService, NutritionService>();
             builder.Services.AddTransient<IWeightService, WeightService>();
+            builder.Services.AddScoped<IBenchmarkService, BenchmarkService>();
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddTransient<IActivityService, ActivityService>();
+            builder.Services.AddMemoryCache();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -112,6 +115,10 @@ namespace Fitness_Tracker
             });
 
             builder.Services.AddControllers();
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+            });
 
             builder.Services.AddCors(options =>
             {
@@ -146,6 +153,7 @@ namespace Fitness_Tracker
             app.UseCors("AllowReactApp");
 
             app.UseStaticFiles(); // Enable serving static files (e.g., avatars)
+            app.UseResponseCompression();
 
             app.UseAuthentication();
             app.UseAuthorization();

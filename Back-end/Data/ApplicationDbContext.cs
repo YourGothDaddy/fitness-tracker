@@ -33,6 +33,17 @@
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<Meal>()
+                .HasIndex(m => new { m.UserId, m.Date });
+
+            builder.Entity<Activity>()
+                .HasIndex(a => new { a.UserId, a.Date });
+
+            builder.Entity<ActivityType>()
+                .HasIndex(at => new { at.Name, at.ActivityCategoryId });
+
+            builder.Entity<User>()
+                .HasIndex(u => u.UserName);
 
             // Ensure unique email at the database level to prevent duplicates
             builder.Entity<User>()

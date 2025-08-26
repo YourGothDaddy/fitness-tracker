@@ -4,14 +4,17 @@ namespace Fitness_Tracker.Services.Activity
     using Fitness_Tracker.Models.Activity;
     using Microsoft.EntityFrameworkCore;
     using Fitness_Tracker.Data.Models.Enums;
+    using Microsoft.Extensions.Caching.Memory;
 
     public class ActivityService : IActivityService
     {
         private readonly ApplicationDbContext _databaseContext;
+        private readonly IMemoryCache _cache;
 
-        public ActivityService(ApplicationDbContext databaseContext)
+        public ActivityService(ApplicationDbContext databaseContext, IMemoryCache cache)
         {
             _databaseContext = databaseContext;
+            _cache = cache;
         }
 
         public async Task<ActivityOverviewModel> GetActivityOverviewAsync(string userId, DateTime date)
@@ -22,6 +25,7 @@ namespace Fitness_Tracker.Services.Activity
             }
 
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -50,6 +54,7 @@ namespace Fitness_Tracker.Services.Activity
             }
 
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -70,6 +75,7 @@ namespace Fitness_Tracker.Services.Activity
         private async Task<List<MealActivityModel>> GetMealsForPeriodAsync(string userId, DateTime startDate, DateTime endDate)
         {
             return await _databaseContext.Meals
+                .AsNoTracking()
                 .Where(m => m.UserId == userId && m.Date >= startDate && m.Date <= endDate)
                 .OrderBy(m => m.Date)
                 .Select(m => new MealActivityModel
@@ -87,6 +93,7 @@ namespace Fitness_Tracker.Services.Activity
         private async Task<List<ExerciseActivityModel>> GetExercisesForPeriodAsync(string userId, DateTime startDate, DateTime endDate)
         {
             return await _databaseContext.Activities
+                .AsNoTracking()
                 .Include(a => a.ActivityType)
                 .ThenInclude(at => at.ActivityCategory)
                 .Where(a => a.UserId == userId && a.Date >= startDate && a.Date <= endDate)
@@ -105,15 +112,25 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<ActivityLevelModel>> GetAllActivityLevelsAsync()
         {
-            return await _databaseContext.ActivityLevels
-                .OrderBy(al => al.Id)
-                .Select(al => new ActivityLevelModel
-                {
-                    Id = al.Id,
-                    Name = al.Name,
-                    Multiplier = al.Multiplier
-                })
-                .ToListAsync();
+            const string cacheKey = "activity-levels:list";
+            if (_cache.TryGetValue(cacheKey, out List<ActivityLevelModel> cached))
+            {
+                return cached;
+            }
+
+            var levels = await _databaseContext.ActivityLevels
+                    .AsNoTracking()
+                    .OrderBy(al => al.Id)
+                    .Select(al => new ActivityLevelModel
+                    {
+                        Id = al.Id,
+                        Name = al.Name,
+                        Multiplier = al.Multiplier
+                    })
+                    .ToListAsync();
+
+            _cache.Set(cacheKey, levels, TimeSpan.FromHours(12));
+            return levels;
         }
 
         public async Task AddActivityAsync(Models.Activity.AddActivityModel model, string userId)
@@ -187,23 +204,27 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync()
         {
+            // Cache public, but this endpoint returns all types (public and private)
+            // so we won't cache this one globally.
             return await _databaseContext.ActivityTypes
-                .Include(at => at.ActivityCategory)
-                .Select(at => new Models.Activity.ActivityTypeModel
-                {
-                    Id = at.Id,
-                    Name = at.Name,
-                    Category = at.ActivityCategory.Name
-                })
-                .ToListAsync();
+                    .AsNoTracking()
+                    .Include(at => at.ActivityCategory)
+                    .Select(at => new Models.Activity.ActivityTypeModel
+                    {
+                        Id = at.Id,
+                        Name = at.Name,
+                        Category = at.ActivityCategory.Name
+                    })
+                    .ToListAsync();
         }
 
         public async Task<List<ExerciseMetaDataModel>> GetExerciseMetaDataAsync(string userId)
         {
-            var user = await _databaseContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await _databaseContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             float userWeight = user?.Weight ?? 70f;
 
             var activityTypes = await _databaseContext.ActivityTypes
+                .AsNoTracking()
                 .Include(at => at.ActivityCategory)
                 .Where(at => at.IsPublic)
                 .Where(at => _databaseContext.ActivityExercises.Any(e => e.ActivityTypeId == at.Id && e.IsPublic))
@@ -214,6 +235,7 @@ namespace Fitness_Tracker.Services.Activity
             foreach (var type in activityTypes)
             {
                 var firstExercise = await _databaseContext.ActivityExercises
+                    .AsNoTracking()
                     .Include(e => e.MetProfiles)
                     .FirstOrDefaultAsync(e => e.ActivityTypeId == type.Id && e.IsPublic);
 
@@ -389,6 +411,7 @@ namespace Fitness_Tracker.Services.Activity
         public async Task<int?> GetActivityTypeIdByCategoryAndSubcategoryAsync(string category, string subcategory)
         {
             var activityType = await _databaseContext.ActivityTypes
+                .AsNoTracking()
                 .Include(at => at.ActivityCategory)
                 .FirstOrDefaultAsync(at => at.Name == subcategory && at.ActivityCategory.Name == category);
                 
@@ -429,6 +452,7 @@ namespace Fitness_Tracker.Services.Activity
         public async Task<List<Models.Activity.ActivityTypeModel>> GetFavoriteActivityTypesAsync(string userId)
         {
             var result = await _databaseContext.UserFavoriteActivityTypes
+                .AsNoTracking()
                 .Where(x => x.UserId == userId)
                 .Select(x => new Models.Activity.ActivityTypeModel
                 {
@@ -466,19 +490,27 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<Models.Activity.ActivityTypeModel>> GetPublicActivityTypesAsync()
         {
-            return await _databaseContext.ActivityTypes
-                .Include(at => at.ActivityCategory)
-                .Where(at => at.IsPublic)
-                .Select(at => new Models.Activity.ActivityTypeModel
-                {
-                    Id = at.Id,
-                    Name = at.Name,
-                    Category = at.ActivityCategory.Name,
-                    IsPublic = at.IsPublic,
-                    CreatedByUserId = at.CreatedByUserId,
-                    Calories = at.Calories
-                })
-                .ToListAsync();
+            const string cacheKey = "activity-types:public";
+            if (_cache.TryGetValue(cacheKey, out List<Models.Activity.ActivityTypeModel> cached))
+            {
+                return cached;
+            }
+            var list = await _databaseContext.ActivityTypes
+                    .AsNoTracking()
+                    .Include(at => at.ActivityCategory)
+                    .Where(at => at.IsPublic)
+                    .Select(at => new Models.Activity.ActivityTypeModel
+                    {
+                        Id = at.Id,
+                        Name = at.Name,
+                        Category = at.ActivityCategory.Name,
+                        IsPublic = at.IsPublic,
+                        CreatedByUserId = at.CreatedByUserId,
+                        Calories = at.Calories
+                    })
+                    .ToListAsync();
+            _cache.Set(cacheKey, list, TimeSpan.FromHours(12));
+            return list;
         }
 
         // Custom activity types removed
@@ -507,19 +539,27 @@ namespace Fitness_Tracker.Services.Activity
 
         public async Task<List<string>> GetSubcategoriesByCategoryAsync(string category)
         {
-            return await _databaseContext.ActivityTypes
-                .Include(t => t.ActivityCategory)
-                .Where(t => t.ActivityCategory.Name == category && t.IsPublic)
-                .Where(t => t.ActivityExercises.Any(e => e.IsPublic))
-                .OrderBy(t => t.Name)
-                .Select(t => t.Name)
-                .Distinct()
-                .ToListAsync();
+            var key = $"subcategories:{category}";
+            if (_cache.TryGetValue(key, out List<string> cached))
+            {
+                return cached;
+            }
+            var subs = await _databaseContext.ActivityTypes
+                    .Include(t => t.ActivityCategory)
+                    .Where(t => t.ActivityCategory.Name == category && t.IsPublic)
+                    .Where(t => t.ActivityExercises.Any(e => e.IsPublic))
+                    .OrderBy(t => t.Name)
+                    .Select(t => t.Name)
+                    .Distinct()
+                    .ToListAsync();
+            _cache.Set(key, subs, TimeSpan.FromMinutes(30));
+            return subs;
         }
 
         public async Task<List<ActivityExerciseVariantModel>> GetExercisesByCategoryAndSubcategoryAsync(string category, string subcategory)
         {
             var query = _databaseContext.ActivityExercises
+                .AsNoTracking()
                 .Include(e => e.ActivityType)
                 .ThenInclude(t => t.ActivityCategory)
                 .Include(e => e.MetProfiles)

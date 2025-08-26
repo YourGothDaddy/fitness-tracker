@@ -1,11 +1,32 @@
 import { API_URL } from "@/constants/Config";
 import axiosInstance from "@/app/services/authService";
 
+const memo = new Map();
+const memoTtlMs = 30 * 1000; // 30s per-request cache
+
+function getMemo(key) {
+  const item = memo.get(key);
+  if (!item) return null;
+  if (Date.now() - item.t > memoTtlMs) {
+    memo.delete(key);
+    return null;
+  }
+  return item.v;
+}
+
+function setMemo(key, value) {
+  memo.set(key, { v: value, t: Date.now() });
+}
+
 class ActivityService {
   async getActivityOverview(date) {
     try {
       const url = `${API_URL}/api/activity/activity-overview?date=${date.toISOString()}`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -15,7 +36,11 @@ class ActivityService {
   async getActivityOverviewForPeriod(startDate, endDate) {
     try {
       const url = `${API_URL}/api/activity/activity-overview-period?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -41,7 +66,11 @@ class ActivityService {
   async getActivityLevels() {
     try {
       const url = `${API_URL}/api/activity/activity-levels`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -51,7 +80,11 @@ class ActivityService {
   async getActivityTypes() {
     try {
       const url = `${API_URL}/api/activity/types`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -77,6 +110,8 @@ class ActivityService {
         isPublic: isPublic,
       };
       const response = await axiosInstance.post(url, payload);
+      // Invalidate related caches
+      memo.clear();
       return response.data;
     } catch (error) {
       throw error;
@@ -86,7 +121,11 @@ class ActivityService {
   async getExerciseMetaData() {
     try {
       const url = `${API_URL}/api/activity/exercise-metadata`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -147,6 +186,7 @@ class ActivityService {
       };
 
       const response = await axiosInstance.post(url, payload);
+      memo.clear();
       return response.data;
     } catch (error) {
       throw error;
@@ -156,7 +196,11 @@ class ActivityService {
   async getCategories() {
     try {
       const url = `${API_URL}/api/activity/categories`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -168,7 +212,11 @@ class ActivityService {
       const url = `${API_URL}/api/activity/subcategories?category=${encodeURIComponent(
         category
       )}`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -180,7 +228,11 @@ class ActivityService {
       const url = `${API_URL}/api/activity/exercises?category=${encodeURIComponent(
         category
       )}&subcategory=${encodeURIComponent(subcategory)}`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -191,6 +243,7 @@ class ActivityService {
     try {
       const url = `${API_URL}/api/activity/delete/${activityId}`;
       const response = await axiosInstance.delete(url);
+      memo.clear();
       return response.data;
     } catch (error) {
       throw error;
@@ -203,6 +256,7 @@ class ActivityService {
       const response = await axiosInstance.post(url, activityTypeId, {
         headers: { "Content-Type": "application/json" },
       });
+      memo.clear();
       return response.data;
     } catch (error) {
       throw error;
@@ -215,6 +269,7 @@ class ActivityService {
       const response = await axiosInstance.post(url, activityTypeId, {
         headers: { "Content-Type": "application/json" },
       });
+      memo.clear();
       return response.data;
     } catch (error) {
       throw error;
@@ -224,7 +279,11 @@ class ActivityService {
   async isFavoriteActivityType(activityTypeId) {
     try {
       const url = `${API_URL}/api/activity/favorites/${activityTypeId}/is-favorite`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit !== null && hit !== undefined) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data.isFavorite);
       return response.data.isFavorite;
     } catch (error) {
       throw error;
@@ -234,7 +293,11 @@ class ActivityService {
   async getFavoriteActivityTypes() {
     try {
       const url = `${API_URL}/api/activity/favorites`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -244,7 +307,11 @@ class ActivityService {
   async getPublicActivityTypes() {
     try {
       const url = `${API_URL}/api/activity/public-activity-types`;
+      const mk = `GET:${url}`;
+      const hit = getMemo(mk);
+      if (hit) return hit;
       const response = await axiosInstance.get(url);
+      setMemo(mk, response.data);
       return response.data;
     } catch (error) {
       throw error;

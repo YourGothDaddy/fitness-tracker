@@ -23,6 +23,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<CalorieOverviewModel> GetCalorieOverviewAsync(string userId, DateTime startDate, DateTime endDate)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -34,6 +35,7 @@ namespace Fitness_Tracker.Services.Nutrition
             var endDateTime = endDate.Date.AddDays(1).AddTicks(-1);
 
             var dailyCalories = await _databaseContext.Meals
+                .AsNoTracking()
                 .Where(m => m.UserId == userId && m.Date >= startDateTime && m.Date <= endDateTime)
                 .GroupBy(m => m.Date.Date)
                 .Select(g => new DailyCaloriesModel
@@ -60,8 +62,11 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<DailyCaloriesModel> GetDailyCaloriesAsync(string userId, DateTime date)
         {
+            var start = date.Date;
+            var end = start.AddDays(1);
             var totalCalories = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= start && m.Date < end)
                 .SumAsync(m => m.Calories);
 
             return new DailyCaloriesModel
@@ -73,8 +78,12 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<MacronutrientsModel> GetMacronutrientsAsync(string userId, DateTime date)
         {
+            var start = date.Date;
+            var end = start.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= start && m.Date < end)
+                .Select(m => new { m.Name, m.Protein, m.Carbs, m.Fat, m.Calories })
                 .ToListAsync();
 
             var totalProtein = meals.Sum(m => m.Protein);
@@ -98,6 +107,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<EnergyExpenditureModel> GetEnergyExpenditureAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .Include(u => u.ActivityLevel)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -116,18 +126,23 @@ namespace Fitness_Tracker.Services.Nutrition
                 bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) - 161;
             }
 
+            var aStart = date.Date;
+            var aEnd = aStart.AddDays(1);
             var exerciseCalories = await _databaseContext.Activities
-                .Where(a => a.UserId == userId && a.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(a => a.UserId == userId && a.Date >= aStart && a.Date < aEnd)
                 .SumAsync(a => a.CaloriesBurned);
 
             var baselineActivityCalories = bmr * (user.ActivityLevel.Multiplier - 1);
 
-            var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+            var tefMeals = await _databaseContext.Meals
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= aStart && m.Date < aEnd)
+                .Select(m => new { m.Protein, m.Carbs, m.Fat })
                 .ToListAsync();
 
             double tefCalories = 0;
-            foreach (var meal in meals)
+            foreach (var meal in tefMeals)
             {
                 var proteinCalories = meal.Protein * 4;
                 tefCalories += proteinCalories * 0.25;
@@ -158,6 +173,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<EnergyBudgetModel> GetEnergyBudgetAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -165,8 +181,11 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var bStart = date.Date;
+            var bEnd = bStart.AddDays(1);
             var consumedCalories = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= bStart && m.Date < bEnd)
                 .SumAsync(m => m.Calories);
 
             var target = user.DailyCaloriesGoal;
@@ -184,6 +203,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<MainTargetsModel> GetMainTargetsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -191,8 +211,12 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startC = date.Date;
+            var endC = startC.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startC && m.Date < endC)
+                .Select(m => new { m.Calories, m.Protein, m.Carbs, m.Fat })
                 .ToListAsync();
 
             var consumedCalories = meals.Sum(m => m.Calories);
@@ -260,8 +284,11 @@ namespace Fitness_Tracker.Services.Nutrition
                 .Where(m => m.UserId == userId && m.Date.Date == date.Date)
                 .ToListAsync();
 
+            var names = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => names.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -309,6 +336,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<AminoAcidsModel> GetAminoAcidsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -316,12 +344,19 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startA = date.Date;
+            var endA = startA.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startA && m.Date < endA)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var aNames = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => aNames.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -379,6 +414,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<FatsModel> GetFatsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -386,12 +422,19 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startF = date.Date;
+            var endF = startF.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startF && m.Date < endF)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var fNames = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => fNames.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -435,6 +478,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<MineralsModel> GetMineralsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -442,12 +486,19 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startM = date.Date;
+            var endM = startM.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startM && m.Date < endM)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var mNames = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => mNames.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -496,12 +547,19 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<OtherNutrientsModel> GetOtherNutrients(DateTime date)
         {
+            var start = date.Date;
+            var end = start.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.Date >= start && m.Date < end)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var names = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => names.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -549,6 +607,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<SterolsModel> GetSterolsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -556,12 +615,19 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startS = date.Date;
+            var endS = startS.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startS && m.Date < endS)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var sNames = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => sNames.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -605,6 +671,7 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<VitaminsModel> GetVitaminsAsync(string userId, DateTime date)
         {
             var user = await _databaseContext.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
@@ -612,12 +679,19 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
+            var startV = date.Date;
+            var endV = startV.AddDays(1);
             var meals = await _databaseContext.Meals
-                .Where(m => m.UserId == userId && m.Date.Date == date.Date)
+                .AsNoTracking()
+                .Where(m => m.UserId == userId && m.Date >= startV && m.Date < endV)
+                .Select(m => new { m.Name })
                 .ToListAsync();
 
+            var vNames = meals.Select(m => m.Name).Distinct().ToList();
             var consumableItems = await _databaseContext.ConsumableItems
+                .AsNoTracking()
                 .Include(ci => ci.NutritionalInformation)
+                .Where(ci => vNames.Contains(ci.Name))
                 .ToListAsync();
 
             var consumableItemsDict = consumableItems.ToDictionary(ci => ci.Name);
@@ -738,11 +812,13 @@ namespace Fitness_Tracker.Services.Nutrition
         public async Task<List<UserNutrientTargetModel>> GetUserNutrientTargetsAsync(string userId)
         {
             var allNutrients = await _databaseContext.Nutrients
+                .AsNoTracking()
                 .Select(n => new { n.Name, n.Category })
                 .Distinct()
                 .ToListAsync();
 
             var userTargets = await _databaseContext.UserNutrientTargets
+                .AsNoTracking()
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
 
