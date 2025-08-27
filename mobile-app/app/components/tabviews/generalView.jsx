@@ -435,6 +435,7 @@ const GeneralView = () => {
       if (activityTypeName === "Swimming") return "pool";
       if (activityTypeName === "Jumping Rope") return "sports";
       if (activityTypeName === "Walking") return "directions-walk";
+      if (activityTypeName === "HIIT") return "flash-on";
       return "favorite";
     }
     if (activityCategoryName === "Gym") {

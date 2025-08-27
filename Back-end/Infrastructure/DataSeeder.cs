@@ -172,7 +172,7 @@
 
             var categoriesWithTypes = new List<(string Category, List<string> Types)>
             {
-                ("Cardio", new List<string> { "Cycling", "Running", "Swimming", "Walking" }),
+                ("Cardio", new List<string> { "Cycling", "Running", "Swimming", "Walking", "Jumping Rope", "HIIT" }),
                 ("Cardio Machines", new List<string> { "Rowing Machine", "Elliptical Trainer", "Stair Stepping" }),
                 ("Gym", new List<string> { "Resistance Training", "Circuit Training", "Calisthenics" }),
                 ("Outdoor Activity", new List<string> { "Hiking" }),
@@ -243,9 +243,7 @@
                 var cyclingTypeId = await EnsureTypeIdAsync("Cardio", "Cycling");
                 var cyclingExercises = new[]
                 {
-                    ("Mountain Cycling", new (string Key, float Met)[]{ ("Low", 6.8f), ("Moderate", 8.5f), ("Hard", 10.0f) }),
-                    ("Road Biking", new (string Key, float)[]{ ("Low", 6.8f), ("Moderate", 8.0f), ("Hard", 10.0f) }),
-                    ("Stationary Bike", new (string Key, float)[]{ ("Low", 3.5f), ("Moderate", 5.5f), ("Hard", 7.0f) })
+                    ("Mountain Cycling", new (string Key, float Met)[]{ ("Low", 6.8f), ("Moderate", 8.5f), ("Hard", 10.0f) })
                 };
                 foreach (var (name, profiles) in cyclingExercises)
                 {
@@ -330,23 +328,6 @@
                     context.ActivityExercises.Add(resistance);
                 }
 
-                // Running exercises with varied intensities
-                var runningExercises = new[]
-                {
-                    ("Easy Jog", new (string Key, float)[]{ ("Low", 8.3f), ("Moderate", 9.0f), ("Hard", 10.0f) }),
-                    ("Steady Run", new (string Key, float)[]{ ("Low", 8.3f), ("Moderate", 9.8f), ("Hard", 11.0f) }),
-                    ("Tempo Run", new (string Key, float)[]{ ("Low", 9.0f), ("Moderate", 10.5f), ("Hard", 11.5f) })
-                };
-                foreach (var (name, profiles) in runningExercises)
-                {
-                    if (!await context.ActivityExercises.AnyAsync(e => e.Name == name && e.ActivityTypeId == runningTypeId))
-                    {
-                        var ex = new ActivityExercise { Name = name, ActivityTypeId = runningTypeId, IsPublic = true };
-                        foreach (var (key, met) in profiles) ex.MetProfiles.Add(new ExerciseMetProfile { Key = key, Met = met });
-                        context.ActivityExercises.Add(ex);
-                    }
-                }
-
                 // Jumping Rope as separate activity type
                 var jumpingRopeTypeId = await EnsureTypeIdAsync("Cardio", "Jumping Rope");
                 if (!await context.ActivityExercises.AnyAsync(e => e.ActivityTypeId == jumpingRopeTypeId && e.Name == "Jump Rope Session"))
@@ -356,6 +337,17 @@
                     jumpRope.MetProfiles.Add(new ExerciseMetProfile { Key = "Moderate", Met = 11.8f });
                     jumpRope.MetProfiles.Add(new ExerciseMetProfile { Key = "Hard", Met = 12.3f });
                     context.ActivityExercises.Add(jumpRope);
+                }
+
+                // HIIT as separate activity type
+                var hiitTypeId = await EnsureTypeIdAsync("Cardio", "HIIT");
+                if (!await context.ActivityExercises.AnyAsync(e => e.ActivityTypeId == hiitTypeId && e.Name == "HIIT Workout"))
+                {
+                    var hiit = new ActivityExercise { Name = "HIIT Workout", ActivityTypeId = hiitTypeId, IsPublic = true };
+                    hiit.MetProfiles.Add(new ExerciseMetProfile { Key = "Low", Met = 8.0f });
+                    hiit.MetProfiles.Add(new ExerciseMetProfile { Key = "Moderate", Met = 10.0f });
+                    hiit.MetProfiles.Add(new ExerciseMetProfile { Key = "Hard", Met = 12.0f });
+                    context.ActivityExercises.Add(hiit);
                 }
 
                 // Walking exercises

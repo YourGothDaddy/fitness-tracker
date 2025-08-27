@@ -159,36 +159,192 @@ const FloatingSparkles = () => {
   );
 };
 
+// Priority order for standard intensity-based effort levels (from easiest to hardest)
 const INTENSITY_PRIORITY = [
-  "very low",
-  "low",
-  "light",
-  "moderate",
-  "medium",
-  "hard",
-  "high",
-  "vigorous",
-  "very hard",
-  "very high",
-  "max",
-  "maximal",
+  "Very Low",
+  "Low",
+  "Light",
+  "Moderate",
+  "Medium",
+  "Hard",
+  "High",
+  "Vigorous",
+  "Very Hard",
+  "Very High",
+  "Max",
+  "Maximal",
 ];
 
 const sortEffortLevels = (levels = []) => {
   const priority = (label) => {
     const v = String(label || "").toLowerCase();
-    const idx = INTENSITY_PRIORITY.findIndex((p) => v.includes(p));
+
+    // Handle hiking-specific effort levels that use terrain descriptions
+    // Only apply this logic if we actually have hiking-specific descriptions
+    if (v.includes("easy trail")) return 0; // Easy Trail
+    if (v.includes("moderate incline")) return 1; // Moderate Incline
+    if (
+      v.includes("steep or rough") ||
+      v.includes("steep terrain") ||
+      v.includes("rough terrain")
+    )
+      return 2; // Steep or rough terrain
+
+    // Handle standard intensity-based effort levels
+    const idx = INTENSITY_PRIORITY.findIndex((p) =>
+      v.includes(p.toLowerCase())
+    );
     return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
   };
   return [...levels].sort((a, b) => priority(a) - priority(b));
+};
+
+// Helper function to detect if effort levels are actually terrain descriptions (for hiking)
+const isHikingEffortLevels = (levels) => {
+  if (!Array.isArray(levels) || levels.length === 0) return false;
+
+  const hikingKeywords = ["trail", "incline", "terrain", "steep", "rough"];
+  return levels.some((level) =>
+    hikingKeywords.some((keyword) =>
+      String(level).toLowerCase().includes(keyword)
+    )
+  );
+};
+
+// Helper function to convert hiking terrain descriptions to proper effort levels
+const convertHikingToEffortLevels = (levels) => {
+  if (!isHikingEffortLevels(levels)) return levels;
+
+  return levels.map((level) => {
+    const v = String(level).toLowerCase();
+    if (v.includes("easy") || v.includes("easy trail")) return "Low";
+    if (v.includes("moderate") || v.includes("moderate incline"))
+      return "Moderate";
+    if (
+      v.includes("steep") ||
+      v.includes("rough") ||
+      v.includes("steep or rough")
+    )
+      return "High";
+    return level; // Keep original if no match
+  });
+};
+
+// Helper function to convert hiking terrain descriptions to proper terrain types
+const convertHikingToTerrainTypes = (levels) => {
+  if (!isHikingEffortLevels(levels)) return levels;
+
+  return levels.map((level) => {
+    const v = String(level).toLowerCase();
+    if (v.includes("easy") || v.includes("easy trail")) return "Easy Trail";
+    if (v.includes("moderate") || v.includes("moderate incline"))
+      return "Moderate Incline";
+    if (
+      v.includes("steep") ||
+      v.includes("rough") ||
+      v.includes("steep or rough")
+    )
+      return "Steep or rough terrain";
+    return level; // Keep original if no match
+  });
+};
+
+// Helper function to convert display terrain back to original format for API calls
+const convertDisplayTerrainToOriginal = (displayTerrain, originalLevels) => {
+  if (!isHikingEffortLevels(originalLevels)) return displayTerrain;
+
+  const v = String(displayTerrain).toLowerCase();
+  if (v.includes("easy trail")) {
+    // Find the original level that represents "easy trail"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("easy") ||
+          String(level).toLowerCase().includes("easy trail")
+      ) || displayTerrain
+    );
+  }
+  if (v.includes("moderate incline")) {
+    // Find the original level that represents "moderate incline"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("moderate") ||
+          String(level).toLowerCase().includes("moderate incline")
+      ) || displayTerrain
+    );
+  }
+  if (v.includes("steep or rough terrain")) {
+    // Find the original level that represents "steep or rough terrain"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("steep") ||
+          String(level).toLowerCase().includes("rough") ||
+          String(level).toLowerCase().includes("steep or rough")
+      ) || displayTerrain
+    );
+  }
+  return displayTerrain;
+};
+
+// Helper function to convert display effort level back to original format for API calls
+const convertDisplayEffortToOriginal = (displayEffort, originalLevels) => {
+  if (!isHikingEffortLevels(originalLevels)) return displayEffort;
+
+  const v = String(displayEffort).toLowerCase();
+  if (v === "low") {
+    // Find the original level that represents "low"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("easy") ||
+          String(level).toLowerCase().includes("easy trail")
+      ) || displayEffort
+    );
+  }
+  if (v === "moderate") {
+    // Find the original level that represents "moderate"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("moderate") ||
+          String(level).toLowerCase().includes("moderate incline")
+      ) || displayEffort
+    );
+  }
+  if (v === "high") {
+    // Find the original level that represents "high"
+    return (
+      originalLevels.find(
+        (level) =>
+          String(level).toLowerCase().includes("steep") ||
+          String(level).toLowerCase().includes("rough") ||
+          String(level).toLowerCase().includes("steep or rough")
+      ) || displayEffort
+    );
+  }
+  return displayEffort;
 };
 
 const sortTerrainTypes = (levels = []) => {
   const order = ["easy", "moderate", "steep", "rough"];
   const pr = (label) => {
     const v = String(label || "").toLowerCase();
+
+    // Handle hiking-specific terrain types
+    if (v.includes("easy trail")) return 0;
+    if (v.includes("moderate incline")) return 1;
+    if (
+      v.includes("steep or rough") ||
+      v.includes("steep") ||
+      v.includes("rough")
+    )
+      return 2;
+
+    // Handle standard terrain types
     const idx = order.findIndex((p) => v.includes(p));
-    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx + 3; // Offset to put hiking types first
   };
   return [...levels].sort((a, b) => pr(a) - pr(b));
 };
@@ -328,10 +484,20 @@ const ExerciseItem = ({
   ...rest
 }) => {
   const [duration, setDuration] = useState(30);
-  const [effort, setEffort] = useState(
-    effortLevels[1] || effortLevels[0] || ""
+  const [effort, setEffort] = useState(() => {
+    const isHiking =
+      category === "Outdoor Activity" && subcategory === "Hiking";
+    if (isHiking) return ""; // No effort level for hiking
+
+    return (
+      sortEffortLevels(convertHikingToEffortLevels(effortLevels))[1] ||
+      sortEffortLevels(convertHikingToEffortLevels(effortLevels))[0] ||
+      ""
+    );
+  });
+  const [terrain, setTerrain] = useState(
+    sortTerrainTypes(convertHikingToTerrainTypes(terrainTypes))[0] || ""
   );
-  const [terrain, setTerrain] = useState(terrainTypes[0] || "");
   const [effortModalVisible, setEffortModalVisible] = useState(false);
   const [terrainModalVisible, setTerrainModalVisible] = useState(false);
   const [calories, setCalories] = useState({
@@ -371,6 +537,8 @@ const ExerciseItem = ({
     if (key.includes("swimming") || key.includes("swim")) return "pool";
     if (key.includes("walking") || key.includes("hike"))
       return "directions-walk";
+    if (key.includes("hiit") || key.includes("high intensity"))
+      return "flash-on";
     if (key.includes("yoga") || key.includes("stretch"))
       return "self-improvement";
     if (key.includes("weight") || key.includes("strength"))
@@ -519,14 +687,19 @@ const ExerciseItem = ({
     setLoading(true);
     setError("");
     try {
-      const res = await activityService.calculateExerciseCalories({
+      const isHiking =
+        category === "Outdoor Activity" && subcategory === "Hiking";
+
+      const requestData = {
         category,
         subcategory,
         exercise,
-        effortLevel: newEffort,
+        effortLevel: isHiking ? "Moderate" : newEffort, // Use default effort for hiking
         durationInMinutes: newDuration,
         terrainType: newTerrain,
-      });
+      };
+
+      const res = await activityService.calculateExerciseCalories(requestData);
       setCalories({
         caloriesPerMinute: res.caloriesPerMinute,
         caloriesPerHalfHour: res.caloriesPerHalfHour,
@@ -544,13 +717,21 @@ const ExerciseItem = ({
     setLoading(true);
     setError("");
     try {
+      const isHiking =
+        category === "Outdoor Activity" && subcategory === "Hiking";
+
       const requestData = {
         category,
         subcategory,
         exercise,
-        effortLevel: effort,
+        effortLevel: isHiking
+          ? undefined
+          : convertDisplayEffortToOriginal(effort, effortLevels),
         durationInMinutes: duration,
-        terrainType: terrainTypes.length > 0 ? terrain : undefined,
+        terrainType:
+          terrainTypes.length > 0
+            ? convertDisplayTerrainToOriginal(terrain, terrainTypes)
+            : undefined,
         date: selectedDate,
         isPublic: true,
       };
@@ -573,17 +754,65 @@ const ExerciseItem = ({
 
   useEffect(() => {
     if (!isCustomWorkout) {
-      if (
-        (effortLevels.length > 0 && effort) ||
-        (terrainTypes.length > 0 && terrain)
-      ) {
-        recalculateCalories(effort, terrain, duration);
+      const isHiking =
+        category === "Outdoor Activity" && subcategory === "Hiking";
+
+      if (isHiking) {
+        // For hiking, use terrain type for calorie calculation (effort will be set to "Moderate" in recalculateCalories)
+        if (terrainTypes.length > 0 && terrain) {
+          recalculateCalories(
+            "Moderate", // Default effort for hiking
+            convertDisplayTerrainToOriginal(terrain, terrainTypes),
+            duration
+          );
+        }
+      } else {
+        // For other exercises, use effort level and/or terrain type
+        if (
+          (effortLevels.length > 0 && effort) ||
+          (terrainTypes.length > 0 && terrain)
+        ) {
+          recalculateCalories(
+            convertDisplayEffortToOriginal(effort, effortLevels),
+            convertDisplayTerrainToOriginal(terrain, terrainTypes),
+            duration
+          );
+        }
       }
     }
-  }, [effort, terrain, duration, isCustomWorkout]);
+  }, [effort, terrain, duration, isCustomWorkout, category, subcategory]);
+
+  // Ensure selected effort and terrain are valid after sorting
+  useEffect(() => {
+    const isHiking =
+      category === "Outdoor Activity" && subcategory === "Hiking";
+    if (isHiking) return; // Skip effort validation for hiking
+
+    if (effortLevels.length > 0) {
+      const convertedEffortLevels = convertHikingToEffortLevels(effortLevels);
+      const sortedEffortLevels = sortEffortLevels(convertedEffortLevels);
+      if (!sortedEffortLevels.includes(effort)) {
+        // If current effort is not in the sorted list, set to the middle option or first
+        setEffort(sortedEffortLevels[1] || sortedEffortLevels[0] || "");
+      }
+    }
+  }, [effortLevels, category, subcategory]);
+
+  useEffect(() => {
+    if (terrainTypes.length > 0) {
+      const convertedTerrainTypes = convertHikingToTerrainTypes(terrainTypes);
+      const sortedTerrainTypes = sortTerrainTypes(convertedTerrainTypes);
+      if (!sortedTerrainTypes.includes(terrain)) {
+        // If current terrain is not in the sorted list, set to the first option
+        setTerrain(sortedTerrainTypes[0] || "");
+      }
+    }
+  }, [terrainTypes]);
 
   let showDuration = effortLevels.length > 0 || terrainTypes.length > 0;
-  let showEffort = effortLevels.length > 0;
+  let showEffort =
+    effortLevels.length > 0 &&
+    !(category === "Outdoor Activity" && subcategory === "Hiking");
   let showTerrain = terrainTypes.length > 0;
 
   const handleAddPress = () => {
@@ -806,7 +1035,9 @@ const ExerciseItem = ({
                       elevation: 5,
                     }}
                   >
-                    {effortLevels.map((option) => (
+                    {sortEffortLevels(
+                      convertHikingToEffortLevels(effortLevels)
+                    ).map((option) => (
                       <TouchableOpacity
                         key={option}
                         style={{ paddingVertical: 10, paddingHorizontal: 8 }}
@@ -877,7 +1108,9 @@ const ExerciseItem = ({
                       elevation: 5,
                     }}
                   >
-                    {terrainTypes.map((option) => (
+                    {sortTerrainTypes(
+                      convertHikingToTerrainTypes(terrainTypes)
+                    ).map((option) => (
                       <TouchableOpacity
                         key={option}
                         style={{ paddingVertical: 10, paddingHorizontal: 8 }}
@@ -1701,14 +1934,18 @@ const TrackExerciseView = () => {
                     name: selectedSubcategory,
                   });
                   const effectiveEffortLevels = sortEffortLevels(
-                    Array.isArray(ex.keys) && ex.keys.length > 0
-                      ? ex.keys
-                      : Array.isArray(meta.effortLevels)
-                      ? meta.effortLevels
-                      : []
+                    convertHikingToEffortLevels(
+                      Array.isArray(ex.keys) && ex.keys.length > 0
+                        ? ex.keys
+                        : Array.isArray(meta.effortLevels)
+                        ? meta.effortLevels
+                        : []
+                    )
                   );
                   const effectiveTerrainTypes = sortTerrainTypes(
-                    Array.isArray(meta.terrainTypes) ? meta.terrainTypes : []
+                    convertHikingToTerrainTypes(
+                      Array.isArray(meta.terrainTypes) ? meta.terrainTypes : []
+                    )
                   );
                   return (
                     <ExerciseItem
@@ -1753,8 +1990,12 @@ const TrackExerciseView = () => {
                       onFavoriteToggle={
                         isCustomWorkout ? undefined : handleFavoriteToggle
                       }
-                      effortLevels={meta.effortLevels || []}
-                      terrainTypes={meta.terrainTypes || []}
+                      effortLevels={sortEffortLevels(
+                        convertHikingToEffortLevels(meta.effortLevels || [])
+                      )}
+                      terrainTypes={sortTerrainTypes(
+                        convertHikingToTerrainTypes(meta.terrainTypes || [])
+                      )}
                       hideEffortAndDuration={hideEffortAndDuration}
                       isCustomWorkout={hideEffortAndDuration}
                       customCalories={undefined}
