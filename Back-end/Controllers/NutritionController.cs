@@ -18,64 +18,7 @@ namespace Fitness_Tracker.Controllers
             _nutritionService = nutritionService;
         }
 
-        [HttpGet(CalorieOverviewHttpAttributeName)]
-        public async Task<IActionResult> GetCalorieOverview([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string timeframe = null)
-        {
-            var validationResult = ValidateUserAuthentication(out var userId);
-            if (validationResult != null)
-            {
-                return validationResult;
-            }
-
-            DateTime sDate, eDate;
-            if (!string.IsNullOrEmpty(timeframe))
-            {
-                var today = DateTime.Now;
-                switch (timeframe.ToLower())
-                {
-                    case "today":
-                        sDate = today.Date;
-                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
-                        break;
-                    case "month":
-                        sDate = new DateTime(today.Year, today.Month, 1);
-                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
-                        break;
-                    case "week":
-                    default:
-                        sDate = today.Date.AddDays(-6);
-                        eDate = today.Date.AddDays(1).AddMilliseconds(-1);
-                        break;
-                }
-            }
-            else if (startDate.HasValue && endDate.HasValue)
-            {
-                sDate = startDate.Value;
-                eDate = endDate.Value;
-            }
-            else
-            {
-                return BadRequest("Either timeframe or both startDate and endDate must be provided.");
-            }
-
-            try
-            {
-                var result = await _nutritionService.GetCalorieOverviewAsync(userId, sDate, eDate);
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                if (ex.Message?.Contains("User not found", StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    return Unauthorized(new { Message = ex.Message });
-                }
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"An error occurred while retrieving calorie overview: {ex.Message}");
-            }
-        }
+        // Removed: Calorie Overview endpoint
 
         [HttpGet(DailyCaloriesHttpAttributeName)]
         public async Task<IActionResult> GetDailyCalories([FromQuery] DateTime date)

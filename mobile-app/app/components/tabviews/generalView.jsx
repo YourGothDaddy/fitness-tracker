@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
-import { BarChart, LineChart } from "react-native-chart-kit";
+import { BarChart, LineChart, PieChart } from "react-native-chart-kit";
 import { Colors } from "@/constants/Colors";
 import { nutritionService } from "../../services/nutritionService";
 import { weightService } from "../../services/weightService";
@@ -72,11 +72,15 @@ const getTimeframeDates = (timeframe) => {
 const GeneralView = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [calorieOverview, setCalorieOverview] = useState({
-    dailyAverage: 0,
+  const [energyBudget, setEnergyBudget] = useState({
     target: 0,
-    deficit: 0,
-    dailyCalories: [],
+    consumed: 0,
+    remaining: 0,
+    overLimit: 0,
+  });
+  const [energyExpenditure, setEnergyExpenditure] = useState({
+    exerciseCalories: 0,
+    baselineActivityCalories: 0,
   });
   const [weightProgress, setWeightProgress] = useState({
     startingWeight: 0,
@@ -92,8 +96,11 @@ const GeneralView = () => {
   });
   const [isWeightLoading, setIsWeightLoading] = useState(true);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
-  const [selectedTimeframe, setSelectedTimeframe] = useState("week");
-  const [isTimeframeModalVisible, setIsTimeframeModalVisible] = useState(false);
+  const [energyBudgetDate, setEnergyBudgetDate] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
   const [selectedWeightTimeframe, setSelectedWeightTimeframe] =
     useState("week");
   const [isWeightTimeframeModalVisible, setIsWeightTimeframeModalVisible] =
@@ -187,23 +194,24 @@ const GeneralView = () => {
     [router]
   );
 
-  const fetchCalorieOverview = useCallback(
-    async (timeframe = selectedTimeframe) => {
-      const requestId = "calories-" + Date.now();
+  const fetchEnergyBudget = useCallback(
+    async (date = energyBudgetDate) => {
+      const requestId = "energy-budget-" + Date.now();
       pendingRequests.current.add(requestId);
 
       try {
-        const data = await nutritionService.getCalorieOverview(
-          null,
-          null,
-          timeframe
-        );
+        const data = await nutritionService.getEnergyBudget(date);
         if (!isMounted.current) return;
 
-        setCalorieOverview(data);
+        setEnergyBudget({
+          target: data.target,
+          consumed: data.consumed,
+          remaining: Math.max(0, data.remaining),
+          overLimit: Math.max(0, -data.remaining),
+        });
         setError("");
       } catch (err) {
-        handleError(err, "calorie");
+        handleError(err, "energy budget");
       } finally {
         if (isMounted.current) {
           pendingRequests.current.delete(requestId);
@@ -213,7 +221,32 @@ const GeneralView = () => {
         }
       }
     },
-    [selectedTimeframe, handleError]
+    [energyBudgetDate, handleError]
+  );
+
+  const fetchEnergyExpenditure = useCallback(
+    async (date = energyBudgetDate) => {
+      const requestId = "energy-expenditure-" + Date.now();
+      pendingRequests.current.add(requestId);
+      try {
+        const data = await nutritionService.getEnergyExpenditure(date);
+        if (!isMounted.current) return;
+        setEnergyExpenditure({
+          exerciseCalories: data.exerciseCalories ?? 0,
+          baselineActivityCalories: data.baselineActivityCalories ?? 0,
+        });
+      } catch (err) {
+        handleError(err, "energy expenditure");
+      } finally {
+        if (isMounted.current) {
+          pendingRequests.current.delete(requestId);
+          if (pendingRequests.current.size === 0) {
+            setIsLoading(false);
+          }
+        }
+      }
+    },
+    [energyBudgetDate, handleError]
   );
 
   const fetchWeightProgress = useCallback(
@@ -269,25 +302,97 @@ const GeneralView = () => {
   const handleDeleteMeal = useCallback(
     async (mealId) => {
       try {
+        // Find the meal to get its calories before deleting
+        const mealToDelete = activityOverview.meals.find(
+          (meal) => meal.id === mealId
+        );
+        const caloriesToRemove = mealToDelete ? mealToDelete.calories : 0;
+
+        // Remove meal from state immediately for instant UI feedback
+        setActivityOverview((prev) => ({
+          ...prev,
+          meals: prev.meals.filter((meal) => meal.id !== mealId),
+        }));
+
+        // Update energy budget immediately to reflect the deletion
+        setEnergyBudget((prev) => ({
+          ...prev,
+          consumed: Math.max(0, prev.consumed - caloriesToRemove),
+        }));
+
         await mealService.deleteMeal(mealId);
-        await fetchActivityOverview(activityDate);
+        // Don't refresh data immediately - trust our local state
+        // The item will be gone on next app refresh or navigation
       } catch (err) {
+        // If deletion fails, revert both state changes
+        setActivityOverview((prev) => ({
+          ...prev,
+          meals: prev.meals.filter((meal) => meal.id !== mealId),
+        }));
+        setEnergyBudget((prev) => ({
+          ...prev,
+          consumed:
+            prev.consumed +
+            (activityOverview.meals.find((meal) => meal.id === mealId)
+              ?.calories || 0),
+        }));
         handleError(err, "meal deletion");
       }
     },
-    [activityDate, fetchActivityOverview, handleError]
+    [activityOverview.meals, handleError]
   );
 
   const handleDeleteExercise = useCallback(
     async (activityId) => {
       try {
+        // Find the exercise to get its calories before deleting
+        const exerciseToDelete = activityOverview.exercises.find(
+          (exercise) => exercise.id === activityId
+        );
+        const caloriesToRemove = exerciseToDelete
+          ? exerciseToDelete.caloriesBurned
+          : 0;
+
+        // Remove exercise from state immediately for instant UI feedback
+        setActivityOverview((prev) => ({
+          ...prev,
+          exercises: prev.exercises.filter(
+            (exercise) => exercise.id !== activityId
+          ),
+        }));
+
+        // Update energy expenditure immediately to reflect the deletion
+        setEnergyExpenditure((prev) => ({
+          ...prev,
+          exerciseCalories: Math.max(
+            0,
+            prev.exerciseCalories - caloriesToRemove
+          ),
+        }));
+
         await activityService.deleteActivity(activityId);
-        await fetchActivityOverview(activityDate);
+        // Don't refresh data immediately - trust our local state
+        // The item will be gone on next app refresh or navigation
       } catch (err) {
+        // If deletion fails, revert both state changes
+        setActivityOverview((prev) => ({
+          ...prev,
+          exercises: prev.exercises.filter(
+            (exercise) => exercise.id !== activityId
+          ),
+        }));
+        setEnergyExpenditure((prev) => ({
+          ...prev,
+          exerciseCalories:
+            prev.exerciseCalories +
+            (activityOverview.exercises.find(
+              (exercise) => exercise.id === activityId
+            )?.caloriesBurned || 0),
+        }));
         handleError(err, "exercise deletion");
       }
     },
-    [activityDate, fetchActivityOverview, handleError]
+    [activityOverview.exercises, handleError]
   );
 
   useFocusEffect(
@@ -298,7 +403,8 @@ const GeneralView = () => {
       const fetchData = async () => {
         try {
           await Promise.all([
-            fetchCalorieOverview(selectedTimeframe),
+            fetchEnergyBudget(energyBudgetDate),
+            fetchEnergyExpenditure(energyBudgetDate),
             fetchWeightProgress(selectedWeightTimeframe),
             fetchActivityOverview(activityDate),
           ]);
@@ -310,10 +416,11 @@ const GeneralView = () => {
       fetchData();
       return cleanup;
     }, [
-      selectedTimeframe,
+      energyBudgetDate,
+      fetchEnergyExpenditure,
       selectedWeightTimeframe,
       activityDate,
-      fetchCalorieOverview,
+      fetchEnergyBudget,
       fetchWeightProgress,
       fetchActivityOverview,
       handleError,
@@ -326,17 +433,103 @@ const GeneralView = () => {
   const screenWidth =
     Dimensions.get("window").width - totalHorizontalPadding - cardPadding;
 
-  const calorieData = useMemo(
-    () => ({
-      labels: calorieOverview.dailyCalories.map((day) => getDayName(day.date)),
-      datasets: [
-        {
-          data: calorieOverview.dailyCalories.map((day) => day.totalCalories),
-        },
-      ],
-    }),
-    [calorieOverview.dailyCalories]
+  const computedRemainingRaw =
+    (energyBudget.target || 0) +
+    (energyExpenditure.exerciseCalories || 0) -
+    (energyBudget.consumed || 0);
+  const computedRemaining = Math.max(0, computedRemainingRaw);
+  const computedOverLimit = Math.max(0, -computedRemainingRaw);
+
+  const hasEnergyBudgetData = useCallback(() => {
+    return (
+      (energyBudget.consumed || 0) > 0 ||
+      computedRemaining > 0 ||
+      computedOverLimit > 0
+    );
+  }, [energyBudget, computedRemaining, computedOverLimit]);
+
+  const getDefaultEnergyBudgetData = () => [
+    {
+      name: "",
+      population: 1,
+      color: "#E0E0E0",
+      legendFontColor: "#FFFFFF",
+    },
+  ];
+
+  const budgetData = useMemo(
+    () =>
+      hasEnergyBudgetData()
+        ? computedOverLimit > 0
+          ? [
+              {
+                name: "Consumed",
+                population: energyBudget.consumed,
+                color: Colors.brightRed.color,
+                legendFontColor: "#7F7F7F",
+              },
+              {
+                name: "Over Limit",
+                population: computedOverLimit,
+                color: Colors.brightRed.color,
+                legendFontColor: "#7F7F7F",
+              },
+            ]
+          : [
+              {
+                name: "Remaining",
+                population: computedRemaining,
+                color: Colors.blue.color,
+                legendFontColor: "#7F7F7F",
+              },
+              {
+                name: "Consumed",
+                population: energyBudget.consumed,
+                color: Colors.green.color,
+                legendFontColor: "#7F7F7F",
+              },
+            ]
+        : getDefaultEnergyBudgetData(),
+    [energyBudget, hasEnergyBudgetData, computedRemaining, computedOverLimit]
   );
+
+  const shadeColor = (color, percent) => {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = ((num >> 8) & 0x00ff) + amt;
+    const B = (num & 0x0000ff) + amt;
+    return `#${(
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)}`;
+  };
+
+  const showEnergyBudgetDatePicker = useCallback(() => {
+    try {
+      DateTimePickerAndroid.open({
+        value: energyBudgetDate,
+        mode: "date",
+        is24Hour: true,
+        onChange: (event, selectedDate) => {
+          if (event.type === "set" && selectedDate) {
+            selectedDate.setHours(0, 0, 0, 0);
+            setEnergyBudgetDate(selectedDate);
+            fetchEnergyBudget(selectedDate);
+            fetchEnergyExpenditure(selectedDate);
+          }
+        },
+        maximumDate: new Date(),
+      });
+    } catch (error) {
+      console.error("DatePicker error:", error);
+      setError("Failed to open date picker. Please try again.");
+    }
+  }, [energyBudgetDate, fetchEnergyBudget, fetchEnergyExpenditure]);
 
   let weightLabels = [],
     weightValues = [];
@@ -535,151 +728,121 @@ const GeneralView = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Calorie Overview Card */}
+      {/* Energy Budget Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
             <Icon
-              name="local-fire-department"
+              name="account-balance"
               size={24}
               color="#619819"
               style={styles.headerIcon}
             />
-            <Text style={styles.cardTitle}>Calorie Overview</Text>
+            <Text style={styles.cardTitle}>Energy Budget</Text>
           </View>
         </View>
-        <View style={styles.timeframeBadgeWrapper}>
+
+        <View style={styles.subtitleContainer}>
+          <Text style={styles.formulaText}>
+            Remaining = Target + Exercise - Consumed
+          </Text>
+        </View>
+
+        <View style={styles.dateButtonContainer}>
           <TouchableOpacity
-            style={styles.badgeContainer}
-            onPress={() => setIsTimeframeModalVisible(true)}
+            style={styles.dateButton}
+            onPress={showEnergyBudgetDatePicker}
             activeOpacity={0.8}
           >
-            <Text style={styles.badgeText}>
-              {TIMEFRAMES.find((t) => t.value === selectedTimeframe)?.label ||
-                "This Week"}
-            </Text>
             <Icon
-              name="arrow-drop-down"
-              size={20}
+              name="calendar-today"
+              size={18}
               color="#619819"
-              style={{ marginLeft: 2 }}
+              style={styles.dateButtonIcon}
             />
-          </TouchableOpacity>
-        </View>
-        <Modal
-          visible={isTimeframeModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsTimeframeModalVisible(false)}
-        >
-          <Pressable
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.2)",
-            }}
-            onPress={() => setIsTimeframeModalVisible(false)}
-          >
-            <View
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: 12,
-                padding: 16,
-                minWidth: 180,
-                elevation: 5,
-              }}
-            >
-              {TIMEFRAMES.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={{ paddingVertical: 10, paddingHorizontal: 8 }}
-                  onPress={() => {
-                    setSelectedTimeframe(option.value);
-                    setIsTimeframeModalVisible(false);
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color:
-                        option.value === selectedTimeframe
-                          ? "#619819"
-                          : "#2d3436",
-                      fontWeight:
-                        option.value === selectedTimeframe ? "700" : "500",
-                    }}
-                  >
-                    {option.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Pressable>
-        </Modal>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <View style={styles.labelContainer}>
-              <Text style={styles.statLabel}>Daily{"\n"}Average</Text>
-            </View>
-            <Text style={styles.statValue}>{calorieOverview.dailyAverage}</Text>
-            <Text style={styles.statUnit}>kcal</Text>
-          </View>
-
-          <View style={styles.statBox}>
-            <View style={styles.labelContainer}>
-              <Text
-                style={styles.statLabel}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                Target
-              </Text>
-            </View>
-            <Text style={styles.statValue}>{calorieOverview.target}</Text>
-            <Text style={styles.statUnit}>kcal</Text>
-          </View>
-
-          <View style={styles.statBox}>
-            <View style={styles.labelContainer}>
-              <Text
-                style={styles.statLabel}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                Deficit
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.statValue,
-                { color: calorieOverview.deficit > 0 ? "#27ae60" : "#e74c3c" },
-              ]}
-            >
-              {calorieOverview.deficit > 0 ? "-" : "+"}
-              {Math.abs(calorieOverview.deficit)}
+            <Text style={styles.dateButtonText}>
+              {formatDate(energyBudgetDate)}
             </Text>
-            <Text style={styles.statUnit}>kcal</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.chartContainer}>
           <View style={styles.chartWrapper}>
-            <BarChart
-              data={calorieData}
+            <PieChart
+              data={budgetData}
               width={screenWidth}
               height={180}
               chartConfig={chartConfig}
-              style={styles.chart}
-              showBarTops={false}
-              fromZero
-              segments={4}
-              withInnerLines={true}
-              yAxisLabel=""
-              yAxisSuffix=""
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="0"
+              absolute
             />
+            {!hasEnergyBudgetData() && (
+              <View style={styles.noDataOverlayEnergy}>
+                <Text style={styles.noDataTextEnergy}>No Data</Text>
+              </View>
+            )}
           </View>
+        </View>
+
+        <View style={styles.budgetDetailsContainer}>
+          {[
+            {
+              title: "Target",
+              value: energyBudget.target,
+              icon: "flag",
+              color: Colors.darkGreen.color,
+            },
+            ...(computedOverLimit > 0
+              ? [
+                  {
+                    title: "Consumed",
+                    value: energyBudget.consumed,
+                    icon: "restaurant",
+                    color: Colors.green.color,
+                  },
+                ]
+              : [
+                  {
+                    title: "Remaining",
+                    value: computedRemaining,
+                    icon: "hourglass-empty",
+                    color: Colors.blue.color,
+                  },
+                ]),
+            {
+              title: "Exercise",
+              value: Math.round(energyExpenditure.exerciseCalories),
+              icon: "directions-run",
+              color: Colors.blue.color,
+            },
+          ].map((item) => (
+            <View key={item.title} style={styles.budgetRow}>
+              <View style={styles.budgetIconContainer}>
+                <LinearGradient
+                  colors={[item.color, shadeColor(item.color, 20)]}
+                  style={styles.budgetIconGradient}
+                >
+                  <Icon name={item.icon} size={20} color="white" />
+                </LinearGradient>
+              </View>
+              <View style={styles.budgetInfo}>
+                <Text style={styles.budgetTitle}>{item.title}</Text>
+                <Text
+                  style={[
+                    styles.budgetValue,
+                    item.title === "Over Limit" && {
+                      color: Colors.brightRed.color,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {item.value} kcal
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       </LinearGradient>
 
@@ -1036,6 +1199,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#2d3436",
   },
+  cardSubtitle: {
+    fontSize: 12,
+    color: "#7f8c8d",
+    marginTop: -10,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
   badgeContainer: {
     backgroundColor: "rgba(97, 152, 25, 0.1)",
     paddingHorizontal: 12,
@@ -1097,6 +1267,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 200,
+  },
+  noDataOverlayEnergy: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -40 }, { translateY: -15 }],
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 1,
+  },
+  noDataTextEnergy: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
   chart: {
     borderRadius: 16,
@@ -1238,6 +1425,75 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(97, 152, 25, 0.18)",
     marginTop: 0,
+  },
+  subtitleContainer: {
+    marginBottom: 8,
+    marginTop: -8,
+  },
+  formulaText: {
+    fontSize: 12,
+    color: "#7f8c8d",
+    fontStyle: "italic",
+    textAlign: "left",
+  },
+  dateButtonContainer: {
+    alignItems: "flex-end",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(97, 152, 25, 0.08)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.15)",
+  },
+  dateButtonIcon: {
+    marginRight: 8,
+  },
+  dateButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#619819",
+  },
+  budgetDetailsContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  budgetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  budgetIconContainer: {
+    marginRight: 10,
+  },
+  budgetIconGradient: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  budgetInfo: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  budgetTitle: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#2d3436",
+  },
+  budgetValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2d3436",
   },
 });
 

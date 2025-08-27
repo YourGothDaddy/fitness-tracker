@@ -20,45 +20,7 @@ namespace Fitness_Tracker.Services.Nutrition
             _databaseContext = databaseContext;
         }
 
-        public async Task<CalorieOverviewModel> GetCalorieOverviewAsync(string userId, DateTime startDate, DateTime endDate)
-        {
-            var user = await _databaseContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
-            {
-                throw new InvalidOperationException("User not found");
-            }
-
-            var startDateTime = startDate.Date;
-            var endDateTime = endDate.Date.AddDays(1).AddTicks(-1);
-
-            var dailyCalories = await _databaseContext.Meals
-                .AsNoTracking()
-                .Where(m => m.UserId == userId && m.Date >= startDateTime && m.Date <= endDateTime)
-                .GroupBy(m => m.Date.Date)
-                .Select(g => new DailyCaloriesModel
-                {
-                    Date = g.Key,
-                    TotalCalories = g.Sum(m => m.Calories)
-                })
-                .ToListAsync();
-
-            var averageCalories = dailyCalories.Any() 
-                ? (int)Math.Round(dailyCalories.Average(d => d.TotalCalories)) 
-                : 0;
-
-            var deficit = user.DailyCaloriesGoal - averageCalories;
-
-            return new CalorieOverviewModel
-            {
-                DailyAverage = averageCalories,
-                Target = user.DailyCaloriesGoal,
-                Deficit = deficit,
-                DailyCalories = dailyCalories
-            };
-        }
+        // Removed: GetCalorieOverviewAsync
 
         public async Task<DailyCaloriesModel> GetDailyCaloriesAsync(string userId, DateTime date)
         {

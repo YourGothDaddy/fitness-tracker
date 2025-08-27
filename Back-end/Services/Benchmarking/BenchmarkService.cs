@@ -42,7 +42,7 @@ namespace Fitness_Tracker.Services.Benchmarking
                 { "GetActivityOverviewForPeriodAsync", new List<double>() },
                 { "GetAllUserMealsAsync", new List<double>() },
                 { "GetTotalUserMealCaloriesAsync", new List<double>() },
-                { "GetCalorieOverviewAsync", new List<double>() },
+                // Removed: GetCalorieOverviewAsync
                 { "GetMacronutrientsAsync", new List<double>() },
                 { "GetEnergyExpenditureAsync", new List<double>() },
                 { "GetEnergyBudgetAsync", new List<double>() }
@@ -63,7 +63,7 @@ namespace Fitness_Tracker.Services.Benchmarking
                 await Measure("GetActivityOverviewForPeriodAsync", () => _activityService.GetActivityOverviewForPeriodAsync(userId, start, end));
                 await Measure("GetAllUserMealsAsync", () => _mealService.GetAllUserMealsAsync(userId, today));
                 await Measure("GetTotalUserMealCaloriesAsync", () => _mealService.GetTotalUserMealCaloriesAsync(userId, today));
-                await Measure("GetCalorieOverviewAsync", () => _nutritionService.GetCalorieOverviewAsync(userId, start, end));
+                // Removed: GetCalorieOverviewAsync
                 await Measure("GetMacronutrientsAsync", () => _nutritionService.GetMacronutrientsAsync(userId, today));
                 await Measure("GetEnergyExpenditureAsync", () => _nutritionService.GetEnergyExpenditureAsync(userId, today));
                 await Measure("GetEnergyBudgetAsync", () => _nutritionService.GetEnergyBudgetAsync(userId, today));

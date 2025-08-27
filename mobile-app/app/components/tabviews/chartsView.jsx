@@ -43,12 +43,7 @@ const ChartsView = () => {
     tefPercentage: 0,
   });
 
-  const [energyBudget, setEnergyBudget] = useState({
-    target: 0,
-    consumed: 0,
-    remaining: 0,
-    overLimit: 0,
-  });
+  // Removed: energyBudget state (moved to GeneralView)
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -89,10 +84,9 @@ const ChartsView = () => {
     async (date = selectedDate) => {
       try {
         setIsLoading(true);
-        const [macrosData, energyData, budgetData] = await Promise.all([
+        const [macrosData, energyData] = await Promise.all([
           nutritionService.getMacronutrients(date),
           nutritionService.getEnergyExpenditure(date),
-          nutritionService.getEnergyBudget(date),
         ]);
         if (!isMounted.current) return;
         setMacronutrients({
@@ -116,14 +110,6 @@ const ChartsView = () => {
           exercisePercentage: energyData.exercisePercentage,
           baselineActivityPercentage: energyData.baselineActivityPercentage,
           tefPercentage: energyData.tefPercentage,
-        });
-
-        if (!isMounted.current) return;
-        setEnergyBudget({
-          target: budgetData.target,
-          consumed: budgetData.consumed,
-          remaining: Math.max(0, budgetData.remaining),
-          overLimit: Math.max(0, -budgetData.remaining),
         });
       } catch (error) {
         // Optionally handle error
@@ -199,13 +185,7 @@ const ChartsView = () => {
     );
   };
 
-  const hasEnergyBudgetData = () => {
-    return (
-      energyBudget.consumed > 0 ||
-      energyBudget.remaining > 0 ||
-      energyBudget.overLimit > 0
-    );
-  };
+  // Removed: energy budget helpers (moved to GeneralView)
 
   // Default grey chart data
   const getDefaultMacroData = () => [
@@ -226,14 +206,7 @@ const ChartsView = () => {
     },
   ];
 
-  const getDefaultEnergyBudgetData = () => [
-    {
-      name: "",
-      population: 1,
-      color: "#E0E0E0",
-      legendFontColor: "#FFFFFF",
-    },
-  ];
+  // Removed: default energy budget data
 
   const macroData = useMemo(
     () =>
@@ -295,40 +268,7 @@ const ChartsView = () => {
     [energyExpenditure]
   );
 
-  const budgetData = useMemo(
-    () =>
-      hasEnergyBudgetData()
-        ? [
-            {
-              name: "Consumed",
-              population: energyBudget.consumed,
-              color: Colors.green.color,
-              legendFontColor: "#7F7F7F",
-            },
-            ...(energyBudget.remaining > 0
-              ? [
-                  {
-                    name: "Remaining",
-                    population: energyBudget.remaining,
-                    color: Colors.blue.color,
-                    legendFontColor: "#7F7F7F",
-                  },
-                ]
-              : []),
-            ...(energyBudget.overLimit > 0
-              ? [
-                  {
-                    name: "Over Limit",
-                    population: energyBudget.overLimit,
-                    color: Colors.brightRed.color,
-                    legendFontColor: "#7F7F7F",
-                  },
-                ]
-              : []),
-          ]
-        : getDefaultEnergyBudgetData(),
-    [energyBudget]
-  );
+  // Removed: energy budget computed data
 
   return (
     <View style={styles.container}>
@@ -536,115 +476,7 @@ const ChartsView = () => {
         </View>
       </LinearGradient>
 
-      {/* Energy Budget Card */}
-      <LinearGradient
-        colors={["#ffffff", "#f8faf5"]}
-        style={[styles.card, { marginBottom: 24 }]}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <MaterialIcons name="account-balance" size={24} color="#619819" />
-            <Text style={styles.cardTitle}>Energy Budget</Text>
-          </View>
-          <View style={styles.timeframeBadgeWrapper}>
-            <TouchableOpacity
-              style={styles.badgeContainer}
-              onPress={showDatePicker}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#619819"
-                style={{ marginLeft: 2 }}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.chartSection}>
-          <View style={styles.chartContainer}>
-            <PieChart
-              data={budgetData}
-              width={screenWidth * 0.85}
-              height={180}
-              chartConfig={chartConfig}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="0"
-              absolute
-            />
-            {!hasEnergyBudgetData() && (
-              <View style={styles.noDataOverlay}>
-                <Text style={styles.noDataText}>No Data</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.budgetDetailsContainer}>
-          {[
-            {
-              title: "Target",
-              value: energyBudget.target,
-              icon: "flag",
-              color: Colors.darkGreen.color,
-            },
-            {
-              title: "Consumed",
-              value: energyBudget.consumed,
-              icon: "restaurant",
-              color: Colors.green.color,
-            },
-            ...(energyBudget.remaining > 0
-              ? [
-                  {
-                    title: "Remaining",
-                    value: energyBudget.remaining,
-                    icon: "hourglass-empty",
-                    color: Colors.blue.color,
-                  },
-                ]
-              : []),
-            ...(energyBudget.overLimit > 0
-              ? [
-                  {
-                    title: "Over Limit",
-                    value: energyBudget.overLimit,
-                    icon: "warning",
-                    color: Colors.brightRed.color,
-                  },
-                ]
-              : []),
-          ].map((item) => (
-            <View key={item.title} style={styles.budgetRow}>
-              <View style={styles.budgetIconContainer}>
-                <LinearGradient
-                  colors={[item.color, shadeColor(item.color, 20)]}
-                  style={styles.budgetIconGradient}
-                >
-                  <MaterialIcons name={item.icon} size={20} color="white" />
-                </LinearGradient>
-              </View>
-              <View style={styles.budgetInfo}>
-                <Text style={styles.budgetTitle}>{item.title}</Text>
-                <Text
-                  style={[
-                    styles.budgetValue,
-                    item.title === "Over Limit" && {
-                      color: Colors.brightRed.color,
-                      fontWeight: "600",
-                    },
-                  ]}
-                >
-                  {item.value} kcal
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
+      {/* Removed: Energy Budget Card (moved to GeneralView) */}
     </View>
   );
 };

@@ -5,4 +5,4 @@ namespace Fitness_Tracker.Models.Nutrition
         public DateTime Date { get; set; }
         public int TotalCalories { get; set; }
     }
-} 
+}
