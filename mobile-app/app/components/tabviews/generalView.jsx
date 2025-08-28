@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  RefreshControl,
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
@@ -96,6 +97,7 @@ const GeneralView = () => {
   });
   const [isWeightLoading, setIsWeightLoading] = useState(true);
   const [isActivityLoading, setIsActivityLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [energyBudgetDate, setEnergyBudgetDate] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -413,6 +415,8 @@ const GeneralView = () => {
         }
       };
 
+      // Always fetch data when focusing on this tab
+      // This ensures fresh data when returning from add meal/exercise views
       fetchData();
       return cleanup;
     }, [
@@ -530,6 +534,63 @@ const GeneralView = () => {
       setError("Failed to open date picker. Please try again.");
     }
   }, [energyBudgetDate, fetchEnergyBudget, fetchEnergyExpenditure]);
+
+  // Manual refresh function for debugging or manual refresh scenarios
+  const refreshAllData = useCallback(async () => {
+    if (!isMounted.current) return;
+
+    try {
+      setIsLoading(true);
+      await Promise.all([
+        fetchEnergyBudget(energyBudgetDate),
+        fetchEnergyExpenditure(energyBudgetDate),
+        fetchWeightProgress(selectedWeightTimeframe),
+        fetchActivityOverview(activityDate),
+      ]);
+    } catch (error) {
+      handleError(error, "manual refresh");
+    } finally {
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [
+    energyBudgetDate,
+    selectedWeightTimeframe,
+    activityDate,
+    fetchEnergyBudget,
+    fetchEnergyExpenditure,
+    fetchWeightProgress,
+    fetchActivityOverview,
+    handleError,
+  ]);
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    if (!isMounted.current) return;
+
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        fetchEnergyBudget(energyBudgetDate),
+        fetchEnergyExpenditure(energyBudgetDate),
+        fetchActivityOverview(activityDate),
+      ]);
+    } catch (error) {
+      // Silent refresh - don't show errors for pull-to-refresh
+      console.log("Pull-to-refresh failed:", error);
+    } finally {
+      if (isMounted.current) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [
+    energyBudgetDate,
+    activityDate,
+    fetchEnergyBudget,
+    fetchEnergyExpenditure,
+    fetchActivityOverview,
+  ]);
 
   let weightLabels = [],
     weightValues = [];
@@ -727,7 +788,17 @@ const GeneralView = () => {
   const keyExtractorById = useCallback((x) => String(x.id), []);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          colors={["#619819"]}
+          tintColor="#619819"
+        />
+      }
+    >
       {/* Energy Budget Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
