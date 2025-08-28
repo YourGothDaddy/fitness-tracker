@@ -5,6 +5,9 @@ import {
   Platform,
   Dimensions,
   ActivityIndicator,
+  Modal,
+  Pressable,
+  TouchableOpacity,
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
@@ -272,6 +275,8 @@ const TargetsView = () => {
   // New state for user nutrient targets
   const [userNutrientTargets, setUserNutrientTargets] = useState({});
   const [loadingTargets, setLoadingTargets] = useState(true);
+  const [isMainTargetsTooltipVisible, setIsMainTargetsTooltipVisible] =
+    useState(false);
 
   const fetchUserNutrientTargets = useCallback(async () => {
     setLoadingTargets(true);
@@ -459,8 +464,17 @@ const TargetsView = () => {
       {/* Main Targets Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.mainCard}>
         <View style={styles.cardHeader}>
-          <Icon name="stars" size={24} color="#619819" />
-          <Text style={styles.cardTitle}>Main Targets</Text>
+          <View style={styles.headerLeft}>
+            <Icon name="stars" size={24} color="#619819" />
+            <Text style={styles.cardTitle}>Main Targets</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsMainTargetsTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Icon name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
 
         {loading ? (
@@ -481,8 +495,10 @@ const TargetsView = () => {
           style={styles.categoryCard}
         >
           <View style={styles.cardHeader}>
-            <Icon name="hourglass-empty" size={24} color="#619819" />
-            <Text style={styles.cardTitle}>Loading Detailed Nutrients...</Text>
+            <View style={styles.headerLeft}>
+              <Icon name="hourglass-empty" size={24} color="#619819" />
+              <Text style={styles.cardTitle}>Loading Detailed Nutrients...</Text>
+            </View>
           </View>
           <View style={styles.loadingContentContainer}>
             <ActivityIndicator size="large" color={Colors.darkGreen.color} />
@@ -504,26 +520,28 @@ const TargetsView = () => {
                 style={styles.categoryCard}
               >
                 <View style={styles.cardHeader}>
-                  <Icon
-                    name={
-                      category === "Carbohydrates"
-                        ? "grain"
-                        : category === "AminoAcids"
-                        ? "science"
-                        : category === "Fats"
-                        ? "opacity"
-                        : category === "Minerals"
-                        ? "diamond"
-                        : category === "Vitamins"
-                        ? "medication"
-                        : category === "Sterols"
-                        ? "biotech"
-                        : "category"
-                    }
-                    size={24}
-                    color="#619819"
-                  />
-                  <Text style={styles.cardTitle}>{category}</Text>
+                  <View style={styles.headerLeft}>
+                    <Icon
+                      name={
+                        category === "Carbohydrates"
+                          ? "grain"
+                          : category === "AminoAcids"
+                          ? "science"
+                          : category === "Fats"
+                          ? "opacity"
+                          : category === "Minerals"
+                          ? "diamond"
+                          : category === "Vitamins"
+                          ? "medication"
+                          : category === "Sterols"
+                          ? "biotech"
+                          : "category"
+                      }
+                      size={24}
+                      color="#619819"
+                    />
+                    <Text style={styles.cardTitle}>{category}</Text>
+                  </View>
                 </View>
 
                 <View style={styles.nutrientsGrid}>
@@ -669,8 +687,10 @@ const TargetsView = () => {
             style={styles.categoryCard}
           >
             <View style={styles.cardHeader}>
-              <Icon name="visibility-off" size={24} color="#619819" />
-              <Text style={styles.cardTitle}>No Tracked Nutrients</Text>
+              <View style={styles.headerLeft}>
+                <Icon name="visibility-off" size={24} color="#619819" />
+                <Text style={styles.cardTitle}>No Tracked Nutrients</Text>
+              </View>
             </View>
             <View style={styles.emptyStateContainer}>
               <Text style={styles.emptyStateText}>
@@ -681,6 +701,26 @@ const TargetsView = () => {
             </View>
           </LinearGradient>
         )}
+
+      {/* Main Targets Tooltip Modal */}
+      <Modal
+        visible={isMainTargetsTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsMainTargetsTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsMainTargetsTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Main Targets</Text>
+            <Text style={styles.tooltipText}>
+              Information about your main nutrition targets and goals.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -730,7 +770,12 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   cardTitle: {
@@ -848,6 +893,42 @@ const styles = StyleSheet.create({
     color: "#636e72",
     textAlign: "center",
     lineHeight: 20,
+  },
+  tooltipIcon: {
+    padding: 8,
+    borderRadius: 16,
+    backgroundColor: "rgba(97, 152, 25, 0.08)",
+  },
+  tooltipModalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+  },
+  tooltipModal: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    maxWidth: 300,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  tooltipText: {
+    fontSize: 14,
+    color: "#636e72",
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
 

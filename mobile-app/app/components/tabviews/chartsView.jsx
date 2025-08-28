@@ -52,6 +52,12 @@ const ChartsView = () => {
   });
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMacronutrientsTooltipVisible, setIsMacronutrientsTooltipVisible] =
+    useState(false);
+  const [
+    isEnergyExpenditureTooltipVisible,
+    setIsEnergyExpenditureTooltipVisible,
+  ] = useState(false);
 
   // Helper to format date as YYYY-MM-DD
   const formatDate = (date) => {
@@ -279,6 +285,13 @@ const ChartsView = () => {
             <MaterialIcons name="pie-chart" size={24} color="#619819" />
             <Text style={styles.cardTitle}>Macronutrients</Text>
           </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsMacronutrientsTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
         <View style={styles.dateButtonContainer}>
           <TouchableOpacity
@@ -380,6 +393,13 @@ const ChartsView = () => {
             />
             <Text style={styles.cardTitle}>Energy Expenditure</Text>
           </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsEnergyExpenditureTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
         <View style={styles.dateButtonContainer}>
           <TouchableOpacity
@@ -471,6 +491,46 @@ const ChartsView = () => {
       </LinearGradient>
 
       {/* Removed: Energy Budget Card (moved to GeneralView) */}
+
+      {/* Macronutrients Tooltip Modal */}
+      <Modal
+        visible={isMacronutrientsTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsMacronutrientsTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsMacronutrientsTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Macronutrients</Text>
+            <Text style={styles.tooltipText}>
+              Information about protein, carbohydrates, and fat breakdown.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Energy Expenditure Tooltip Modal */}
+      <Modal
+        visible={isEnergyExpenditureTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsEnergyExpenditureTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsEnergyExpenditureTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Energy Expenditure</Text>
+            <Text style={styles.tooltipText}>
+              Information about how your body burns calories throughout the day.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
@@ -502,8 +562,8 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
-    gap: 10,
     paddingRight: 0,
     paddingLeft: 0,
   },
@@ -721,6 +781,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#619819",
+  },
+  tooltipIcon: {
+    padding: 8,
+    borderRadius: 16,
+    backgroundColor: "rgba(97, 152, 25, 0.08)",
+  },
+  tooltipModalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+  },
+  tooltipModal: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    maxWidth: 300,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  tooltipText: {
+    fontSize: 14,
+    color: "#636e72",
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
 

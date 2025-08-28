@@ -112,6 +112,12 @@ const GeneralView = () => {
     today.setHours(0, 0, 0, 0);
     return today;
   });
+  const [isEnergyBudgetTooltipVisible, setIsEnergyBudgetTooltipVisible] =
+    useState(false);
+  const [isWeightProgressTooltipVisible, setIsWeightProgressTooltipVisible] =
+    useState(false);
+  const [isActivityTooltipVisible, setIsActivityTooltipVisible] =
+    useState(false);
 
   const isMounted = useRef(true);
   const pendingRequests = useRef(new Set());
@@ -811,6 +817,13 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Energy Budget</Text>
           </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsEnergyBudgetTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Icon name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.subtitleContainer}>
@@ -917,6 +930,27 @@ const GeneralView = () => {
         </View>
       </LinearGradient>
 
+      {/* Energy Budget Tooltip Modal */}
+      <Modal
+        visible={isEnergyBudgetTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsEnergyBudgetTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsEnergyBudgetTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Energy Budget</Text>
+            <Text style={styles.tooltipText}>
+              Information about energy budget calculations and how to interpret
+              this data.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Weight Progress Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
@@ -929,6 +963,13 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Weight Progress</Text>
           </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsWeightProgressTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Icon name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
         <View style={styles.dateButtonContainer}>
           <TouchableOpacity
@@ -1072,6 +1113,26 @@ const GeneralView = () => {
         </View>
       </LinearGradient>
 
+      {/* Weight Progress Tooltip Modal */}
+      <Modal
+        visible={isWeightProgressTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsWeightProgressTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsWeightProgressTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Weight Progress</Text>
+            <Text style={styles.tooltipText}>
+              Information about weight tracking and progress monitoring.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Activity Log Card */}
       <LinearGradient colors={["#ffffff", "#f8faf5"]} style={styles.card}>
         <View style={styles.cardHeader}>
@@ -1084,6 +1145,13 @@ const GeneralView = () => {
             />
             <Text style={styles.cardTitle}>Today's Activity</Text>
           </View>
+          <TouchableOpacity
+            style={styles.tooltipIcon}
+            onPress={() => setIsActivityTooltipVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Icon name="help-outline" size={20} color="#619819" />
+          </TouchableOpacity>
         </View>
         <View style={styles.dateButtonContainer}>
           <TouchableOpacity
@@ -1227,6 +1295,26 @@ const GeneralView = () => {
           </>
         )}
       </LinearGradient>
+
+      {/* Activity Tooltip Modal */}
+      <Modal
+        visible={isActivityTooltipVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsActivityTooltipVisible(false)}
+      >
+        <Pressable
+          style={styles.tooltipModalOverlay}
+          onPress={() => setIsActivityTooltipVisible(false)}
+        >
+          <View style={styles.tooltipModal}>
+            <Text style={styles.tooltipTitle}>Today's Activity</Text>
+            <Text style={styles.tooltipText}>
+              Information about tracking daily meals and exercises.
+            </Text>
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 };
@@ -1571,6 +1659,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#2d3436",
+  },
+  tooltipIcon: {
+    padding: 8,
+    borderRadius: 16,
+    backgroundColor: "rgba(97, 152, 25, 0.08)",
+  },
+  tooltipModalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.2)",
+  },
+  tooltipModal: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    maxWidth: 300,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  tooltipTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2d3436",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  tooltipText: {
+    fontSize: 14,
+    color: "#636e72",
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
 
