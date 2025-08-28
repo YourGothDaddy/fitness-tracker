@@ -689,11 +689,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     gap: 20,
+    paddingBottom: 32,
   },
   mainCard: {
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
+    overflow: "hidden",
+    marginBottom: 20,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -710,6 +713,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
+    overflow: "hidden",
     marginBottom: 20,
     ...Platform.select({
       ios: {
@@ -730,7 +734,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#2d3436",
   },
@@ -738,18 +742,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: "rgba(97, 152, 25, 0.05)",
-    borderRadius: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.08)",
     marginBottom: 12,
   },
   targetIconContainer: {
-    marginRight: 12,
+    marginRight: 16,
   },
   targetIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
@@ -759,12 +763,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   targetLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
   },
   targetValues: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#636e72",
   },
   progressBarContainer: {
@@ -785,7 +789,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   progressText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#619819",
     width: 40,
@@ -798,9 +802,10 @@ const styles = StyleSheet.create({
   },
   nutrientItem: {
     width: "48%",
-    backgroundColor: "rgba(97, 152, 25, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.08)",
     borderRadius: 12,
-    padding: 12,
+    padding: 16,
   },
   nutrientHeader: {
     flexDirection: "row",

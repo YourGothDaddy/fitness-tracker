@@ -150,7 +150,7 @@ const ChartsView = () => {
       {
         key: 4,
         value: energyExpenditure.tefCalories,
-        svg: { fill: Colors.red.color },
+        svg: { fill: "#FF8C00" },
       },
     ],
     [energyExpenditure]
@@ -260,7 +260,7 @@ const ChartsView = () => {
             {
               name: "TEF",
               population: energyExpenditure.tefCalories,
-              color: Colors.red.color,
+              color: "#FF8C00",
               legendFontColor: "#7F7F7F",
             },
           ]
@@ -279,21 +279,23 @@ const ChartsView = () => {
             <MaterialIcons name="pie-chart" size={24} color="#619819" />
             <Text style={styles.cardTitle}>Macronutrients</Text>
           </View>
-          <View style={styles.timeframeBadgeWrapper}>
-            <TouchableOpacity
-              style={styles.badgeContainer}
-              onPress={showDatePicker}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#619819"
-                style={{ marginLeft: 2 }}
-              />
-            </TouchableOpacity>
-          </View>
+        </View>
+        <View style={styles.dateButtonContainer}>
+          <TouchableOpacity
+            style={styles.dateButton}
+            onPress={showDatePicker}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons
+              name="calendar-today"
+              size={18}
+              color="#619819"
+              style={styles.dateButtonIcon}
+            />
+            <Text style={styles.dateButtonText}>
+              {formatDate(selectedDate)}
+            </Text>
+          </TouchableOpacity>
         </View>
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -328,35 +330,28 @@ const ChartsView = () => {
                   value: macronutrients.protein,
                   percentage: macronutrients.proteinPercentage.toFixed(1),
                   color: Colors.green.color,
-                  icon: "fitness-center",
                 },
                 {
                   title: "Carbs",
                   value: macronutrients.carbs,
                   percentage: macronutrients.carbsPercentage.toFixed(1),
                   color: Colors.blue.color,
-                  icon: "grain",
                 },
                 {
                   title: "Fat",
                   value: macronutrients.fat,
                   percentage: macronutrients.fatPercentage.toFixed(1),
                   color: Colors.brightRed.color,
-                  icon: "opacity",
                 },
               ].map((macro, index) => (
                 <View key={macro.title} style={styles.macroRow}>
                   <View style={styles.macroIconContainer}>
-                    <LinearGradient
-                      colors={[macro.color, shadeColor(macro.color, 20)]}
-                      style={styles.macroIconGradient}
-                    >
-                      <MaterialIcons
-                        name={macro.icon}
-                        size={20}
-                        color="white"
-                      />
-                    </LinearGradient>
+                    <View
+                      style={[
+                        styles.macroColorCircle,
+                        { backgroundColor: macro.color },
+                      ]}
+                    />
                   </View>
                   <View style={styles.macroInfo}>
                     <Text style={styles.macroTitle}>{macro.title}</Text>
@@ -383,26 +378,25 @@ const ChartsView = () => {
               size={24}
               color="#619819"
             />
-            <Text
-              style={styles.cardTitleWithWrap}
-              numberOfLines={2}
-            >{`Energy\nExpenditure`}</Text>
+            <Text style={styles.cardTitle}>Energy Expenditure</Text>
           </View>
-          <View style={styles.timeframeBadgeWrapper}>
-            <TouchableOpacity
-              style={styles.badgeContainer}
-              onPress={showDatePicker}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.badgeText}>{formatDate(selectedDate)}</Text>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#619819"
-                style={{ marginLeft: 2 }}
-              />
-            </TouchableOpacity>
-          </View>
+        </View>
+        <View style={styles.dateButtonContainer}>
+          <TouchableOpacity
+            style={styles.dateButton}
+            onPress={showDatePicker}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons
+              name="calendar-today"
+              size={18}
+              color="#619819"
+              style={styles.dateButtonIcon}
+            />
+            <Text style={styles.dateButtonText}>
+              {formatDate(selectedDate)}
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.chartSection}>
           <View style={styles.chartContainer}>
@@ -451,7 +445,7 @@ const ChartsView = () => {
               title: "TEF",
               value: energyExpenditure.tefCalories,
               percentage: energyExpenditure.tefPercentage.toFixed(1),
-              color: Colors.red.color,
+              color: "#FF8C00",
               icon: "whatshot",
             },
           ].map((item) => (
@@ -485,11 +479,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     gap: 20,
+    paddingBottom: 32,
   },
   card: {
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
+    overflow: "hidden",
+    marginBottom: 20,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -505,7 +502,6 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     marginBottom: 20,
     gap: 10,
     paddingRight: 0,
@@ -518,7 +514,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#2d3436",
     flexShrink: 1,
@@ -546,72 +542,73 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
   },
   macroDetailsContainer: {
-    gap: 12,
+    gap: 16,
   },
   macroRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "rgba(97, 152, 25, 0.05)",
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.08)",
   },
   macroIconContainer: {
-    marginRight: 12,
+    marginRight: 16,
   },
-  macroIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
+  macroColorCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   macroInfo: {
     flex: 1,
   },
   macroTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
+    marginBottom: 2,
   },
   macroValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#636e72",
   },
   percentageContainer: {
-    backgroundColor: "rgba(97, 152, 25, 0.1)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: "rgba(97, 152, 25, 0.06)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.1)",
   },
   percentageText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#619819",
   },
   energyDetailsContainer: {
-    gap: 12,
+    gap: 16,
   },
   energyRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "rgba(97, 152, 25, 0.05)",
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.08)",
   },
   energyIconContainer: {
-    marginRight: 12,
+    marginRight: 16,
   },
   energyIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -619,32 +616,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   energyTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
+    marginBottom: 2,
   },
   energyValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#636e72",
   },
   budgetDetailsContainer: {
-    gap: 12,
+    gap: 16,
   },
   budgetRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "rgba(97, 152, 25, 0.05)",
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.08)",
   },
   budgetIconContainer: {
-    marginRight: 12,
+    marginRight: 16,
   },
   budgetIconGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -652,12 +650,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   budgetTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
   },
   budgetValue: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#636e72",
   },
   timeframeBadgeWrapper: {
@@ -694,12 +692,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cardTitleWithWrap: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#2d3436",
     flexShrink: 1,
     flexWrap: "wrap",
     lineHeight: 20,
+  },
+  dateButtonContainer: {
+    alignItems: "flex-end",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(97, 152, 25, 0.08)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(97, 152, 25, 0.15)",
+  },
+  dateButtonIcon: {
+    marginRight: 8,
+  },
+  dateButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#619819",
   },
 });
 

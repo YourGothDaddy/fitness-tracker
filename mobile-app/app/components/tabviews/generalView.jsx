@@ -930,22 +930,22 @@ const GeneralView = () => {
             <Text style={styles.cardTitle}>Weight Progress</Text>
           </View>
         </View>
-        <View style={styles.timeframeBadgeWrapper}>
+        <View style={styles.dateButtonContainer}>
           <TouchableOpacity
-            style={styles.badgeContainer}
+            style={styles.dateButton}
             onPress={() => setIsWeightTimeframeModalVisible(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.badgeText}>
+            <Icon
+              name="calendar-today"
+              size={18}
+              color="#619819"
+              style={styles.dateButtonIcon}
+            />
+            <Text style={styles.dateButtonText}>
               {TIMEFRAMES.find((t) => t.value === selectedWeightTimeframe)
                 ?.label || "This Week"}
             </Text>
-            <Icon
-              name="arrow-drop-down"
-              size={20}
-              color="#619819"
-              style={{ marginLeft: 2 }}
-            />
           </TouchableOpacity>
         </View>
         <Modal
@@ -983,7 +983,7 @@ const GeneralView = () => {
                 >
                   <Text
                     style={{
-                      fontSize: 16,
+                      fontSize: 14,
                       color:
                         option.value === selectedWeightTimeframe
                           ? "#619819"
@@ -1085,19 +1085,21 @@ const GeneralView = () => {
             <Text style={styles.cardTitle}>Today's Activity</Text>
           </View>
         </View>
-        <View style={styles.timeframeBadgeWrapper}>
+        <View style={styles.dateButtonContainer}>
           <TouchableOpacity
-            style={styles.badgeContainer}
+            style={styles.dateButton}
             onPress={showDatePicker}
             activeOpacity={0.8}
           >
-            <Text style={styles.badgeText}>{formatDate(activityDate)}</Text>
             <Icon
               name="calendar-today"
-              size={20}
+              size={18}
               color="#619819"
-              style={{ marginLeft: 2 }}
+              style={styles.dateButtonIcon}
             />
+            <Text style={styles.dateButtonText}>
+              {formatDate(activityDate)}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -1232,14 +1234,15 @@ const GeneralView = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    paddingBottom: 32,
+    gap: 20,
   },
   card: {
     borderRadius: 20,
     padding: 20,
     backgroundColor: "#ffffff",
     overflow: "hidden",
-    marginBottom: 24,
+    marginBottom: 20,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -1266,7 +1269,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: "#2d3436",
   },
@@ -1291,7 +1294,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 20,
     gap: 12,
   },
   statBox: {
@@ -1317,14 +1320,14 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: "#2d3436",
     textAlign: "center",
     marginBottom: 4,
   },
   statUnit: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#636e72",
     fontWeight: "500",
     textAlign: "center",
@@ -1352,7 +1355,7 @@ const styles = StyleSheet.create({
   },
   noDataTextEnergy: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
   },
@@ -1364,7 +1367,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#2d3436",
     marginBottom: 12,
@@ -1400,7 +1403,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  calorieText: { fontSize: 13, color: "#636e72", paddingLeft: 28 },
+  calorieText: { fontSize: 12, color: "#636e72", paddingLeft: 28 },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -1408,7 +1411,7 @@ const styles = StyleSheet.create({
   },
   tableCellTitle: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
   },
@@ -1422,7 +1425,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#636e72",
   },
   timeHeaderContainer: {
@@ -1452,7 +1455,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   timeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "500",
     color: "#619819",
   },
@@ -1532,16 +1535,18 @@ const styles = StyleSheet.create({
   },
   budgetDetailsContainer: {
     marginTop: 16,
-    gap: 8,
+    gap: 16,
   },
   budgetRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(97, 152, 25, 0.08)",
   },
   budgetIconContainer: {
-    marginRight: 10,
+    marginRight: 16,
   },
   budgetIconGradient: {
     width: 32,
@@ -1557,9 +1562,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   budgetTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "500",
     color: "#2d3436",
+    marginBottom: 2,
   },
   budgetValue: {
     fontSize: 12,
