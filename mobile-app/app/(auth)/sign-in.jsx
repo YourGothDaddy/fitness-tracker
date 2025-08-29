@@ -69,19 +69,19 @@ const SignIn = () => {
         style={styles.gradient}
       >
         <SafeAreaView style={styles.safeArea}>
-          {/* Header Section */}
+          {/* Header Section - Centered */}
           <View style={styles.header}>
             <View style={styles.logoCircle}>
               <MaterialCommunityIcons
                 name="leaf"
-                size={40}
+                size={60}
                 color={Colors.darkGreen.color}
               />
             </View>
             <Text style={styles.appTitle}>Fitlicious</Text>
           </View>
 
-          {/* Main Content */}
+          {/* Main Content - Near Bottom */}
           <View style={styles.contentContainer}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
@@ -187,23 +187,24 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 40,
   },
   header: {
+    flex: 1,
     alignItems: "center",
-    marginTop: 15,
-    marginBottom: 0,
+    justifyContent: "center",
+    paddingTop: 40,
   },
   appTitle: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: "800",
     color: Colors.darkGreen.color,
     letterSpacing: 1,
+    marginTop: 16,
   },
   logoCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     justifyContent: "center",
     alignItems: "center",
@@ -212,13 +213,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    marginBottom: 8,
   },
   contentContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
-    paddingTop: 20,
-    marginBottom: 40,
+    paddingBottom: 40,
   },
   glassCard: {
     overflow: "hidden",
@@ -255,14 +252,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.darkGreen.color,
     textAlign: "center",
-    marginBottom: 8,
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: Colors.green.color,
-    textAlign: "center",
     marginBottom: 30,
-    opacity: 0.8,
   },
   formContainer: {
     width: "100%",

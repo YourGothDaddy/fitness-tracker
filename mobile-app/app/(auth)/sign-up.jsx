@@ -194,11 +194,7 @@ const SignUp = () => {
     switch (currentStage) {
       case 1:
         return (
-          <Animated.View
-            entering={FadeIn}
-            exiting={FadeOut}
-            style={styles.stageWrapper}
-          >
+          <View style={styles.stageWrapper}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
                 <View style={styles.decorativeCircle} />
@@ -311,15 +307,11 @@ const SignUp = () => {
                 </View>
               </View>
             </BlurView>
-          </Animated.View>
+          </View>
         );
       case 2:
         return (
-          <Animated.View
-            entering={FadeIn}
-            exiting={FadeOut}
-            style={styles.stageWrapper}
-          >
+          <View style={styles.stageWrapper}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
                 <View style={styles.decorativeCircle} />
@@ -382,15 +374,11 @@ const SignUp = () => {
                 </View>
               </View>
             </BlurView>
-          </Animated.View>
+          </View>
         );
       case 3:
         return (
-          <Animated.View
-            entering={FadeIn.duration(400)}
-            exiting={FadeOut.duration(400)}
-            style={styles.stageWrapper}
-          >
+          <View style={styles.stageWrapper}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
                 <View style={styles.decorativeCircle} />
@@ -480,15 +468,11 @@ const SignUp = () => {
                 </View>
               </View>
             </BlurView>
-          </Animated.View>
+          </View>
         );
       case 4:
         return (
-          <Animated.View
-            entering={FadeIn.duration(400)}
-            exiting={FadeOut.duration(400)}
-            style={styles.stageWrapper}
-          >
+          <View style={styles.stageWrapper}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
                 <View style={styles.decorativeCircle} />
@@ -566,7 +550,7 @@ const SignUp = () => {
                 </View>
               </View>
             </BlurView>
-          </Animated.View>
+          </View>
         );
       default:
         return null;
@@ -656,16 +640,13 @@ const SignUp = () => {
         colors={["#e8f5e9", "#ffffff", "#e8f5e9"]}
         style={styles.gradient}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header Section */}
+        <SafeAreaView style={styles.safeArea}>
+          {/* Header Section - Centered */}
           <View style={styles.header}>
             <View style={styles.logoCircle}>
               <MaterialCommunityIcons
                 name="leaf"
-                size={40}
+                size={60}
                 color={Colors.darkGreen.color}
               />
             </View>
@@ -703,10 +684,10 @@ const SignUp = () => {
             ))}
           </View>
 
-          {/* Main Content */}
-          {renderStageContent()}
+          {/* Main Content - Near Bottom */}
+          <View style={styles.contentContainer}>{renderStageContent()}</View>
 
-          {/* Navigation Buttons */}
+          {/* Navigation Buttons - Bottom */}
           {!isKeyboardVisible && (
             <View style={styles.buttonContainer}>
               <CustomButton
@@ -723,7 +704,7 @@ const SignUp = () => {
               />
             </View>
           )}
-        </ScrollView>
+        </SafeAreaView>
       </LinearGradient>
     </View>
   );
@@ -739,26 +720,27 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
+  safeArea: {
+    flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 40,
   },
   header: {
+    flex: 0.4,
     alignItems: "center",
-    marginTop: 15,
-    marginBottom: 10,
+    justifyContent: "center",
+    paddingTop: 40,
   },
   appTitle: {
-    fontSize: 24,
+    fontSize: 36,
     fontWeight: "800",
     color: Colors.darkGreen.color,
     letterSpacing: 1,
+    marginTop: 16,
   },
   logoCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     justifyContent: "center",
     alignItems: "center",
@@ -767,7 +749,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
-    marginBottom: 8,
   },
   progressContainer: {
     flexDirection: "row",
@@ -817,6 +798,10 @@ const styles = StyleSheet.create({
   activeProgressLine: {
     backgroundColor: Colors.darkGreen.color,
   },
+  contentContainer: {
+    flex: 1,
+    paddingBottom: 20,
+  },
   stageWrapper: {
     marginBottom: 10,
   },
@@ -862,6 +847,10 @@ const styles = StyleSheet.create({
     color: Colors.darkGreen.color,
     opacity: 0.8,
   },
+  buttonContainer: {
+    paddingBottom: 40,
+    gap: 15,
+  },
   nextButton: {
     backgroundColor: Colors.darkGreen.color,
     borderRadius: 30,
@@ -873,7 +862,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
-    marginTop: 20,
   },
   nextButtonText: {
     color: "#ffffff",
@@ -882,7 +870,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   backButton: {
-    marginTop: 15,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 2,
     borderColor: Colors.darkGreen.color,
@@ -1102,5 +1089,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     marginTop: 8,
+  },
+  accountInputs: {
+    gap: 4,
   },
 });
