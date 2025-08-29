@@ -5,53 +5,49 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/app/context/AuthContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import { authService } from "@/app/services/authService";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
+import CustomButton from "@/app/components/CustomButton";
 
-const SignIn = () => {
+const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
-  const { login } = useAuth();
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
 
-  const checkAuthStatus = async () => {
-    try {
-      const isAuthenticated = await authService.isAuthenticated();
-      if (isAuthenticated) {
-        router.replace("/dashboard");
-      }
-    } catch (error) {}
-  };
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please fill in all fields");
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address");
       return;
     }
 
     setLoading(true);
     setError("");
+    setMessage("");
 
     try {
-      await login(email, password);
-      router.replace("/dashboard");
+      // TODO: Implement actual password reset logic here
+      // For now, just simulate the process
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      setMessage(
+        "If an account with that email exists, we've sent a password reset link."
+      );
+      setEmail("");
     } catch (error) {
-      setError("Invalid email or password. Please try again.");
+      setError("Failed to send reset email. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -88,7 +84,11 @@ const SignIn = () => {
                 <View style={styles.decorativeCircle} />
                 <View style={styles.decorativeCircle2} />
 
-                <Text style={styles.welcomeTitle}>Welcome Back</Text>
+                <Text style={styles.title}>Reset Password</Text>
+                <Text style={styles.subtitle}>
+                  Enter your email address and we'll send you a link to reset
+                  your password
+                </Text>
 
                 <View style={styles.formContainer}>
                   <View style={styles.inputContainer}>
@@ -109,63 +109,33 @@ const SignIn = () => {
                     />
                   </View>
 
-                  <View style={styles.inputContainer}>
-                    <MaterialCommunityIcons
-                      name="lock"
-                      size={24}
-                      color={Colors.darkGreen.color}
-                    />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Password"
-                      placeholderTextColor={Colors.darkGreen.color}
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={true}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.forgotPassword}
-                    onPress={() => router.push("/forgot-password")}
-                  >
-                    <Text style={styles.forgotPasswordText}>
-                      Forgot Password?
-                    </Text>
-                  </TouchableOpacity>
-
                   {error ? (
-                    <Animated.View
-                      entering={FadeIn}
-                      exiting={FadeOut}
-                      style={styles.errorContainer}
-                    >
+                    <View style={styles.errorContainer}>
                       <Text style={styles.errorText}>{error}</Text>
-                    </Animated.View>
+                    </View>
                   ) : null}
 
-                  <TouchableOpacity
-                    style={[
-                      styles.signInButton,
-                      loading && styles.signInButtonDisabled,
-                    ]}
-                    onPress={handleLogin}
-                    disabled={loading}
-                  >
-                    <Text style={styles.signInButtonText}>
-                      {loading ? "Signing in..." : "Sign In"}
-                    </Text>
-                  </TouchableOpacity>
+                  {message ? (
+                    <View style={styles.messageContainer}>
+                      <Text style={styles.messageText}>{message}</Text>
+                    </View>
+                  ) : null}
 
-                  <View style={styles.signUpContainer}>
-                    <Text style={styles.signUpText}>
-                      Don't have an account?{" "}
-                    </Text>
-                    <TouchableOpacity onPress={() => router.push("/sign-up")}>
-                      <Text style={styles.signUpLink}>Sign Up</Text>
-                    </TouchableOpacity>
+                  <View style={styles.buttonContainer}>
+                    <CustomButton
+                      title={loading ? "Sending..." : "Send Reset Link"}
+                      containerStyles={styles.resetButton}
+                      textStyles={styles.resetButtonText}
+                      handleOnPress={handleResetPassword}
+                      disabled={loading}
+                    />
+
+                    <CustomButton
+                      title="Back to Sign In"
+                      containerStyles={styles.backButton}
+                      textStyles={styles.backButtonText}
+                      handleOnPress={() => router.push("/sign-in")}
+                    />
                   </View>
                 </View>
               </View>
@@ -177,7 +147,7 @@ const SignIn = () => {
   );
 };
 
-export default SignIn;
+export default ForgotPassword;
 
 const styles = StyleSheet.create({
   container: {
@@ -250,12 +220,20 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: "rgba(129, 199, 132, 0.2)",
   },
-  welcomeTitle: {
+  title: {
     fontSize: 28,
     fontWeight: "700",
     color: Colors.darkGreen.color,
     textAlign: "center",
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: Colors.green.color,
+    textAlign: "center",
     marginBottom: 30,
+    opacity: 0.8,
+    lineHeight: 22,
   },
   formContainer: {
     width: "100%",
@@ -266,7 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 12,
     padding: 3,
-    marginBottom: 16,
+    marginBottom: 20,
     shadowColor: "#fff",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -280,15 +258,6 @@ const styles = StyleSheet.create({
     color: Colors.darkGreen.color,
     opacity: 0.8,
     paddingVertical: 12,
-  },
-  forgotPassword: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: Colors.green.color,
-    fontSize: 14,
-    fontWeight: "500",
   },
   errorContainer: {
     backgroundColor: "rgba(231, 76, 60, 0.1)",
@@ -304,7 +273,45 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   },
-  signInButton: {
+  messageContainer: {
+    backgroundColor: "rgba(129, 199, 132, 0.1)",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(129, 199, 132, 0.3)",
+  },
+  messageText: {
+    color: Colors.green.color,
+    fontSize: 14,
+    textAlign: "center",
+    fontWeight: "500",
+    lineHeight: 20,
+  },
+  buttonContainer: {
+    width: "100%",
+    gap: 16,
+  },
+  backButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderWidth: 2,
+    borderColor: Colors.darkGreen.color,
+    borderRadius: 30,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  backButtonText: {
+    color: Colors.darkGreen.color,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  resetButton: {
     backgroundColor: Colors.darkGreen.color,
     borderRadius: 30,
     height: 60,
@@ -315,29 +322,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
-    marginBottom: 24,
   },
-  signInButtonDisabled: {
-    opacity: 0.7,
-  },
-  signInButtonText: {
+  resetButtonText: {
     color: "#ffffff",
     fontSize: 18,
     fontWeight: "700",
     letterSpacing: 0.5,
-  },
-  signUpContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  signUpText: {
-    color: "#666",
-    fontSize: 14,
-  },
-  signUpLink: {
-    color: Colors.darkGreen.color,
-    fontSize: 14,
-    fontWeight: "600",
   },
 });
