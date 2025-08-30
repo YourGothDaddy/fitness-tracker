@@ -6,6 +6,7 @@ namespace Fitness_Tracker.Services.Emails
     public interface IEmailService
     {
         Task SendRegistrationConfirmationEmailAsync(User user);
+        Task SendPasswordResetEmailAsync(User user, string appLink, string webLink);
     }
 }
 

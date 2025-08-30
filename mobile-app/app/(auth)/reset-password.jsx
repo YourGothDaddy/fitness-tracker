@@ -1,12 +1,6 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
-import React, { useState } from "react";
-import { useRouter } from "expo-router";
+import { View, Text, TextInput, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
@@ -17,21 +11,51 @@ import CustomButton from "@/app/components/CustomButton";
 import axios from "axios";
 import { API_URL, API_TIMEOUT } from "@/constants/Config";
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
+const ResetPassword = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter();
 
-  const handleResetPassword = async () => {
-    if (!email.trim()) {
-      setError("Please enter your email address");
+  const email = useMemo(
+    () =>
+      typeof params.email === "string"
+        ? params.email
+        : Array.isArray(params.email)
+        ? params.email[0]
+        : "",
+    [params.email]
+  );
+  const token = useMemo(
+    () =>
+      typeof params.token === "string"
+        ? params.token
+        : Array.isArray(params.token)
+        ? params.token[0]
+        : "",
+    [params.token]
+  );
+
+  useEffect(() => {
+    if (!email || !token) {
+      setError("Invalid or missing reset link.");
+    }
+  }, [email, token]);
+
+  const handleSubmit = async () => {
+    if (!email || !token) {
+      setError("Invalid or missing reset link.");
       return;
     }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Please enter a valid email address");
+    if (!password || password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -41,8 +65,8 @@ const ForgotPassword = () => {
 
     try {
       await axios.post(
-        `${API_URL}/api/auth/forgot-password`,
-        { email },
+        `${API_URL}/api/auth/reset-password`,
+        { email, token, newPassword: password },
         {
           headers: {
             "Content-Type": "application/json",
@@ -51,13 +75,11 @@ const ForgotPassword = () => {
           timeout: API_TIMEOUT,
         }
       );
-
-      setMessage(
-        "If an account with that email exists, we've sent a password reset link."
-      );
-      setEmail("");
-    } catch (error) {
-      setError("Failed to send reset email. Please try again.");
+      setMessage("Password reset successful. You can now sign in.");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setError("Failed to reset password. The link may be invalid or expired.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +97,6 @@ const ForgotPassword = () => {
         style={styles.gradient}
       >
         <SafeAreaView style={styles.safeArea}>
-          {/* Header Section - Centered */}
           <View style={styles.header}>
             <View style={styles.logoCircle}>
               <MaterialCommunityIcons
@@ -87,35 +108,46 @@ const ForgotPassword = () => {
             <Text style={styles.appTitle}>Fitlicious</Text>
           </View>
 
-          {/* Main Content - Near Bottom */}
           <View style={styles.contentContainer}>
             <BlurView intensity={20} tint="light" style={styles.glassCard}>
               <View style={styles.contentWrapper}>
                 <View style={styles.decorativeCircle} />
                 <View style={styles.decorativeCircle2} />
 
-                <Text style={styles.title}>Reset Password</Text>
+                <Text style={styles.title}>Set New Password</Text>
                 <Text style={styles.subtitle}>
-                  Enter your email address and we'll send you a link to reset
-                  your password
+                  Enter and confirm your new password
                 </Text>
 
                 <View style={styles.formContainer}>
                   <View style={styles.inputContainer}>
                     <MaterialCommunityIcons
-                      name="email"
+                      name="lock"
                       size={24}
                       color={Colors.darkGreen.color}
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="Email Address"
+                      placeholder="New Password"
                       placeholderTextColor={Colors.darkGreen.color}
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                    />
+                  </View>
+                  <View style={styles.inputContainer}>
+                    <MaterialCommunityIcons
+                      name="lock-check"
+                      size={24}
+                      color={Colors.darkGreen.color}
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Confirm Password"
+                      placeholderTextColor={Colors.darkGreen.color}
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry
                     />
                   </View>
 
@@ -133,10 +165,10 @@ const ForgotPassword = () => {
 
                   <View style={styles.buttonContainer}>
                     <CustomButton
-                      title={loading ? "Sending..." : "Send Reset Link"}
+                      title={loading ? "Resetting..." : "Reset Password"}
                       containerStyles={styles.resetButton}
                       textStyles={styles.resetButtonText}
-                      handleOnPress={handleResetPassword}
+                      handleOnPress={handleSubmit}
                       disabled={loading}
                     />
 
@@ -157,20 +189,12 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 0,
-  },
-  gradient: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+  container: { flex: 1, paddingTop: 0 },
+  gradient: { flex: 1 },
+  safeArea: { flex: 1, paddingHorizontal: 20 },
   header: {
     flex: 1,
     alignItems: "center",
@@ -197,9 +221,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  contentContainer: {
-    paddingBottom: 40,
-  },
+  contentContainer: { paddingBottom: 40 },
   glassCard: {
     overflow: "hidden",
     borderRadius: 30,
@@ -245,9 +267,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     lineHeight: 22,
   },
-  formContainer: {
-    width: "100%",
-  },
+  formContainer: { width: "100%" },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -298,10 +318,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 20,
   },
-  buttonContainer: {
-    width: "100%",
-    gap: 16,
-  },
+  buttonContainer: { width: "100%", gap: 16 },
   backButton: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderWidth: 2,

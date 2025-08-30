@@ -24,6 +24,9 @@
             public const string LoginHttpAttributeName = "login";
             public const string LogoutHttpAttributeName = "logout";
             public const string RefreshTokenHttpAttributeName = "refresh-token";
+            public const string ForgotPasswordHttpAttributeName = "forgot-password";
+            public const string ResetPasswordHttpAttributeName = "reset-password";
+            public const string OpenResetPasswordHttpAttributeName = "open-reset-password";
 
             public const string UserExistsError = "User with this email already exists!";
             public const string RefreshTokenRequiredError = "Refresh token is required.";
