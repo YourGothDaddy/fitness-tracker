@@ -14,6 +14,17 @@ class UserService {
     }
   }
 
+  async getPremiumStatus() {
+    try {
+      const response = await axiosInstance.get(
+        `${API_URL}/api/user/premium-status`
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getProfileData() {
     try {
       const response = await axiosInstance.get(

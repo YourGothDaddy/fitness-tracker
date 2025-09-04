@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     isLoading,
-    isPremium: !!user?.IsPremium,
+    isPremium: !!(user?.IsPremium ?? user?.isPremium),
     login,
     logout,
     refreshUser: async () => {

@@ -1,36 +1,52 @@
 ﻿namespace Fitness_Tracker.Services.Tokens
 {
     using Fitness_Tracker.Data;
-    using Fitness_Tracker.Data.Models;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.IdentityModel.Tokens;
-    using System.IdentityModel.Tokens.Jwt;
-    using System.Security.Claims;
-    using System.Security.Cryptography;
-    using System.Text;
-    using System.Threading.Tasks;
+using Fitness_Tracker.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using System.Collections.Generic;
+using System.Linq;
 
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
         private readonly ApplicationDbContext _context;
-        public TokenService(IConfiguration configuration, ApplicationDbContext context)
+        private readonly UserManager<User> _userManager;
+        
+        public TokenService(IConfiguration configuration, ApplicationDbContext context, UserManager<User> userManager)
         {
             _configuration = configuration;
             _context = context;
+            _userManager = userManager;
         }
 
         public string GenerateToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+            
+            // Get user roles
+            var roles = _userManager.GetRolesAsync(user).Result;
+            
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName)
+            };
+            
+            // Add role claims
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[]
-                 {
-                         new Claim(ClaimTypes.NameIdentifier, user.Id),
-                         new Claim(ClaimTypes.Email, user.Email)
-                 }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(30),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
