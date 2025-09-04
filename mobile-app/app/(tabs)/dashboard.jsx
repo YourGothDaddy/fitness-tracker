@@ -15,6 +15,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import GeneralView from "../components/tabviews/generalView";
 import ChartsView from "../components/tabviews/chartsView";
 import TargetsView from "../components/tabviews/targetsView";
+import PremiumGate from "../components/PremiumGate";
+import { useAuth } from "../context/AuthContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import { Animated } from "react-native";
@@ -23,6 +25,7 @@ import { FadeInDown } from "react-native-reanimated";
 const { width } = Dimensions.get("window");
 
 const Dashboard = () => {
+  const { isPremium } = useAuth();
   const tabs = useMemo(() => ["General", "Charts", "Targets"], []);
   const [activeTab, setActiveTab] = useState("General");
   const translateX = useRef(new Animated.Value(0)).current;
@@ -79,11 +82,18 @@ const Dashboard = () => {
       case "Charts":
         return <ChartsView />;
       case "Targets":
-        return <TargetsView />;
+        return (
+          <PremiumGate
+            enabled={!!isPremium}
+            message="Premium required to access Targets"
+          >
+            <TargetsView />
+          </PremiumGate>
+        );
       default:
         return <GeneralView />;
     }
-  }, [activeTab]);
+  }, [activeTab, isPremium]);
 
   return (
     <SafeAreaView style={styles.container}>

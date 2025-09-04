@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { authService } from "../services/authService";
+import userService from "../services/userService";
 import { router } from "expo-router";
 
 const AuthContext = createContext();
@@ -13,8 +14,6 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const isAuth = await authService.isAuthenticated();
-        setIsLoading(false);
-
         if (!isAuth) {
           // Not authenticated, make sure we're not showing protected screens
           // Use optional chaining to avoid errors if router.state is undefined
@@ -22,7 +21,18 @@ export const AuthProvider = ({ children }) => {
           if (path && !path.startsWith("/(auth)") && path !== "/") {
             router.replace("/");
           }
+          setUser(null);
+          setIsLoading(false);
+          return;
         }
+        // Fetch profile
+        try {
+          const profile = await userService.getProfile();
+          setUser(profile);
+        } catch (e) {
+          setUser({});
+        }
+        setIsLoading(false);
       } catch (error) {
         setIsLoading(false);
       }
@@ -35,6 +45,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       await authService.login(email, password);
+      // After login, fetch profile
+      try {
+        const profile = await userService.getProfile();
+        setUser(profile);
+      } catch (e) {
+        setUser({});
+      }
       return true;
     } catch (error) {
       throw error;
@@ -54,8 +71,15 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     isLoading,
+    isPremium: !!user?.IsPremium,
     login,
     logout,
+    refreshUser: async () => {
+      try {
+        const profile = await userService.getProfile();
+        setUser(profile);
+      } catch (e) {}
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

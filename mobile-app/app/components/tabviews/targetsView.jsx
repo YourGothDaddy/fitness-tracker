@@ -497,7 +497,9 @@ const TargetsView = () => {
           <View style={styles.cardHeader}>
             <View style={styles.headerLeft}>
               <Icon name="hourglass-empty" size={24} color="#619819" />
-              <Text style={styles.cardTitle}>Loading Detailed Nutrients...</Text>
+              <Text style={styles.cardTitle}>
+                Loading Detailed Nutrients...
+              </Text>
             </View>
           </View>
           <View style={styles.loadingContentContainer}>

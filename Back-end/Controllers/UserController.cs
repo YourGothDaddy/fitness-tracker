@@ -164,7 +164,8 @@
                 user.PhoneNumber,
                 user.NotificationsEnabled,
                 initials = initials,
-                AvatarUrl = string.IsNullOrEmpty(user.AvatarUrl) ? null : (user.AvatarUrl.StartsWith("http") ? user.AvatarUrl : $"{Request.Scheme}://{Request.Host}{user.AvatarUrl}")
+                AvatarUrl = string.IsNullOrEmpty(user.AvatarUrl) ? null : (user.AvatarUrl.StartsWith("http") ? user.AvatarUrl : $"{Request.Scheme}://{Request.Host}{user.AvatarUrl}"),
+                IsPremium = user.IsPremium
             });
         }
 
@@ -195,6 +196,51 @@
             }
 
             return Ok(new { Message = "Profile updated successfully" });
+        }
+
+        [HttpGet("premium-status")]
+        public async Task<IActionResult> GetPremiumStatus()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new { IsPremium = user.IsPremium });
+        }
+
+        public class UpdatePremiumStatusModel
+        {
+            public string UserId { get; set; }
+            public bool IsPremium { get; set; }
+        }
+
+        [Authorize(Policy = "RequireAdministratorRole")]
+        [HttpPut("premium-status")]
+        public async Task<IActionResult> UpdatePremiumStatus([FromBody] UpdatePremiumStatusModel model)
+        {
+            if (model == null || string.IsNullOrEmpty(model.UserId))
+            {
+                return BadRequest(new { Message = "UserId and IsPremium are required." });
+            }
+
+            var user = await _userService.FindUserByIdAsync(model.UserId);
+            if (user == null)
+            {
+                return NotFound(new { Message = "User not found" });
+            }
+
+            user.IsPremium = model.IsPremium;
+            await _userService.UpdateUserAsync(user);
+
+            return Ok(new { Message = "Premium status updated" });
         }
 
         [HttpPut("change-password")]

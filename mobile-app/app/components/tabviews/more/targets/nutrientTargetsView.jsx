@@ -16,6 +16,8 @@ import Icon from "../../../../../components/Icon";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import nutritionService from "@/app/services/nutritionService";
+import PremiumGate from "@/app/components/PremiumGate";
+import { useAuth } from "@/app/context/AuthContext";
 
 const categories = {
   Carbohydrates: [
@@ -421,6 +423,8 @@ const NutrientTargetsView = () => {
     [router]
   );
 
+  const { isPremium } = useAuth();
+
   return (
     <>
       <Stack.Screen
@@ -447,78 +451,83 @@ const NutrientTargetsView = () => {
             </TouchableOpacity>
           </View>
         )}
-        {!category ? (
-          <ScrollView contentContainerStyle={styles.scrollViewContainer}>
-            <View style={styles.tabsContainer}>
-              {loading ? (
-                <View style={styles.loadingContentContainer}>
-                  <ActivityIndicator
-                    size="large"
-                    color={Colors.darkGreen.color}
-                  />
-                </View>
-              ) : error ? (
-                <View style={styles.loadingContentContainer}>
-                  <Text style={{ color: "red" }}>{error}</Text>
-                </View>
-              ) : (
-                Object.keys(nutrientTargets).map((cat) => (
-                  <CategoryTab
-                    key={cat}
-                    title={cat}
-                    count={nutrientTargets[cat].length}
-                    onPress={() => handleCategoryPress(cat)}
-                  />
-                ))
-              )}
-            </View>
-          </ScrollView>
-        ) : (
-          <>
-            <View style={styles.stickyCategoryHeader}>
-              <View style={styles.categoryHeaderContent}>
-                {/* Left stub - colored section */}
-                <LinearGradient
-                  colors={getCategoryGradient(category)}
-                  style={styles.categoryHeaderStub}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.categoryHeaderStubContent}>
-                    <Text style={styles.categoryHeaderLetter}>
-                      {category.charAt(0)}
-                    </Text>
-                    <Text style={styles.categoryHeaderLabel}>
-                      {getCategoryLabel(category)}
-                    </Text>
+        <PremiumGate
+          enabled={!!isPremium}
+          message="Premium required to access Nutrient Targets"
+        >
+          {!category ? (
+            <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+              <View style={styles.tabsContainer}>
+                {loading ? (
+                  <View style={styles.loadingContentContainer}>
+                    <ActivityIndicator
+                      size="large"
+                      color={Colors.darkGreen.color}
+                    />
                   </View>
-                </LinearGradient>
-
-                {/* Right main content area */}
-                <View style={styles.categoryHeaderMain}>
-                  <Text style={styles.categoryTitle}>{category}</Text>
-                  <Text style={styles.categoryItemCount}>
-                    {nutrientTargets[category]?.length || 0} items
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <ScrollView
-              contentContainerStyle={styles.scrollViewContainer}
-              style={styles.nutrientsScrollView}
-            >
-              <View style={styles.nutrientsContainer}>
-                {nutrientTargets[category]?.map((nutrient) => (
-                  <NutrientRow
-                    key={`${nutrient.Category}-${nutrient.NutrientName}`}
-                    nutrient={nutrient}
-                    onUpdate={handleUpdate}
-                  />
-                ))}
+                ) : error ? (
+                  <View style={styles.loadingContentContainer}>
+                    <Text style={{ color: "red" }}>{error}</Text>
+                  </View>
+                ) : (
+                  Object.keys(nutrientTargets).map((cat) => (
+                    <CategoryTab
+                      key={cat}
+                      title={cat}
+                      count={nutrientTargets[cat].length}
+                      onPress={() => handleCategoryPress(cat)}
+                    />
+                  ))
+                )}
               </View>
             </ScrollView>
-          </>
-        )}
+          ) : (
+            <>
+              <View style={styles.stickyCategoryHeader}>
+                <View style={styles.categoryHeaderContent}>
+                  {/* Left stub - colored section */}
+                  <LinearGradient
+                    colors={getCategoryGradient(category)}
+                    style={styles.categoryHeaderStub}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.categoryHeaderStubContent}>
+                      <Text style={styles.categoryHeaderLetter}>
+                        {category.charAt(0)}
+                      </Text>
+                      <Text style={styles.categoryHeaderLabel}>
+                        {getCategoryLabel(category)}
+                      </Text>
+                    </View>
+                  </LinearGradient>
+
+                  {/* Right main content area */}
+                  <View style={styles.categoryHeaderMain}>
+                    <Text style={styles.categoryTitle}>{category}</Text>
+                    <Text style={styles.categoryItemCount}>
+                      {nutrientTargets[category]?.length || 0} items
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <ScrollView
+                contentContainerStyle={styles.scrollViewContainer}
+                style={styles.nutrientsScrollView}
+              >
+                <View style={styles.nutrientsContainer}>
+                  {nutrientTargets[category]?.map((nutrient) => (
+                    <NutrientRow
+                      key={`${nutrient.Category}-${nutrient.NutrientName}`}
+                      nutrient={nutrient}
+                      onUpdate={handleUpdate}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            </>
+          )}
+        </PremiumGate>
       </SafeAreaView>
     </>
   );

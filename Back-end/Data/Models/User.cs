@@ -2,6 +2,7 @@
 {
     using Fitness_Tracker.Data.Models.Enums;
     using Microsoft.AspNetCore.Identity;
+    using System.ComponentModel.DataAnnotations.Schema;
 
     public class User : IdentityUser
     {
@@ -38,5 +39,7 @@
         public string? AvatarUrl { get; set; } // Path to profile image
 
         public bool IncludeTef { get; set; } = false; // Whether to include Thermic Effect of Food
+
+        public bool IsPremium { get; set; } = false; // Stored in DB
     }
 }
