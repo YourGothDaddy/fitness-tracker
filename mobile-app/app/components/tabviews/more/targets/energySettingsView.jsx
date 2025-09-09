@@ -413,7 +413,7 @@ const EnergySettingsView = () => {
             ) : (
               <>
                 <Text style={styles.energyLabel}>
-                  Daily Maintenance Calories
+                  Daily Calories to Maintain Weight
                 </Text>
                 <Text style={styles.energyValue}>
                   {energySettings
@@ -421,38 +421,14 @@ const EnergySettingsView = () => {
                     : "-"}
                 </Text>
                 <Text style={styles.energyUnit}>kcal / day</Text>
-                <Text
-                  style={{
-                    color: "#666",
-                    fontSize: 11,
-                    marginTop: 6,
-                    textAlign: "center",
-                    fontStyle: "italic",
-                  }}
-                >
-                  The amount needed to maintain your current weight
-                </Text>
+
                 <View style={styles.bmrContainer}>
-                  <Text
-                    style={{
-                      color: Colors.darkGreen.color,
-                      fontSize: 14,
-                      fontWeight: "500",
-                    }}
-                  >
+                  <Text style={styles.bmrLabel}>
                     BMR:{" "}
                     {energySettings ? formatNumber(energySettings.BMR) : "-"}{" "}
                     kcal
                   </Text>
-                  <Text
-                    style={{
-                      color: "#666",
-                      fontSize: 10,
-                      marginTop: 2,
-                      textAlign: "center",
-                      fontStyle: "italic",
-                    }}
-                  >
+                  <Text style={styles.bmrDescription}>
                     Basal Metabolic Rate - calories burned at rest
                   </Text>
                 </View>
@@ -674,28 +650,51 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   energyLabel: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.darkGreen.color,
-    marginBottom: 6,
+    marginBottom: 8,
     textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   energyValue: {
-    fontSize: 21,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: "800",
     color: Colors.darkGreen.color,
     marginBottom: 4,
+    textAlign: "center",
   },
   energyUnit: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
+    fontWeight: "500",
+    marginBottom: 12,
   },
   bmrContainer: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGreen.color + "40",
+    marginTop: 12,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    borderTopWidth: 2,
+    borderTopColor: Colors.darkGreen.color + "30",
+    backgroundColor: Colors.darkGreen.color + "08",
+    borderRadius: 8,
     alignItems: "center",
+  },
+  bmrLabel: {
+    color: Colors.darkGreen.color,
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  bmrDescription: {
+    color: "#666",
+    fontSize: 11,
+    marginTop: 4,
+    textAlign: "center",
+    fontStyle: "italic",
+    lineHeight: 14,
   },
   settingsContainer: {
     padding: 20,

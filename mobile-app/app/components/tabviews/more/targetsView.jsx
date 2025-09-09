@@ -37,15 +37,6 @@ const TargetCard = ({ title, description, icon, onPress }) => {
   );
 };
 
-const GoalBadge = ({ value, label, onPress }) => {
-  return (
-    <TouchableOpacity style={styles.statCard} onPress={onPress}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-};
-
 const EditGoalModal = ({ visible, onClose, title, value, onSave }) => {
   const [inputValue, setInputValue] = useState(value.toString());
 
@@ -417,15 +408,21 @@ const TargetsView = () => {
             <Icon name="flag" size={24} color={Colors.white.color} />
             <Text style={styles.setWeightGoalButtonText}>Set Weight Goal</Text>
           </TouchableOpacity>
-          {/* Existing profile preview and badges */}
-          <View style={styles.profilePreview}>
-            <View style={styles.statsContainer}>
-              <GoalBadge
-                value={goals.dailyCaloriesGoal}
-                label="Daily Calories"
-                onPress={handleGoalPress}
-              />
-            </View>
+          {/* Daily Calories Goal Card */}
+          <View style={styles.goalCard}>
+            <Text style={styles.goalLabel}>
+              Daily Calories to Reach Your Goal
+            </Text>
+            <Text style={styles.goalValue}>{goals.dailyCaloriesGoal}</Text>
+            <Text style={styles.goalUnit}>kcal / day</Text>
+
+            <TouchableOpacity
+              style={styles.editGoalButton}
+              onPress={handleGoalPress}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.editGoalButtonText}>Tap to Edit Goal</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.sectionTitle}>
@@ -516,20 +513,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 40,
   },
-  profilePreview: {
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 15,
-  },
-  statCard: {
-    flex: 1,
+  goalCard: {
+    margin: 20,
+    padding: 15,
     backgroundColor: Colors.lightGreen.color,
     borderRadius: 15,
-    padding: 15,
     alignItems: "center",
     elevation: 3,
     shadowColor: "#000",
@@ -537,15 +525,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
+  goalLabel: {
+    fontSize: 16,
+    fontWeight: "700",
     color: Colors.darkGreen.color,
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: "center",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  statLabel: {
-    fontSize: 14,
+  goalValue: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: Colors.darkGreen.color,
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  goalUnit: {
+    fontSize: 16,
     color: "#666",
+    fontWeight: "500",
+    marginBottom: 12,
+  },
+  editGoalButton: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: Colors.darkGreen.color + "20",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.darkGreen.color + "40",
+  },
+  editGoalButtonText: {
+    fontSize: 14,
+    color: Colors.darkGreen.color,
+    fontWeight: "600",
     textAlign: "center",
   },
   sectionTitle: {
