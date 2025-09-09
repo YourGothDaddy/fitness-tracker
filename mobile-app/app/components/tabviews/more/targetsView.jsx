@@ -398,7 +398,10 @@ const TargetsView = () => {
           </View>
         )}
 
-        <View style={styles.contentContainer}>
+        <ScrollView
+          style={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {/* New Set Weight Goal Button */}
           <TouchableOpacity
             style={styles.setWeightGoalButton}
@@ -466,7 +469,7 @@ const TargetsView = () => {
               }
             />
           </View>
-        </View>
+        </ScrollView>
 
         {/* Set Weight Goal Modal */}
         <SetWeightGoalModal
