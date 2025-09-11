@@ -833,6 +833,11 @@
             }
 
             Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}, Not Found: {notFound}");
+
+            // Store final database hash for SubTitle to allow future runs to skip when unchanged
+            var finalDbHashSubTitlePublic = await CalculateDatabaseHash(context);
+            await StoreHash(context, finalDbHashSubTitlePublic, "SubTitle");
+            Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
         }
 
         private static async Task SeedConsumableItemSubtitlesAsync(ApplicationDbContext context, List<JsonElement> items)
@@ -927,6 +932,11 @@
             }
 
             Console.WriteLine($"[SubTitle Seeder] Done. Updated: {updated}, Skipped: {skipped}, Errors: {errors}, Not Found: {notFound}");
+
+            // Store final database hash for SubTitle to allow future runs to skip when unchanged
+            var finalDbHashSubTitle = await CalculateDatabaseHash(context);
+            await StoreHash(context, finalDbHashSubTitle, "SubTitle");
+            Console.WriteLine($"[Hash Check] Stored final SubTitle database hash for future comparisons");
         }
 
         private static ConsumableItem? FindBestMatch(List<ConsumableItem> potentialMatches, string? subTitle, int calories, double protein, double carbs, double fat)

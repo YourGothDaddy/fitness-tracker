@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "VNCJnu7QkLuKD3sHuzZW0V3JVohXtSOcDKriXo6P3+M=",
+  "Hash": "nOxEv2PAHpsE/MMyD44iKaB2N05qas2PUsemnqyPEeU=",
   "Source": "Fitness-Tracker",
   "BasePath": "_content/Fitness-Tracker",
   "Mode": "Default",
@@ -91,6 +91,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\avatars\\cba985f1-49cd-4efa-a811-47fe3b73f881_2b642d06-ddf5-4e7e-9cb8-eacf7c9e3cfe.jpeg"
+    },
+    {
+      "Identity": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\dccb8a88-0647-43f6-b49a-6502c9b63508_e85c447b-7ebd-4f7a-8bdc-8e4b06017b90.jpeg",
+      "SourceId": "Fitness-Tracker",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\",
+      "BasePath": "_content/Fitness-Tracker",
+      "RelativePath": "avatars/dccb8a88-0647-43f6-b49a-6502c9b63508_e85c447b-7ebd-4f7a-8bdc-8e4b06017b90.jpeg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\avatars\\dccb8a88-0647-43f6-b49a-6502c9b63508_e85c447b-7ebd-4f7a-8bdc-8e4b06017b90.jpeg"
     },
     {
       "Identity": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\wwwroot\\avatars\\e99f3056-1ba4-4299-a240-a5ade53f225c_0934781e-503d-4b4d-a332-045b4c61ddee.jpeg",
