@@ -739,10 +739,11 @@ const TrackMealView = () => {
 
   // Optimized fetchFoods with loading state management
   const fetchFoods = useCallback(
-    async (requestId) => {
+    async (requestId, pageArg) => {
       try {
         // Only show loading on first load or page 1, use subtle loading for pagination
-        if (currentPage === 1) {
+        const pageToLoad = pageArg ?? currentPage;
+        if (pageToLoad === 1) {
           setLoading(true);
         } else {
           setIsPageLoading(true); // Show subtle loading for pagination
@@ -765,7 +766,7 @@ const TrackMealView = () => {
         // Debug logging for search parameters
         console.log("[TrackMealView] Search params:", {
           query,
-          currentPage,
+          currentPage: pageToLoad,
           pageSize,
           filter,
           category: activeTab === "category" ? selectedCategory : null,
@@ -774,7 +775,7 @@ const TrackMealView = () => {
 
         const searchResult = await searchConsumableItems(
           query,
-          currentPage,
+          pageToLoad,
           pageSize,
           filter,
           activeTab === "category" ? selectedCategory : null
@@ -789,7 +790,7 @@ const TrackMealView = () => {
         console.log("[TrackMealView] Search result:", {
           totalCount: searchResult.totalCount,
           itemsCount: searchResult.items?.length || 0,
-          currentPage,
+          currentPage: pageToLoad,
           searchQuery: query,
         });
 
@@ -845,7 +846,7 @@ const TrackMealView = () => {
         }
       }
     },
-    [activeTab, currentPage, pageSize, debouncedSearchQuery, selectedCategory]
+    [activeTab, pageSize, debouncedSearchQuery, selectedCategory]
   );
 
   // Fetch favorites only once on component mount
@@ -867,13 +868,12 @@ const TrackMealView = () => {
     })();
   }, []);
 
-  // Main effect for fetching foods - consolidated from multiple useEffects
+  // Initial fetch on mount
   useEffect(() => {
     requestIdRef.current += 1;
     const currentRequestId = requestIdRef.current;
-
-    fetchFoods(currentRequestId);
-  }, [fetchFoods]);
+    fetchFoods(currentRequestId, 1);
+  }, []);
 
   // Effect to handle search query changes - ensure search is triggered
   useEffect(() => {
@@ -881,32 +881,23 @@ const TrackMealView = () => {
       requestIdRef.current += 1;
       const currentRequestId = requestIdRef.current;
 
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        fetchFoods(currentRequestId);
-      }, 100);
+      fetchFoods(currentRequestId, 1);
     }
   }, [debouncedSearchQuery, fetchFoods]);
 
   // Reset page when tab changes - with immediate data fetch
   useEffect(() => {
     setCurrentPage(1);
-    // Trigger immediate fetch for new tab
-    setTimeout(() => {
-      requestIdRef.current += 1;
-      fetchFoods(requestIdRef.current);
-    }, 50);
+    requestIdRef.current += 1;
+    fetchFoods(requestIdRef.current, 1);
   }, [activeTab]);
 
   // Reset page when category changes - with immediate data fetch
   useEffect(() => {
     if (activeTab === "category") {
       setCurrentPage(1);
-      // Trigger immediate fetch for new category
-      setTimeout(() => {
-        requestIdRef.current += 1;
-        fetchFoods(requestIdRef.current);
-      }, 50);
+      requestIdRef.current += 1;
+      fetchFoods(requestIdRef.current, 1);
     }
   }, [selectedCategory]);
 
@@ -950,13 +941,9 @@ const TrackMealView = () => {
   const handlePageChange = useCallback(
     (newPage) => {
       if (newPage === currentPage) return; // Prevent unnecessary changes
-
       setCurrentPage(newPage);
-      // Trigger fetch for new page
-      setTimeout(() => {
-        requestIdRef.current += 1;
-        fetchFoods(requestIdRef.current);
-      }, 50);
+      requestIdRef.current += 1;
+      fetchFoods(requestIdRef.current, newPage);
     },
     [currentPage, fetchFoods]
   );
@@ -1110,7 +1097,13 @@ const TrackMealView = () => {
           ) : error ? (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={fetchFoods}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  requestIdRef.current += 1;
+                  fetchFoods(requestIdRef.current, currentPage || 1);
+                }}
+              >
                 <Text style={styles.retryButtonText}>Retry</Text>
               </TouchableOpacity>
             </View>

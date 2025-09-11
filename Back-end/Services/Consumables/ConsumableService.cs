@@ -101,6 +101,7 @@ namespace Fitness_Tracker.Services.Consumables
                 // Apply pagination
                 var items = await baseQuery
                     .OrderBy(ci => ci.Name)
+                    .ThenBy(ci => ci.Id) // Ensure deterministic ordering for stable pagination
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
