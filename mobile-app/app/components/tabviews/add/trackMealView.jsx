@@ -26,6 +26,7 @@ import { Colors } from "../../../../constants/Colors";
 import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
+import { eventBus } from "@/app/services/eventBus";
 import {
   addFavoriteConsumable,
   removeFavoriteConsumable,
@@ -931,6 +932,18 @@ const TrackMealView = () => {
       Alert.alert("Success", "Meal logged successfully!");
       setLogFoodModalVisible(false);
       setFoodToLog(null);
+      // Notify other screens to refresh immediately
+      try {
+        eventBus.emit("meal:added", {
+          date: mealData.date,
+          calories: mealData.calories,
+          name: mealData.name,
+          mealType: mealData.mealOfTheDay,
+        });
+      } catch (e) {
+        // non-fatal
+        console.log("event emit failed", e);
+      }
     } catch (err) {
       Alert.alert("Error", "Failed to log meal. Please try again.");
       console.error("Error logging meal:", err);

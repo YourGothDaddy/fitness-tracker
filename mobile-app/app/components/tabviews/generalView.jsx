@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -23,6 +29,7 @@ import { mealService } from "../../services/mealService";
 import { useRouter } from "expo-router";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
+import { eventBus } from "@/app/services/eventBus";
 
 const getWeekDates = () => {
   const today = new Date();
@@ -181,6 +188,34 @@ const GeneralView = () => {
       pendingRequests.current.clear();
     };
   }, []);
+
+  // Listen for newly added meals and refresh relevant sections immediately
+  useEffect(() => {
+    const unsubscribe = eventBus.on("meal:added", ({ date }) => {
+      if (!isMounted.current) return;
+      // If the added meal's date matches the current activity/energy date, refresh fast
+      const normalize = (d) => {
+        const n = new Date(d);
+        n.setHours(0, 0, 0, 0);
+        return n.getTime();
+      };
+      const addedTs = normalize(date);
+      const activityTs = normalize(activityDate);
+      const energyTs = normalize(energyBudgetDate);
+      const shouldRefresh = addedTs === activityTs || addedTs === energyTs;
+      if (shouldRefresh) {
+        // Kick off lightweight refreshes
+        fetchActivityOverview(activityDate);
+        fetchEnergyBudget(energyBudgetDate);
+      }
+    });
+    return unsubscribe;
+  }, [
+    activityDate,
+    energyBudgetDate,
+    fetchActivityOverview,
+    fetchEnergyBudget,
+  ]);
 
   const handleError = useCallback(
     (error, context) => {
@@ -887,14 +922,7 @@ const GeneralView = () => {
                     color: Colors.green.color,
                   },
                 ]
-              : [
-                  {
-                    title: "Remaining",
-                    value: computedRemaining,
-                    icon: "hourglass-empty",
-                    color: Colors.blue.color,
-                  },
-                ]),
+              : []),
             {
               title: "Exercise",
               value: Math.round(energyExpenditure.exerciseCalories),
