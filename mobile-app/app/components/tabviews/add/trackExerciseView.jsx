@@ -8,6 +8,7 @@ import {
   FlatList,
   TouchableOpacity,
   Animated,
+  Easing,
   Platform,
   Modal,
   Pressable,
@@ -481,6 +482,7 @@ const ExerciseItem = ({
   hideEffortAndDuration,
   isCustomWorkout,
   customCalories,
+  onSuccessCheck,
   ...rest
 }) => {
   const [duration, setDuration] = useState(30);
@@ -737,8 +739,8 @@ const ExerciseItem = ({
       };
 
       await activityService.trackExercise(requestData);
-
-      Alert.alert("Success", "Exercise tracked successfully!");
+      // Trigger success check animation upstream
+      onSuccessCheck && onSuccessCheck();
       setDuration(30);
     } catch (err) {
       const errorMessage =
@@ -1286,6 +1288,59 @@ const TrackExerciseView = () => {
   const [pressedSubcategory, setPressedSubcategory] = useState(null);
   const categoryAnimRefs = useRef({}).current;
   const subcategoryAnimRefs = useRef({}).current;
+
+  // Success check animation state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const successOpacity = useRef(new Animated.Value(0)).current;
+  const successScale = useRef(new Animated.Value(0.8)).current;
+  const successTranslateY = useRef(new Animated.Value(10)).current;
+
+  const runSuccessAnimation = useCallback(() => {
+    setShowSuccess(true);
+    successOpacity.setValue(0);
+    successScale.setValue(0.8);
+    successTranslateY.setValue(10);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(successOpacity, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.spring(successScale, {
+          toValue: 1,
+          friction: 6,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(successTranslateY, {
+          toValue: 0,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(successOpacity, {
+          toValue: 0,
+          duration: 500,
+          delay: 900,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(successTranslateY, {
+          toValue: -6,
+          duration: 500,
+          delay: 900,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setShowSuccess(false);
+    });
+  }, [successOpacity, successScale, successTranslateY]);
 
   // Reset helpers to avoid stuck shrink when navigating back
   const resetCategoryAnims = useCallback(() => {
@@ -1960,6 +2015,7 @@ const TrackExerciseView = () => {
                       terrainTypes={effectiveTerrainTypes}
                       hideEffortAndDuration={false}
                       isCustomWorkout={false}
+                      onSuccessCheck={runSuccessAnimation}
                     />
                   );
                 })}
@@ -1999,6 +2055,7 @@ const TrackExerciseView = () => {
                       hideEffortAndDuration={hideEffortAndDuration}
                       isCustomWorkout={hideEffortAndDuration}
                       customCalories={undefined}
+                      onSuccessCheck={runSuccessAnimation}
                     />
                   );
                 })}
@@ -2007,6 +2064,27 @@ const TrackExerciseView = () => {
           </ScrollView>
         )}
       </SafeAreaView>
+      {/* Success check overlay */}
+      {showSuccess && (
+        <View pointerEvents="none" style={styles.successOverlay}>
+          <Animated.View
+            style={[
+              styles.successContainer,
+              {
+                opacity: successOpacity,
+                transform: [
+                  { scale: successScale },
+                  { translateY: successTranslateY },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.successCircle}>
+              <Icon name="checkmark" size={48} color={Colors.white.color} />
+            </View>
+          </Animated.View>
+        </View>
+      )}
     </>
   );
 };
@@ -2495,6 +2573,28 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     letterSpacing: 0.1,
     fontFamily: Platform.OS === "ios" ? "System" : "sans-serif",
+  },
+  successOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  successCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.darkGreen.color,
+    alignItems: "center",
+    justifyContent: "center",
+    // No shadow/elevation to avoid polygon-like fade artifacts on Android
   },
 
   tabsContainer: {
