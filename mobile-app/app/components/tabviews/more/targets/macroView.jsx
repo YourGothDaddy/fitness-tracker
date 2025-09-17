@@ -12,6 +12,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "../../../../../constants/Colors";
 import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import userService from "@/app/services/userService";
+import goalsService from "@/app/services/goalsService";
 import { useFocusEffect } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
 
@@ -169,15 +170,24 @@ const MacroView = () => {
       setLoading(true);
       setError(null);
       setSuccess(false);
-      userService
-        .getMacroSettings()
-        .then((data) => {
+      Promise.all([
+        userService.getMacroSettings(),
+        goalsService.getUserGoals().catch(() => null),
+      ])
+        .then(([macroData, goalsData]) => {
           if (!isActive) return;
-          setTotalKcal(data.totalKcal || 2000);
+          const goalKcal = goalsData?.dailyCaloriesGoal;
+          const macroKcal = macroData?.totalKcal;
+          // Prefer explicitly set daily calories goal if available; preserve 0 as valid
+          const resolvedTotalKcal =
+            goalKcal !== undefined && goalKcal !== null
+              ? goalKcal
+              : macroKcal ?? 2000;
+          setTotalKcal(resolvedTotalKcal);
           setMacroValues({
-            protein: data.proteinRatio || 0,
-            netCarbs: data.carbsRatio || 0,
-            fat: data.fatRatio || 0,
+            protein: macroData?.proteinRatio || 0,
+            netCarbs: macroData?.carbsRatio || 0,
+            fat: macroData?.fatRatio || 0,
           });
         })
         .catch((err) => {
