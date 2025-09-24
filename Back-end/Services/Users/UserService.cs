@@ -168,7 +168,8 @@ using Fitness_Tracker.Data.Models.Enums;
 
             return new UpdateGoalsModel
             {
-                DailyCaloriesGoal = user.DailyCaloriesGoal
+                DailyCaloriesGoal = user.DailyCaloriesGoal,
+                IsDailyCaloriesGoal = user.IsDailyCaloriesGoal
             };
         }
 
@@ -181,6 +182,7 @@ using Fitness_Tracker.Data.Models.Enums;
             }
 
             user.DailyCaloriesGoal = model.DailyCaloriesGoal;
+            user.IsDailyCaloriesGoal = model.IsDailyCaloriesGoal;
 
             return await _userManager.UpdateAsync(user);
         }
@@ -283,6 +285,7 @@ using Fitness_Tracker.Data.Models.Enums;
             user.GoalWeight = model.GoalWeight;
             user.WeeklyWeightChangeGoal = model.WeightChangePerWeek;
             user.DailyCaloriesGoal = weightGoalResponse.AdjustedCalorieTarget;
+            user.IsDailyCaloriesGoal = false; // switch to automatic/weight-goal-driven
 
             var result = await _userManager.UpdateAsync(user);
             
@@ -349,6 +352,12 @@ using Fitness_Tracker.Data.Models.Enums;
             if (user == null)
             {
                 throw new InvalidOperationException("User not found");
+            }
+
+            // If user has explicitly set a custom daily calories goal, do not override it
+            if (user.IsDailyCaloriesGoal)
+            {
+                return IdentityResult.Success;
             }
 
             // Calculate new maintenance calories based on current settings

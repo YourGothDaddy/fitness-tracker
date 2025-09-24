@@ -193,6 +193,7 @@ const TargetsView = () => {
   const { hideHeader } = useLocalSearchParams();
   const [goals, setGoals] = useState({
     dailyCaloriesGoal: 0,
+    isDailyCaloriesGoal: false,
   });
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState({
@@ -322,7 +323,10 @@ const TargetsView = () => {
   const fetchGoals = useCallback(async () => {
     try {
       const data = await goalsService.getUserGoals();
-      setGoals({ dailyCaloriesGoal: data.dailyCaloriesGoal });
+      setGoals({
+        dailyCaloriesGoal: data.dailyCaloriesGoal,
+        isDailyCaloriesGoal: data.isDailyCaloriesGoal ?? false,
+      });
     } catch (error) {
       setError("Failed to fetch goals");
     } finally {
@@ -363,6 +367,7 @@ const TargetsView = () => {
     try {
       const updatedGoals = {
         dailyCaloriesGoal: value,
+        isDailyCaloriesGoal: true,
       };
       await goalsService.updateUserGoals(updatedGoals);
       setGoals(updatedGoals);
