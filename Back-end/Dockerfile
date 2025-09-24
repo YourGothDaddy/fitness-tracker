@@ -7,11 +7,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore as distinct layers
-COPY Fitness-Tracker.csproj ./
+COPY Back-end/Fitness-Tracker.csproj ./
 RUN dotnet restore "Fitness-Tracker.csproj"
 
-# Copy the rest of the source
-COPY . .
+# Copy the rest of the source (only Back-end)
+COPY Back-end/. ./
 
 # Publish (Release)
 RUN dotnet publish "Fitness-Tracker.csproj" -c Release -o /app/publish /p:UseAppHost=false
