@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: fitness-tracker-api
+    env: docker
+    plan: free
+    dockerfilePath: Back-end/Dockerfile
+    buildFilter:
+      paths:
+        - Back-end/**
+    autoDeploy: true
+    healthCheckPath: /api/home
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Set your real connection string in the Render dashboard → Environment
+      # - key: ConnectionStrings__DefaultConnection
+      #   sync: false

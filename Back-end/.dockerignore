@@ -1,0 +1,28 @@
+bin/
+obj/
+
+# User files
+*.user
+*.suo
+
+# IDE
+.vscode/
+.idea/
+*.sln.iml
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Static uploads not needed for image build context
+wwwroot/avatars/
