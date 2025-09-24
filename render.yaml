@@ -4,6 +4,7 @@ services:
     env: docker
     plan: free
     dockerfilePath: Back-end/Dockerfile
+    dockerContext: Back-end
     buildFilter:
       paths:
         - Back-end/**
