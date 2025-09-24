@@ -133,7 +133,16 @@ namespace Fitness_Tracker
 
             builder.WebHost.ConfigureKestrel(serverOptions =>
             {
-                serverOptions.Listen(System.Net.IPAddress.Any, 7009);
+                var portEnv = System.Environment.GetEnvironmentVariable("PORT");
+                if (!string.IsNullOrWhiteSpace(portEnv) && int.TryParse(portEnv, out var renderPort))
+                {
+                    serverOptions.Listen(System.Net.IPAddress.Any, renderPort);
+                }
+                else
+                {
+                    // Fallback for local development
+                    serverOptions.Listen(System.Net.IPAddress.Any, 7009);
+                }
             });
 
             var app = builder.Build();
