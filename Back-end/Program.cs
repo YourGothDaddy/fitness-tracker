@@ -150,6 +150,8 @@ namespace Fitness_Tracker
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+                var dbContext = services.GetRequiredService<ApplicationDbContext>();
+                dbContext.Database.Migrate();
                 DataSeeder.SeedActivityLevels(services).Wait();
                 DataSeeder.SeedAdministratorAsync(services).Wait();
                 DataSeeder.SeedTestUserAsync(services).Wait();
