@@ -583,9 +583,9 @@
                 return;
             }
 
-            var filePath = "consumableItem.json";
+            var filePath = Path.Combine(AppContext.BaseDirectory, "consumableItem.json");
             Console.WriteLine($"[Seeder] Looking for file at: {filePath}");
-            Console.WriteLine($"[Seeder] Current directory: {Directory.GetCurrentDirectory()}");
+            Console.WriteLine($"[Seeder] Base directory: {AppContext.BaseDirectory}");
             if (!File.Exists(filePath))
             {
                 Console.WriteLine($"[Seeder] File not found: {filePath}");
@@ -725,7 +725,7 @@
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            var filePath = "consumableItem.json";
+            var filePath = Path.Combine(AppContext.BaseDirectory, "consumableItem.json");
             Console.WriteLine($"[SubTitle Seeder] Looking for file at: {filePath}");
             
             if (!File.Exists(filePath))
@@ -1541,7 +1541,7 @@
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            var filePath = "consumableItem.json";
+            var filePath = Path.Combine(AppContext.BaseDirectory, "consumableItem.json");
             Console.WriteLine($"[Unified Seeder] Looking for file at: {filePath}");
             
             if (!File.Exists(filePath))
@@ -1774,7 +1774,7 @@
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-            var filePath = "consumableItem.json";
+            var filePath = Path.Combine(AppContext.BaseDirectory, "consumableItem.json");
             Console.WriteLine($"[MainCategory Seeder] Looking for file at: {filePath}");
             
             if (!File.Exists(filePath))
