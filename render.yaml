@@ -3,11 +3,12 @@ services:
     name: fitness-tracker-api
     env: docker
     plan: free
-    dockerfilePath: Back-end/Dockerfile
-    dockerContext: Back-end
+    rootDir: .
+    dockerfilePath: Dockerfile
     buildFilter:
       paths:
         - Back-end/**
+        - Dockerfile
     autoDeploy: true
     healthCheckPath: /api/home
     envVars:

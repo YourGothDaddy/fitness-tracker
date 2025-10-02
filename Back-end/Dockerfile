@@ -6,12 +6,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore as distinct layers
+# Using repo-root context (render.yaml without dockerContext)
 COPY Back-end/Fitness-Tracker.csproj ./
 RUN dotnet restore "Fitness-Tracker.csproj"
 
-# Copy the rest of the source (only Back-end)
+# Copy Back-end sources
 COPY Back-end/. ./
+
+# Ensure consumable JSON present for MSBuild content copy
+COPY Back-end/consumableItem.json ./consumableItem.json
 
 # Publish (Release)
 RUN dotnet publish "Fitness-Tracker.csproj" -c Release -o /app/publish /p:UseAppHost=false

@@ -29,5 +29,6 @@ yarn-error.log*
 # Ignore benchmark reports
 Back-end/bin/Debug/net8.0/benchmark-reports/
 
-Back-end/consumableItem.json
+## Keep consumable data in repo for seeding
+# (was ignored previously)
 

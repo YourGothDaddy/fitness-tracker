@@ -57,6 +57,9 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<IActivityService, ActivityService>();
             builder.Services.AddMemoryCache();
 
+            // Run data migrations and seeding in background so Kestrel can bind immediately
+            builder.Services.AddHostedService<DataSeedingHostedService>();
+
             builder.Services.Configure<IdentityOptions>(options =>
             {
                 //@dev Change the options later. Current options are only for developement purposes
@@ -157,20 +160,6 @@ namespace Fitness_Tracker
             });
 
             var app = builder.Build();
-
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                var dbContext = services.GetRequiredService<ApplicationDbContext>();
-                dbContext.Database.Migrate();
-                DataSeeder.SeedActivityLevels(services).Wait();
-                DataSeeder.SeedAdministratorAsync(services).Wait();
-                DataSeeder.SeedTestUserAsync(services).Wait();
-                DataSeeder.SeedActivityTypesAsync(services).Wait();
-                DataSeeder.SeedNutrientsAsync(services).Wait();
-                DataSeeder.SeedConsumableItemsAsync(services).Wait();
-                DataSeeder.SeedAllConsumableItemUpdatesAsync(services).Wait();
-            }
 
             app.UseCors("AllowReactApp");
 
