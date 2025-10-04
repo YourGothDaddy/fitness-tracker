@@ -20,7 +20,7 @@ function setMemo(key, value) {
 
 class ActivityService {
   clearCache() {
-    // Invalidate in-memory GET response cache so subsequent fetches are fresh
+    // Clears in-memory memoization to avoid stale reads (e.g., after deletes)
     memo.clear();
   }
 

@@ -364,10 +364,8 @@ const GeneralView = () => {
         }));
 
         await mealService.deleteMeal(mealId);
-        // Invalidate cached activity data so navigating back doesn't show stale meals
+        // Invalidate cached activity data so it doesn't reappear on quick navigation
         activityService.clearCache();
-        // Optionally refresh in background to keep totals perfectly in sync
-        fetchActivityOverview(activityDate);
       } catch (err) {
         // If deletion fails, revert both state changes
         setActivityOverview((prev) => ({
