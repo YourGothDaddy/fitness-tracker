@@ -19,6 +19,11 @@ function setMemo(key, value) {
 }
 
 class ActivityService {
+  clearCache() {
+    // Invalidate in-memory GET response cache so subsequent fetches are fresh
+    memo.clear();
+  }
+
   async getActivityOverview(date) {
     try {
       const url = `${API_URL}/api/activity/activity-overview?date=${date.toISOString()}`;

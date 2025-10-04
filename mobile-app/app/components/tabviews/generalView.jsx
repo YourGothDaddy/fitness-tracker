@@ -364,8 +364,10 @@ const GeneralView = () => {
         }));
 
         await mealService.deleteMeal(mealId);
-        // Don't refresh data immediately - trust our local state
-        // The item will be gone on next app refresh or navigation
+        // Invalidate cached activity data so navigating back doesn't show stale meals
+        activityService.clearCache();
+        // Optionally refresh in background to keep totals perfectly in sync
+        fetchActivityOverview(activityDate);
       } catch (err) {
         // If deletion fails, revert both state changes
         setActivityOverview((prev) => ({
