@@ -189,9 +189,9 @@ const GeneralView = () => {
     };
   }, []);
 
-  // Listen for newly added meals and refresh relevant sections immediately
+  // Listen for newly added meals and deleted meals to refresh relevant sections immediately
   useEffect(() => {
-    const unsubscribe = eventBus.on("meal:added", ({ date }) => {
+    const unsubscribeAdded = eventBus.on("meal:added", ({ date }) => {
       if (!isMounted.current) return;
       // If the added meal's date matches the current activity/energy date, refresh fast
       const normalize = (d) => {
@@ -209,12 +209,83 @@ const GeneralView = () => {
         fetchEnergyBudget(energyBudgetDate);
       }
     });
-    return unsubscribe;
+
+    const unsubscribeDeleted = eventBus.on("meal:deleted", ({ date }) => {
+      if (!isMounted.current) return;
+      // If the deleted meal's date matches the current activity/energy date, refresh fast
+      const normalize = (d) => {
+        const n = new Date(d);
+        n.setHours(0, 0, 0, 0);
+        return n.getTime();
+      };
+      const deletedTs = normalize(date);
+      const activityTs = normalize(activityDate);
+      const energyTs = normalize(energyBudgetDate);
+      const shouldRefresh = deletedTs === activityTs || deletedTs === energyTs;
+      if (shouldRefresh) {
+        // Kick off lightweight refreshes
+        fetchActivityOverview(activityDate);
+        fetchEnergyBudget(energyBudgetDate);
+      }
+    });
+
+    const unsubscribeExerciseAdded = eventBus.on(
+      "exercise:added",
+      ({ date }) => {
+        if (!isMounted.current) return;
+        // If the added exercise's date matches the current activity/energy date, refresh fast
+        const normalize = (d) => {
+          const n = new Date(d);
+          n.setHours(0, 0, 0, 0);
+          return n.getTime();
+        };
+        const addedTs = normalize(date);
+        const activityTs = normalize(activityDate);
+        const energyTs = normalize(energyBudgetDate);
+        const shouldRefresh = addedTs === activityTs || addedTs === energyTs;
+        if (shouldRefresh) {
+          // Kick off lightweight refreshes
+          fetchActivityOverview(activityDate);
+          fetchEnergyExpenditure(energyBudgetDate);
+        }
+      }
+    );
+
+    const unsubscribeExerciseDeleted = eventBus.on(
+      "exercise:deleted",
+      ({ date }) => {
+        if (!isMounted.current) return;
+        // If the deleted exercise's date matches the current activity/energy date, refresh fast
+        const normalize = (d) => {
+          const n = new Date(d);
+          n.setHours(0, 0, 0, 0);
+          return n.getTime();
+        };
+        const deletedTs = normalize(date);
+        const activityTs = normalize(activityDate);
+        const energyTs = normalize(energyBudgetDate);
+        const shouldRefresh =
+          deletedTs === activityTs || deletedTs === energyTs;
+        if (shouldRefresh) {
+          // Kick off lightweight refreshes
+          fetchActivityOverview(activityDate);
+          fetchEnergyExpenditure(energyBudgetDate);
+        }
+      }
+    );
+
+    return () => {
+      unsubscribeAdded();
+      unsubscribeDeleted();
+      unsubscribeExerciseAdded();
+      unsubscribeExerciseDeleted();
+    };
   }, [
     activityDate,
     energyBudgetDate,
     fetchActivityOverview,
     fetchEnergyBudget,
+    fetchEnergyExpenditure,
   ]);
 
   const handleError = useCallback(
@@ -351,6 +422,10 @@ const GeneralView = () => {
         );
         const caloriesToRemove = mealToDelete ? mealToDelete.calories : 0;
 
+        // Store original state for potential rollback
+        const originalMeals = activityOverview.meals;
+        const originalConsumed = energyBudget.consumed;
+
         // Remove meal from state immediately for instant UI feedback
         setActivityOverview((prev) => ({
           ...prev,
@@ -363,26 +438,34 @@ const GeneralView = () => {
           consumed: Math.max(0, prev.consumed - caloriesToRemove),
         }));
 
+        // Make the API call
         await mealService.deleteMeal(mealId);
-        // Don't refresh data immediately - trust our local state
-        // The item will be gone on next app refresh or navigation
+
+        // Emit event to notify other parts of the app about the deletion
+        try {
+          eventBus.emit("meal:deleted", {
+            mealId: mealId,
+            date: activityDate,
+            calories: caloriesToRemove,
+          });
+        } catch (e) {
+          // Non-fatal error
+          console.log("event emit failed", e);
+        }
       } catch (err) {
         // If deletion fails, revert both state changes
         setActivityOverview((prev) => ({
           ...prev,
-          meals: prev.meals.filter((meal) => meal.id !== mealId),
+          meals: activityOverview.meals, // Restore original meals
         }));
         setEnergyBudget((prev) => ({
           ...prev,
-          consumed:
-            prev.consumed +
-            (activityOverview.meals.find((meal) => meal.id === mealId)
-              ?.calories || 0),
+          consumed: energyBudget.consumed, // Restore original consumed
         }));
         handleError(err, "meal deletion");
       }
     },
-    [activityOverview.meals, handleError]
+    [activityOverview.meals, energyBudget.consumed, activityDate, handleError]
   );
 
   const handleDeleteExercise = useCallback(
@@ -395,6 +478,10 @@ const GeneralView = () => {
         const caloriesToRemove = exerciseToDelete
           ? exerciseToDelete.caloriesBurned
           : 0;
+
+        // Store original state for potential rollback
+        const originalExercises = activityOverview.exercises;
+        const originalExerciseCalories = energyExpenditure.exerciseCalories;
 
         // Remove exercise from state immediately for instant UI feedback
         setActivityOverview((prev) => ({
@@ -413,29 +500,39 @@ const GeneralView = () => {
           ),
         }));
 
+        // Make the API call
         await activityService.deleteActivity(activityId);
-        // Don't refresh data immediately - trust our local state
-        // The item will be gone on next app refresh or navigation
+
+        // Emit event to notify other parts of the app about the deletion
+        try {
+          eventBus.emit("exercise:deleted", {
+            activityId: activityId,
+            date: activityDate,
+            calories: caloriesToRemove,
+          });
+        } catch (e) {
+          // Non-fatal error
+          console.log("event emit failed", e);
+        }
       } catch (err) {
         // If deletion fails, revert both state changes
         setActivityOverview((prev) => ({
           ...prev,
-          exercises: prev.exercises.filter(
-            (exercise) => exercise.id !== activityId
-          ),
+          exercises: activityOverview.exercises, // Restore original exercises
         }));
         setEnergyExpenditure((prev) => ({
           ...prev,
-          exerciseCalories:
-            prev.exerciseCalories +
-            (activityOverview.exercises.find(
-              (exercise) => exercise.id === activityId
-            )?.caloriesBurned || 0),
+          exerciseCalories: energyExpenditure.exerciseCalories, // Restore original calories
         }));
         handleError(err, "exercise deletion");
       }
     },
-    [activityOverview.exercises, handleError]
+    [
+      activityOverview.exercises,
+      energyExpenditure.exerciseCalories,
+      activityDate,
+      handleError,
+    ]
   );
 
   useFocusEffect(

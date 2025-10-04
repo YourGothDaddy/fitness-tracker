@@ -27,6 +27,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import { eventBus } from "@/app/services/eventBus";
 
 const PARTICLE_COUNT = 10;
 const PARTICLE_COLOR = "#e74c3c";
@@ -742,6 +743,19 @@ const ExerciseItem = ({
       // Trigger success check animation upstream
       onSuccessCheck && onSuccessCheck();
       setDuration(30);
+
+      // Emit event to notify other parts of the app about the exercise addition
+      try {
+        eventBus.emit("exercise:added", {
+          date: selectedDate,
+          calories: calories.totalCalories,
+          name: exercise,
+          category: category,
+        });
+      } catch (e) {
+        // Non-fatal error
+        console.log("event emit failed", e);
+      }
     } catch (err) {
       const errorMessage =
         err?.response?.data?.message ||
