@@ -4,6 +4,7 @@
     using Microsoft.AspNetCore.Mvc;
     using Fitness_Tracker.Models.Admins;
     using Fitness_Tracker.Models.Nutrition;
+    using Fitness_Tracker.Models.Consumables;
 
     using static Constants.ConsumableController;
 
@@ -175,6 +176,29 @@
                 return BadRequest(new { Message = "Invalid pagination parameters." });
             var result = await _consumableService.GetPublicConsumableItemsPagedAsync(pageNumber, pageSize);
             return Ok(result);
+        }
+
+        [HttpPost("convert-to-grams")]
+        public async Task<IActionResult> ConvertToGrams([FromBody] ConvertUnitsRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { Message = "Invalid conversion request." });
+            }
+            try
+            {
+                var grams = await _consumableService.ConvertToGramsAsync(request);
+                return Ok(new ConvertUnitsResponse { Grams = grams });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error converting units to grams");
+                return StatusCode(500, new { Message = "An error occurred while converting units." });
+            }
         }
     }
 }

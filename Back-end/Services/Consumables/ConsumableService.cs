@@ -4,6 +4,7 @@ using Fitness_Tracker.Models.Admins;
 using Fitness_Tracker.Data.Models.Consumables;
 using Fitness_Tracker.Models.Nutrition;
 using Fitness_Tracker.Models;
+using Fitness_Tracker.Models.Consumables;
 
 namespace Fitness_Tracker.Services.Consumables
 {
@@ -238,6 +239,74 @@ namespace Fitness_Tracker.Services.Consumables
             return await _databaseContext.ConsumableItems
                 .Where(ci => !ci.IsPublic && ci.UserId == userId)
                 .ToListAsync();
+        }
+
+        public Task<double> ConvertToGramsAsync(ConvertUnitsRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Unit)) throw new ArgumentException("Unit is required", nameof(request.Unit));
+
+            var unit = request.Unit.Trim().ToLower();
+            double grams;
+
+            switch (unit)
+            {
+                case "g":
+                case "gram":
+                case "grams":
+                    grams = request.Amount;
+                    break;
+                case "kg":
+                    grams = request.Amount * 1000.0;
+                    break;
+                case "oz":
+                case "ounce":
+                case "ounces":
+                    grams = request.Amount * 28.349523125; // 1 oz = 28.349523125 g
+                    break;
+                case "lb":
+                case "pound":
+                case "pounds":
+                    grams = request.Amount * 453.59237; // 1 lb = 453.59237 g
+                    break;
+                case "tsp":
+                case "teaspoon":
+                case "teaspoons":
+                    grams = request.Amount * 4.2; // Approximate for water-like density
+                    break;
+                case "tbsp":
+                case "tablespoon":
+                case "tablespoons":
+                    grams = request.Amount * 14.3; // Approximate
+                    break;
+                case "cup":
+                case "cups":
+                    grams = request.Amount * 240.0; // Approximate ml; assume water-like density
+                    break;
+                case "ml":
+                    grams = request.Amount * 1.0; // Assume water-like density
+                    break;
+                case "l":
+                case "liter":
+                case "litre":
+                case "liters":
+                case "litres":
+                    grams = request.Amount * 1000.0; // Assume water-like density
+                    break;
+                case "piece":
+                case "pieces":
+                case "pc":
+                    if (request.GramsPerPiece == null || request.GramsPerPiece <= 0)
+                    {
+                        throw new ArgumentException("GramsPerPiece is required and must be > 0 when unit is 'piece'.");
+                    }
+                    grams = request.Amount * request.GramsPerPiece.Value;
+                    break;
+                default:
+                    throw new ArgumentException($"Unsupported unit '{request.Unit}'.");
+            }
+
+            return Task.FromResult(grams);
         }
     }
 }

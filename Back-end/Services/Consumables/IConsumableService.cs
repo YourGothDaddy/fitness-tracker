@@ -15,5 +15,6 @@ namespace Fitness_Tracker.Services.Consumables
         Task<List<ConsumableItem>> GetFavoriteConsumableItemsAsync(string userId);
         Task<List<ConsumableItem>> GetAllUserCustomConsumableItemsAsync(string userId);
         Task<List<string>> GetDistinctConsumableCategoriesAsync(string? userId = null);
+        Task<double> ConvertToGramsAsync(Fitness_Tracker.Models.Consumables.ConvertUnitsRequest request);
     }
 }
