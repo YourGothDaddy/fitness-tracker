@@ -28,6 +28,7 @@ import { useRouter } from "expo-router";
 import { Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
 import { eventBus } from "@/app/services/eventBus";
+import { activityService } from "@/app/services/activityService";
 import {
   addFavoriteConsumable,
   removeFavoriteConsumable,
@@ -981,6 +982,8 @@ const TrackMealView = () => {
       });
       setLogFoodModalVisible(false);
       setFoodToLog(null);
+      // Clear activity cache to prevent stale data when navigating back
+      activityService.clearCache();
       // Notify other screens to refresh immediately
       try {
         eventBus.emit("meal:added", {
