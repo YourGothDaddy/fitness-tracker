@@ -108,6 +108,7 @@ const AddFoodView = () => {
   const [foodName, setFoodName] = useState("");
   const [servingType, setServingType] = useState(servingTypes[0]);
   const [servingQty, setServingQty] = useState("");
+  const [gramsPerServing, setGramsPerServing] = useState("");
   const [macros, setMacros] = useState({
     Protein: "",
     Carbohydrates: "",
@@ -129,6 +130,28 @@ const AddFoodView = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [calories, setCalories] = useState("");
+
+  // Auto-calc Calories per 100g when macros per serving and grams per serving are available
+  React.useEffect(() => {
+    const p = parseFloat(macros.Protein);
+    const c = parseFloat(macros.Carbohydrates);
+    const f = parseFloat(macros.Fat);
+    const w = parseFloat(gramsPerServing);
+    if (
+      !isNaN(p) &&
+      p >= 0 &&
+      !isNaN(c) &&
+      c >= 0 &&
+      !isNaN(f) &&
+      f >= 0 &&
+      !isNaN(w) &&
+      w > 0
+    ) {
+      const caloriesPerServing = p * 4 + c * 4 + f * 9;
+      const per100g = Math.round((caloriesPerServing / w) * 100);
+      setCalories(String(per100g));
+    }
+  }, [macros.Protein, macros.Carbohydrates, macros.Fat, gramsPerServing]);
 
   React.useEffect(() => {
     Animated.timing(nutritionAnim, {
@@ -153,6 +176,8 @@ const AddFoodView = () => {
     if (
       !foodName ||
       !servingQty ||
+      !gramsPerServing ||
+      Number(gramsPerServing) <= 0 ||
       !macros.Protein ||
       !macros.Carbohydrates ||
       !macros.Fat ||
@@ -163,6 +188,15 @@ const AddFoodView = () => {
     }
     setIsLoading(true);
     try {
+      // Normalize macronutrients per 100g from per-serving data
+      const gramsPerServingNum = Number(gramsPerServing);
+      const proteinPerServing = Number(macros.Protein);
+      const carbsPerServing = Number(macros.Carbohydrates);
+      const fatPerServing = Number(macros.Fat);
+      const proteinPer100g = (proteinPerServing / gramsPerServingNum) * 100;
+      const carbsPer100g = (carbsPerServing / gramsPerServingNum) * 100;
+      const fatPer100g = (fatPerServing / gramsPerServingNum) * 100;
+
       // Prepare NutritionalInformation array
       const nutritionalInformation = Object.entries(nutrition)
         .filter(([name, value]) => value !== "" && !isNaN(Number(value)))
@@ -181,9 +215,9 @@ const AddFoodView = () => {
       const payload = {
         Name: foodName,
         CaloriesPer100g: Number(calories),
-        ProteinPer100g: Number(macros.Protein),
-        CarbohydratePer100g: Number(macros.Carbohydrates),
-        FatPer100g: Number(macros.Fat),
+        ProteinPer100g: Number(proteinPer100g.toFixed(1)),
+        CarbohydratePer100g: Number(carbsPer100g.toFixed(1)),
+        FatPer100g: Number(fatPer100g.toFixed(1)),
         Type: 0, // Default to Food (TypeOfConsumable.Food)
         NutritionalInformation: nutritionalInformation,
         IsPublic: false, // Custom foods are not public by default
@@ -275,6 +309,77 @@ const AddFoodView = () => {
               <Text style={styles.selectedServingType}>{servingType}</Text>
             </TouchableOpacity>
           </View>
+          {/* Grams per Serving */}
+          <CustomField
+            styles={styles.input}
+            placeholder={
+              servingQty && Number(servingQty) > 0 && servingType
+                ? `Weight in grams per ${servingQty} ${servingType}`
+                : "Enter serving quantity and type first"
+            }
+            value={gramsPerServing}
+            onChangeText={setGramsPerServing}
+            numeric
+            allowDecimal
+            textInputStyle={{ fontSize: 14 }}
+            editable={
+              Boolean(servingQty) &&
+              Number(servingQty) > 0 &&
+              Boolean(servingType)
+            }
+          />
+          {/* Preview per 100g */}
+          {(() => {
+            const p = parseFloat(macros.Protein);
+            const c = parseFloat(macros.Carbohydrates);
+            const f = parseFloat(macros.Fat);
+            const w = parseFloat(gramsPerServing);
+            const valid =
+              !isNaN(p) &&
+              p >= 0 &&
+              !isNaN(c) &&
+              c >= 0 &&
+              !isNaN(f) &&
+              f >= 0 &&
+              !isNaN(w) &&
+              w > 0;
+            if (!valid) return null;
+            const proteinPer100g = Math.round((p / w) * 100 * 10) / 10;
+            const carbsPer100g = Math.round((c / w) * 100 * 10) / 10;
+            const fatPer100g = Math.round((f / w) * 100 * 10) / 10;
+            const caloriesPerServing = p * 4 + c * 4 + f * 9;
+            const caloriesPer100g = Math.round((caloriesPerServing / w) * 100);
+            return (
+              <View style={styles.previewBox}>
+                <Text style={styles.previewHeader}>Per 100g (preview)</Text>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Protein</Text>
+                  <Text style={styles.previewValue}>{proteinPer100g} g</Text>
+                </View>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Carbs</Text>
+                  <Text style={styles.previewValue}>{carbsPer100g} g</Text>
+                </View>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Fat</Text>
+                  <Text style={styles.previewValue}>{fatPer100g} g</Text>
+                </View>
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Calories</Text>
+                  <Text style={styles.previewValue}>
+                    {caloriesPer100g} kcal
+                  </Text>
+                </View>
+                <View style={styles.previewDivider} />
+                <View style={styles.previewRow}>
+                  <Text style={styles.previewLabel}>Per Serving Calories</Text>
+                  <Text style={styles.previewValue}>
+                    {Math.round(caloriesPerServing)} kcal
+                  </Text>
+                </View>
+              </View>
+            );
+          })()}
           <Modal
             visible={servingTypeModalVisible}
             transparent
@@ -609,6 +714,41 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     marginRight: 0,
     fontWeight: "500",
+  },
+  previewBox: {
+    backgroundColor: "#F8FAF5",
+    borderWidth: 1,
+    borderColor: "#E6EFE0",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  previewHeader: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.darkGreen.color,
+    marginBottom: 6,
+  },
+  previewRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  previewLabel: {
+    fontSize: 13,
+    color: "#667",
+  },
+  previewValue: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.darkGreen.color,
+  },
+  previewDivider: {
+    height: 1,
+    backgroundColor: "#E6EFE0",
+    marginVertical: 6,
   },
 });
 

@@ -149,6 +149,26 @@ export async function getConsumableCategories() {
   }
 }
 
+export async function convertToGrams(amount, unit, gramsPerPiece = null) {
+  try {
+    const payload = { amount, unit };
+    if (unit && unit.toLowerCase() === "piece" && gramsPerPiece) {
+      payload.gramsPerPiece = gramsPerPiece;
+    }
+    const response = await axiosInstance.post(
+      `/api/consumable/convert-to-grams`,
+      payload
+    );
+    return response.data?.grams ?? response.data?.Grams ?? null;
+  } catch (error) {
+    const msg =
+      error?.response?.data?.Message ||
+      error.message ||
+      "Failed to convert units.";
+    throw new Error(msg);
+  }
+}
+
 export async function getPublicConsumableItemsPaged(
   pageNumber = 1,
   pageSize = 20

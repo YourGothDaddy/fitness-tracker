@@ -36,8 +36,10 @@ import {
   searchConsumableItems,
   getAllCustomConsumableItems,
   getConsumableCategories,
+  convertToGrams,
 } from "@/app/services/foodService";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const FoodItem = ({
   name,
@@ -455,46 +457,121 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
+  const [unit, setUnit] = useState("g");
+  const [showUnitPicker, setShowUnitPicker] = useState(false);
+  const [gramsPerPiece, setGramsPerPiece] = useState("");
+
+  const SERVING_UNITS = ["g", "ml", "tsp", "tbsp", "cup", "oz", "piece"];
 
   useEffect(() => {
     if (visible) {
       setGrams("100");
       setSelectedDate(new Date());
       setIsLogging(false);
+      setUnit("g");
+      setGramsPerPiece("");
     }
   }, [visible]);
 
   const showDatePickerModal = useCallback(() => {
     try {
-      DateTimePickerAndroid.open({
-        value: selectedDate,
-        mode: "date",
-        is24Hour: true,
-        onChange: (event, date) => {
-          if (event.type === "set" && date) {
-            date.setHours(0, 0, 0, 0);
-            setSelectedDate(date);
-          }
-        },
-        maximumDate: new Date(),
-      });
+      if (Platform.OS === "android") {
+        DateTimePickerAndroid.open({
+          value: selectedDate,
+          mode: "date",
+          is24Hour: true,
+          onChange: (event, date) => {
+            if (event.type === "set" && date) {
+              date.setHours(0, 0, 0, 0);
+              setSelectedDate(date);
+            }
+          },
+          maximumDate: new Date(),
+        });
+      } else {
+        setShowDatePicker(true);
+      }
     } catch (error) {
       console.error("DatePicker error:", error);
       Alert.alert("Error", "Failed to open date picker. Please try again.");
     }
   }, [selectedDate]);
 
+  const toGramsLocal = useCallback((amount, selectedUnit, gPerPiece) => {
+    if (!amount || amount <= 0) return 0;
+    const u = (selectedUnit || "").toLowerCase();
+    switch (u) {
+      case "g":
+      case "gram":
+      case "grams":
+        return amount;
+      case "kg":
+        return amount * 1000;
+      case "oz":
+      case "ounce":
+      case "ounces":
+        return amount * 28.349523125;
+      case "lb":
+      case "pound":
+      case "pounds":
+        return amount * 453.59237;
+      case "tsp":
+      case "teaspoon":
+      case "teaspoons":
+        return amount * 4.2;
+      case "tbsp":
+      case "tablespoon":
+      case "tablespoons":
+        return amount * 14.3;
+      case "cup":
+      case "cups":
+        return amount * 240;
+      case "ml":
+        return amount * 1.0;
+      case "l":
+      case "liter":
+      case "litre":
+      case "liters":
+      case "litres":
+        return amount * 1000.0;
+      case "piece":
+      case "pieces":
+      case "pc":
+        if (!gPerPiece || gPerPiece <= 0) return 0;
+        return amount * gPerPiece;
+      default:
+        return 0;
+    }
+  }, []);
+
   const handleLogFood = async () => {
-    const gramsValue = parseFloat(grams);
-    if (!gramsValue || gramsValue <= 0) {
-      Alert.alert("Error", "Please enter a valid amount of grams.");
+    const amountValue = parseFloat(grams);
+    if (!amountValue || amountValue <= 0) {
+      Alert.alert("Error", "Please enter a valid amount.");
+      return;
+    }
+    if (
+      unit === "piece" &&
+      (!gramsPerPiece || parseFloat(gramsPerPiece) <= 0)
+    ) {
+      Alert.alert("Error", "Please enter grams per piece.");
       return;
     }
 
     setIsLogging(true);
 
     try {
-      const multiplier = gramsValue / 100;
+      // Convert to grams on backend for authoritative conversion
+      const gramsConverted = await convertToGrams(
+        amountValue,
+        unit,
+        unit === "piece" ? parseFloat(gramsPerPiece) : null
+      );
+      if (!gramsConverted || gramsConverted <= 0) {
+        throw new Error("Conversion returned invalid value.");
+      }
+
+      const multiplier = gramsConverted / 100;
       const mealData = {
         name: food.name,
         calories: Math.round(food.caloriesPer100g * multiplier),
@@ -509,8 +586,14 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
       onClose();
       setGrams("100");
       setSelectedDate(new Date());
+      setUnit("g");
+      setGramsPerPiece("");
     } catch (error) {
       console.error("Error logging food:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Failed to log meal. Please try again."
+      );
     } finally {
       setIsLogging(false);
     }
@@ -588,54 +671,83 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Amount (grams)</Text>
+                <Text style={styles.inputLabel}>Amount</Text>
                 <View style={styles.inputWithUnit}>
                   <TextInput
                     style={[styles.textInput, styles.textInputElevated]}
                     value={grams}
                     onChangeText={setGrams}
-                    placeholder="Enter grams consumed"
+                    placeholder={`Enter amount in ${unit}`}
                     keyboardType="numeric"
                     placeholderTextColor="#999"
                   />
-                  <View style={styles.unitBadge}>
-                    <Text style={styles.unitBadgeText}>g</Text>
-                  </View>
+                  <TouchableOpacity
+                    style={styles.unitBadge}
+                    onPress={() => setShowUnitPicker(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.unitBadgeText}>{unit}</Text>
+                  </TouchableOpacity>
                 </View>
+
+                {unit === "piece" && (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={styles.inputLabel}>Grams per piece</Text>
+                    <TextInput
+                      style={[styles.textInput, styles.textInputElevated]}
+                      value={gramsPerPiece}
+                      onChangeText={setGramsPerPiece}
+                      placeholder="e.g. 30"
+                      keyboardType="numeric"
+                      placeholderTextColor="#999"
+                    />
+                  </View>
+                )}
+
                 {grams && parseFloat(grams) > 0 && (
                   <View style={styles.previewContainer}>
                     <Text style={styles.previewTitle}>Preview:</Text>
                     <View style={styles.previewMacros}>
-                      <Text style={styles.previewText}>
-                        Calories:{" "}
-                        {Math.round(
-                          (food.caloriesPer100g * parseFloat(grams)) / 100
-                        )}{" "}
-                        kcal
-                      </Text>
-                      <Text style={styles.previewText}>
-                        Protein:{" "}
-                        {Math.round(
-                          ((food.proteinPer100g * parseFloat(grams)) / 100) * 10
-                        ) / 10}
-                        g
-                      </Text>
-                      <Text style={styles.previewText}>
-                        Carbs:{" "}
-                        {Math.round(
-                          ((food.carbohydratePer100g * parseFloat(grams)) /
-                            100) *
-                            10
-                        ) / 10}
-                        g
-                      </Text>
-                      <Text style={styles.previewText}>
-                        Fat:{" "}
-                        {Math.round(
-                          ((food.fatPer100g * parseFloat(grams)) / 100) * 10
-                        ) / 10}
-                        g
-                      </Text>
+                      {(() => {
+                        const gramsPreview = toGramsLocal(
+                          parseFloat(grams),
+                          unit,
+                          unit === "piece"
+                            ? parseFloat(gramsPerPiece)
+                            : undefined
+                        );
+                        if (!gramsPreview || gramsPreview <= 0) return null;
+                        const cals = Math.round(
+                          (food.caloriesPer100g * gramsPreview) / 100
+                        );
+                        const prot =
+                          Math.round(
+                            ((food.proteinPer100g * gramsPreview) / 100) * 10
+                          ) / 10;
+                        const carbs =
+                          Math.round(
+                            ((food.carbohydratePer100g * gramsPreview) / 100) *
+                              10
+                          ) / 10;
+                        const fat =
+                          Math.round(
+                            ((food.fatPer100g * gramsPreview) / 100) * 10
+                          ) / 10;
+                        return (
+                          <>
+                            <Text style={styles.previewText}>
+                              Calories: {cals} kcal
+                            </Text>
+                            <Text style={styles.previewText}>
+                              Protein: {prot} g
+                            </Text>
+                            <Text style={styles.previewText}>
+                              Carbs: {carbs} g
+                            </Text>
+                            <Text style={styles.previewText}>Fat: {fat} g</Text>
+                          </>
+                        );
+                      })()}
                     </View>
                   </View>
                 )}
@@ -658,6 +770,20 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
                     style={{ marginLeft: 2 }}
                   />
                 </TouchableOpacity>
+                {Platform.OS !== "android" && showDatePicker && (
+                  <DateTimePicker
+                    value={selectedDate}
+                    mode="date"
+                    onChange={(event, date) => {
+                      setShowDatePicker(false);
+                      if (date) {
+                        date.setHours(0, 0, 0, 0);
+                        setSelectedDate(date);
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
+                )}
               </View>
             </ScrollView>
           </View>
@@ -680,6 +806,80 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
           </View>
         </View>
       </View>
+      <UnitPickerModal
+        visible={showUnitPicker}
+        units={SERVING_UNITS}
+        onClose={() => setShowUnitPicker(false)}
+        onSelect={(u) => {
+          setUnit(u);
+          setShowUnitPicker(false);
+        }}
+      />
+    </Modal>
+  );
+};
+
+// Unit selection modal rendered alongside the LogFoodModal
+const UnitPickerModal = ({ visible, units, onClose, onSelect }) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        onPress={onClose}
+      >
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 14,
+            paddingVertical: 8,
+            paddingHorizontal: 8,
+            minWidth: 220,
+            maxWidth: "80%",
+            elevation: 5,
+          }}
+        >
+          {units.map((u) => (
+            <TouchableOpacity
+              key={u}
+              style={{ paddingVertical: 12, paddingHorizontal: 12 }}
+              onPress={() => onSelect(u)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={{ fontSize: 16, color: "#2d2d2d", textAlign: "center" }}
+              >
+                {u}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <View style={{ height: 1, backgroundColor: "#eee" }} />
+          <TouchableOpacity
+            style={{ paddingVertical: 12, paddingHorizontal: 12 }}
+            onPress={onClose}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                color: "#619819",
+                textAlign: "center",
+                fontWeight: "700",
+              }}
+            >
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
     </Modal>
   );
 };
@@ -1227,6 +1427,9 @@ const TrackMealView = () => {
         onClose={() => setLogFoodModalVisible(false)}
         onLogFood={handleLogFood}
       />
+      {/* Unit picker modal */}
+      {/** Place unit modal at root so it overlays nicely **/}
+      <Modal visible={false} />
     </>
   );
 };

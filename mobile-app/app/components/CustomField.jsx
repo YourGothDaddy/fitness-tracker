@@ -13,6 +13,7 @@ const CustomField = ({
   secureTextEntry = false,
   keyboardType,
   maxLength,
+  editable = true,
 }) => {
   const handleTextChange = (text) => {
     if (numeric) {
@@ -53,6 +54,7 @@ const CustomField = ({
         autoCapitalize="none"
         autoCorrect={false}
         passwordRules={secureTextEntry ? "minlength: 6;" : undefined}
+        editable={editable}
       />
     </View>
   );
