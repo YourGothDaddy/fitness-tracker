@@ -9,9 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import { API_URL } from "../../constants/Config";
@@ -50,21 +51,29 @@ const More = () => {
   const [avatarUri, setAvatarUri] = useState(null);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await userService.getProfile();
-        setProfile(data);
-      } catch (err) {
-        setError("Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userService.getProfile();
+      setProfile(data);
+    } catch (err) {
+      setError("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Refresh profile data when returning to this screen
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [fetchProfile])
+  );
 
   const handleCardPress = (href) => {
     router.push({
