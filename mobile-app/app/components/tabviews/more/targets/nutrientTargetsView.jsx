@@ -351,7 +351,13 @@ const NutrientRow = ({ nutrient, onUpdate }) => {
 
 const NutrientTargetsView = () => {
   const router = useRouter();
-  const { hideHeader, category } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const hideHeaderParam = Array.isArray(params?.hideHeader)
+    ? params.hideHeader[0]
+    : params?.hideHeader;
+  const categoryParam = Array.isArray(params?.category)
+    ? params.category[0]
+    : params?.category;
   const [nutrientTargets, setNutrientTargets] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -415,7 +421,8 @@ const NutrientTargetsView = () => {
 
   const handleCategoryPress = useCallback(
     (selectedCategory) => {
-      router.push({
+      // Replace params on the same screen to avoid stacking and unwanted transitions
+      router.replace({
         pathname: "/components/tabviews/more/targets/nutrientTargetsView",
         params: { hideHeader: "true", category: selectedCategory },
       });
@@ -429,12 +436,13 @@ const NutrientTargetsView = () => {
     <>
       <Stack.Screen
         options={{
-          headerShown: hideHeader !== "true",
+          headerShown: hideHeaderParam !== "true",
           title: "Nutrient Targets",
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>
-        {hideHeader === "true" && (
+        {hideHeaderParam === "true" && (
           <View style={styles.header}>
             <Text className="text-4xl font-pextrabold text-center text-green pt-10">
               Fitlicious
@@ -455,7 +463,7 @@ const NutrientTargetsView = () => {
           enabled={!!isPremium}
           message="Premium required to access Nutrient Targets"
         >
-          {!category ? (
+          {!categoryParam ? (
             <ScrollView contentContainerStyle={styles.scrollViewContainer}>
               <View style={styles.tabsContainer}>
                 {loading ? (
@@ -487,26 +495,26 @@ const NutrientTargetsView = () => {
                 <View style={styles.categoryHeaderContent}>
                   {/* Left stub - colored section */}
                   <LinearGradient
-                    colors={getCategoryGradient(category)}
+                    colors={getCategoryGradient(categoryParam)}
                     style={styles.categoryHeaderStub}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
                     <View style={styles.categoryHeaderStubContent}>
                       <Text style={styles.categoryHeaderLetter}>
-                        {category.charAt(0)}
+                        {String(categoryParam).charAt(0)}
                       </Text>
                       <Text style={styles.categoryHeaderLabel}>
-                        {getCategoryLabel(category)}
+                        {getCategoryLabel(categoryParam)}
                       </Text>
                     </View>
                   </LinearGradient>
 
                   {/* Right main content area */}
                   <View style={styles.categoryHeaderMain}>
-                    <Text style={styles.categoryTitle}>{category}</Text>
+                    <Text style={styles.categoryTitle}>{categoryParam}</Text>
                     <Text style={styles.categoryItemCount}>
-                      {nutrientTargets[category]?.length || 0} items
+                      {nutrientTargets[categoryParam]?.length || 0} items
                     </Text>
                   </View>
                 </View>
@@ -516,7 +524,7 @@ const NutrientTargetsView = () => {
                 style={styles.nutrientsScrollView}
               >
                 <View style={styles.nutrientsContainer}>
-                  {nutrientTargets[category]?.map((nutrient) => (
+                  {nutrientTargets[categoryParam]?.map((nutrient) => (
                     <NutrientRow
                       key={`${nutrient.Category}-${nutrient.NutrientName}`}
                       nutrient={nutrient}
