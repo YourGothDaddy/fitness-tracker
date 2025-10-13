@@ -382,6 +382,7 @@ const TargetsView = () => {
         options={{
           headerShown: hideHeader !== "true",
           title: "Targets",
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>

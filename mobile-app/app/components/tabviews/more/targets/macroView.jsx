@@ -291,6 +291,7 @@ const MacroView = () => {
         options={{
           headerShown: hideHeader !== "true",
           title: "Macro Targets",
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>

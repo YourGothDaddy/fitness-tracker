@@ -337,6 +337,7 @@ const ProfileView = () => {
             fontSize: 24,
             fontWeight: "bold",
           },
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>

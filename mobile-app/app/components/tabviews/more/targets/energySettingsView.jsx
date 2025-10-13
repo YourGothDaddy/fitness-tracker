@@ -379,6 +379,7 @@ const EnergySettingsView = () => {
       <Stack.Screen
         options={{
           headerShown: false,
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.container}>
