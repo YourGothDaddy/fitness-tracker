@@ -22,7 +22,17 @@ namespace Fitness_Tracker.Infrastructure
                 var services = scope.ServiceProvider;
                 var dbContext = services.GetRequiredService<ApplicationDbContext>();
 
-                await dbContext.Database.MigrateAsync(cancellationToken);
+                // On PostgreSQL, the existing SQL Server migrations may not apply.
+                // Prefer EnsureCreated for fresh databases; on SQL Server keep Migrate.
+                if ((dbContext.Database.ProviderName ?? string.Empty)
+                    .Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+                {
+                    await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+                }
+                else
+                {
+                    await dbContext.Database.MigrateAsync(cancellationToken);
+                }
 
                 await DataSeeder.SeedActivityLevels(services);
                 await DataSeeder.SeedAdministratorAsync(services);

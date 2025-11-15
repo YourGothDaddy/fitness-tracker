@@ -26,19 +26,67 @@ namespace Fitness_Tracker
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    sqlOptions =>
-                    {
-                        sqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 5,
-                            maxRetryDelay: TimeSpan.FromSeconds(10),
-                            errorNumbersToAdd: null);
-                        sqlOptions.CommandTimeout(120);
-                    }
-                )
-            );
+            // Choose database provider based on environment configuration
+            var configuredConnString = builder.Configuration.GetConnectionString("DefaultConnection");
+            var databaseUrl =
+                Environment.GetEnvironmentVariable("DATABASE_URL") ??
+                Environment.GetEnvironmentVariable("POSTGRES_URL") ??
+                Environment.GetEnvironmentVariable("POSTGRESQL_URL");
+
+            string finalConnectionString = !string.IsNullOrWhiteSpace(databaseUrl) ? databaseUrl : configuredConnString;
+            bool usePostgres = false;
+
+            if (!string.IsNullOrWhiteSpace(finalConnectionString))
+            {
+                var normalized = finalConnectionString.Trim();
+                // Accept Render-style URI (postgres://...) and convert to Npgsql format
+                if (normalized.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+                    normalized.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+                {
+                    finalConnectionString = ConvertPostgresUrlToNpgsql(normalized);
+                    usePostgres = true;
+                }
+                else if (normalized.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                         normalized.Contains("Username=", StringComparison.OrdinalIgnoreCase) ||
+                         normalized.Contains("User ID=", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Looks like Npgsql key-value format already
+                    usePostgres = true;
+                }
+            }
+
+            if (usePostgres)
+            {
+                builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
+                    options.UseNpgsql(
+                        finalConnectionString,
+                        sqlOptions =>
+                        {
+                            sqlOptions.EnableRetryOnFailure(
+                                maxRetryCount: 15,
+                                maxRetryDelay: TimeSpan.FromSeconds(30),
+                                errorCodesToAdd: null);
+                            sqlOptions.CommandTimeout(120);
+                        }
+                    )
+                );
+            }
+            else
+            {
+                builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
+                    options.UseSqlServer(
+                        finalConnectionString,
+                        sqlOptions =>
+                        {
+                            sqlOptions.EnableRetryOnFailure(
+                                maxRetryCount: 5,
+                                maxRetryDelay: TimeSpan.FromSeconds(10),
+                                errorNumbersToAdd: null);
+                            sqlOptions.CommandTimeout(120);
+                        }
+                    )
+                );
+            }
 
             builder.Services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -172,6 +220,43 @@ namespace Fitness_Tracker
             app.MapControllers();
 
             app.Run();
+        }
+
+        // Converts e.g. postgres://user:pass@host:5432/dbname?sslmode=require
+        // to Npgsql key=value format that UseNpgsql accepts.
+        private static string ConvertPostgresUrlToNpgsql(string url)
+        {
+            // Ensure scheme is parsable by System.Uri
+            var uri = new Uri(url);
+            var userInfo = uri.UserInfo?.Split(':', 2);
+            var username = userInfo != null && userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+            var password = userInfo != null && userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+            var host = uri.Host;
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.Trim('/'); // remove leading '/'
+
+            // Parse query string manually (System.Web.HttpUtility not available in .NET 8)
+            var sslMode = "Require";
+            var trustServerCert = "true";
+            if (!string.IsNullOrEmpty(uri.Query))
+            {
+                var queryParams = uri.Query.TrimStart('?').Split('&');
+                foreach (var param in queryParams)
+                {
+                    var parts = param.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        var key = parts[0].ToLowerInvariant();
+                        var value = Uri.UnescapeDataString(parts[1]);
+                        if (key == "sslmode")
+                            sslMode = value;
+                        else if (key == "trust server certificate" || key == "trustservercertificate")
+                            trustServerCert = value;
+                    }
+                }
+            }
+
+            return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate={trustServerCert}";
         }
     }
 }

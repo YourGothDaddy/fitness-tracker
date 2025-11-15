@@ -1224,6 +1224,7 @@ const TrackMealView = () => {
       <Stack.Screen
         options={{
           headerShown: false,
+          animation: "none",
         }}
       />
       <SafeAreaView style={styles.safeAreaViewContainer}>

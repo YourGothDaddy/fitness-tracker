@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "DhSg9+hsY7mmJEZ9R3E9aMR/eOyDW0cbY27ntUFW3P6+JcDhLsve7JoHgZJXD/kkAQl+SxgSMuWLuVD0v5ALTA==",
+  "dgSpecHash": "25jzRxGiG/gGkDpEJUPgWs/19BrpqZ5qy4fYJPDM+ZXzh58NBkAGwYt5z7NF4kFGmWYkNccSe0YXvDCub4N0GA==",
   "success": true,
   "projectFilePath": "C:\\Alexander\\Software Developement\\repos\\Web2\\Fitness-Tracker\\Back-end\\Fitness-Tracker.csproj",
   "expectedPackageFiles": [
@@ -48,6 +48,8 @@
     "C:\\Users\\Alexander\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\Alexander\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "C:\\Users\\Alexander\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
+    "C:\\Users\\Alexander\\.nuget\\packages\\npgsql\\8.0.3\\npgsql.8.0.3.nupkg.sha512",
+    "C:\\Users\\Alexander\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\8.0.4\\npgsql.entityframeworkcore.postgresql.8.0.4.nupkg.sha512",
     "C:\\Users\\Alexander\\.nuget\\packages\\system.codedom\\4.4.0\\system.codedom.4.4.0.nupkg.sha512",
     "C:\\Users\\Alexander\\.nuget\\packages\\system.collections.immutable\\6.0.0\\system.collections.immutable.6.0.0.nupkg.sha512",
     "C:\\Users\\Alexander\\.nuget\\packages\\system.composition\\6.0.0\\system.composition.6.0.0.nupkg.sha512",
