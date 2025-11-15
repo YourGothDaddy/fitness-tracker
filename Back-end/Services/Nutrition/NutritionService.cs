@@ -20,11 +20,24 @@ namespace Fitness_Tracker.Services.Nutrition
             _databaseContext = databaseContext;
         }
 
+        /// <summary>
+        /// Normalizes an incoming <see cref="DateTime"/> so that:
+        /// - it is treated as a date-only value (time set to 00:00)
+        /// - the <see cref="DateTime.Kind"/> is forced to <see cref="DateTimeKind.Utc"/>
+        /// This avoids Npgsql errors when writing parameters to PostgreSQL
+        /// columns mapped as 'timestamp with time zone', which require UTC.
+        /// </summary>
+        private static DateTime NormalizeToUtcDate(DateTime date)
+        {
+            var dateOnly = date.Date;
+            return DateTime.SpecifyKind(dateOnly, DateTimeKind.Utc);
+        }
+
         // Removed: GetCalorieOverviewAsync
 
         public async Task<DailyCaloriesModel> GetDailyCaloriesAsync(string userId, DateTime date)
         {
-            var start = date.Date;
+            var start = NormalizeToUtcDate(date);
             var end = start.AddDays(1);
             var totalCalories = await _databaseContext.Meals
                 .AsNoTracking()
@@ -33,14 +46,14 @@ namespace Fitness_Tracker.Services.Nutrition
 
             return new DailyCaloriesModel
             {
-                Date = date.Date,
+                Date = start,
                 TotalCalories = totalCalories
             };
         }
 
         public async Task<MacronutrientsModel> GetMacronutrientsAsync(string userId, DateTime date)
         {
-            var start = date.Date;
+            var start = NormalizeToUtcDate(date);
             var end = start.AddDays(1);
             var meals = await _databaseContext.Meals
                 .AsNoTracking()
@@ -88,7 +101,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 bmr = (10 * user.Weight) + (6.25 * user.Height) - (5 * user.Age) - 161;
             }
 
-            var aStart = date.Date;
+            var aStart = NormalizeToUtcDate(date);
             var aEnd = aStart.AddDays(1);
             var exerciseCalories = await _databaseContext.Activities
                 .AsNoTracking()
@@ -143,7 +156,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            var bStart = date.Date;
+            var bStart = NormalizeToUtcDate(date);
             var bEnd = bStart.AddDays(1);
             var consumedCalories = await _databaseContext.Meals
                 .AsNoTracking()
@@ -173,7 +186,7 @@ namespace Fitness_Tracker.Services.Nutrition
                 throw new InvalidOperationException("User not found");
             }
 
-            var startC = date.Date;
+            var startC = NormalizeToUtcDate(date);
             var endC = startC.AddDays(1);
             var meals = await _databaseContext.Meals
                 .AsNoTracking()
@@ -234,6 +247,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<CarbohydratesModel> GetCarbohydratesAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -297,6 +312,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<AminoAcidsModel> GetAminoAcidsAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -375,6 +392,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<FatsModel> GetFatsAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -439,6 +458,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<MineralsModel> GetMineralsAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -509,6 +530,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<OtherNutrientsModel> GetOtherNutrients(DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var start = date.Date;
             var end = start.AddDays(1);
             var meals = await _databaseContext.Meals
@@ -537,7 +560,7 @@ namespace Fitness_Tracker.Services.Nutrition
 
             var result = new OtherNutrientsModel
             {
-                Date = date,
+                Date = start,
                 Nutrients = new List<OtherNutrient>()
             };
 
@@ -568,6 +591,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<SterolsModel> GetSterolsAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -632,6 +657,8 @@ namespace Fitness_Tracker.Services.Nutrition
 
         public async Task<VitaminsModel> GetVitaminsAsync(string userId, DateTime date)
         {
+            date = NormalizeToUtcDate(date);
+
             var user = await _databaseContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
