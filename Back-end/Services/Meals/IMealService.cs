@@ -14,5 +14,7 @@
         public Task<List<MealListModel>> GetAllMealsAsync();
 
         public Task<bool> DeleteMealAsync(int id, string userId);
+
+        public Task<bool> UpdateMealAsync(int id, string userId, UpdateMealModel model);
     }
 }

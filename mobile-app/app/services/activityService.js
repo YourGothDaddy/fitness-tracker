@@ -255,6 +255,21 @@ class ActivityService {
     }
   }
 
+  async updateActivity(activityId, updateData) {
+    try {
+      const payload = {
+        ...updateData,
+        ...(updateData.date ? { date: this.formatDate(updateData.date) } : {}),
+      };
+      const url = `${API_URL}/api/activity/update/${activityId}`;
+      const response = await axiosInstance.put(url, payload);
+      memo.clear();
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addFavoriteActivityType(activityTypeId) {
     try {
       const url = `${API_URL}/api/activity/favorites/add`;

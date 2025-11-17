@@ -24,8 +24,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
-import { useRouter } from "expo-router";
-import { Stack } from "expo-router";
+import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { mealService } from "@/app/services/mealService";
 import { eventBus } from "@/app/services/eventBus";
 import { activityService } from "@/app/services/activityService";
@@ -452,9 +451,20 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   );
 };
 
-const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
-  const [grams, setGrams] = useState("100");
-  const [selectedDate, setSelectedDate] = useState(new Date());
+const LogFoodModal = ({
+  visible,
+  food,
+  onClose,
+  onLogFood,
+  initialDate,
+  initialAmount = "100",
+}) => {
+  const [grams, setGrams] = useState(initialAmount);
+  const [selectedDate, setSelectedDate] = useState(
+    initialDate instanceof Date && !isNaN(initialDate.getTime())
+      ? initialDate
+      : new Date()
+  );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
   const [unit, setUnit] = useState("g");
@@ -465,13 +475,17 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
 
   useEffect(() => {
     if (visible) {
-      setGrams("100");
-      setSelectedDate(new Date());
+      setGrams(initialAmount);
+      setSelectedDate(
+        initialDate instanceof Date && !isNaN(initialDate.getTime())
+          ? initialDate
+          : new Date()
+      );
       setIsLogging(false);
       setUnit("g");
       setGramsPerPiece("");
     }
-  }, [visible]);
+  }, [visible, initialDate, initialAmount]);
 
   const showDatePickerModal = useCallback(() => {
     try {
@@ -584,8 +598,12 @@ const LogFoodModal = ({ visible, food, onClose, onLogFood }) => {
 
       await onLogFood(mealData);
       onClose();
-      setGrams("100");
-      setSelectedDate(new Date());
+      setGrams(initialAmount);
+      setSelectedDate(
+        initialDate instanceof Date && !isNaN(initialDate.getTime())
+          ? initialDate
+          : new Date()
+      );
       setUnit("g");
       setGramsPerPiece("");
     } catch (error) {
@@ -886,6 +904,19 @@ const UnitPickerModal = ({ visible, units, onClose, onSelect }) => {
 
 const TrackMealView = () => {
   const router = useRouter();
+  const {
+    mode,
+    mealId,
+    mealName,
+    mealCalories,
+    mealProtein,
+    mealCarbs,
+    mealFat,
+    mealDate,
+    mealType,
+  } = useLocalSearchParams();
+
+  const isEditModeRoute = mode === "edit" && mealId;
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -898,6 +929,7 @@ const TrackMealView = () => {
   const [totalPages, setTotalPages] = useState(5);
   const [logFoodModalVisible, setLogFoodModalVisible] = useState(false);
   const [foodToLog, setFoodToLog] = useState(null);
+  const [editInitialAmount, setEditInitialAmount] = useState("100");
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isPageLoading, setIsPageLoading] = useState(false); // For pagination loading state
@@ -905,6 +937,14 @@ const TrackMealView = () => {
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
   const successTranslateY = useRef(new Animated.Value(10)).current;
+
+  const initialEditDate = React.useMemo(() => {
+    if (!isEditModeRoute) return null;
+    const raw = Array.isArray(mealDate) ? mealDate[0] : mealDate;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }, [isEditModeRoute, mealDate]);
 
   // Refs for request deduplication and cleanup
   const requestIdRef = useRef(0);
@@ -1082,6 +1122,102 @@ const TrackMealView = () => {
     fetchFoods(currentRequestId, 1);
   }, []);
 
+  // If opened from the dashboard in edit mode, immediately open the logging modal
+  useEffect(() => {
+    if (!isEditModeRoute) return;
+
+    const initEdit = async () => {
+      try {
+        const parsedCalories = parseFloat(
+          Array.isArray(mealCalories) ? mealCalories[0] : mealCalories || "0"
+        );
+        const parsedProtein = parseFloat(
+          Array.isArray(mealProtein) ? mealProtein[0] : mealProtein || "0"
+        );
+        const parsedCarbs = parseFloat(
+          Array.isArray(mealCarbs) ? mealCarbs[0] : mealCarbs || "0"
+        );
+        const parsedFat = parseFloat(
+          Array.isArray(mealFat) ? mealFat[0] : mealFat || "0"
+        );
+
+        const name =
+          (Array.isArray(mealName) ? mealName[0] : mealName) || "Meal";
+
+        let baseFood = null;
+        try {
+          const searchResult = await searchConsumableItems(
+            name,
+            1,
+            5,
+            "All",
+            null
+          );
+          const items = Array.isArray(searchResult.items)
+            ? searchResult.items
+            : [];
+          const lower = name.toLowerCase();
+          baseFood =
+            items.find((i) => i.name?.toLowerCase() === lower) || items[0];
+        } catch (e) {
+          console.log(
+            "[TrackMealView] Failed to resolve base food for edit",
+            e
+          );
+        }
+
+        let caloriesPer100g = isNaN(parsedCalories) ? 0 : parsedCalories;
+        let proteinPer100g = isNaN(parsedProtein) ? 0 : parsedProtein;
+        let carbsPer100g = isNaN(parsedCarbs) ? 0 : parsedCarbs;
+        let fatPer100g = isNaN(parsedFat) ? 0 : parsedFat;
+        let estimatedGrams = 100;
+
+        if (baseFood && baseFood.caloriesPer100g > 0) {
+          caloriesPer100g = baseFood.caloriesPer100g;
+          proteinPer100g = baseFood.proteinPer100g;
+          carbsPer100g = baseFood.carbohydratePer100g;
+          fatPer100g = baseFood.fatPer100g;
+
+          estimatedGrams = Math.round(
+            (parsedCalories / baseFood.caloriesPer100g) * 100
+          );
+          if (!isFinite(estimatedGrams) || estimatedGrams <= 0) {
+            estimatedGrams = 100;
+          }
+        }
+
+        const syntheticFood = {
+          id: baseFood?.id ?? -1,
+          name,
+          subTitle:
+            baseFood?.subTitle ||
+            baseFood?.SubTitle ||
+            baseFood?.subtitle ||
+            "",
+          caloriesPer100g,
+          proteinPer100g,
+          carbohydratePer100g: carbsPer100g,
+          fatPer100g,
+        };
+
+        setFoodToLog(syntheticFood);
+        setEditInitialAmount(String(estimatedGrams));
+        setLogFoodModalVisible(true);
+      } catch (err) {
+        console.error("[TrackMealView] Failed to initialize edit mode", err);
+      }
+    };
+
+    initEdit();
+  }, [
+    isEditModeRoute,
+    mealName,
+    mealCalories,
+    mealProtein,
+    mealCarbs,
+    mealFat,
+  ]);
+
   // Effect to handle search query changes - ensure search is triggered
   useEffect(() => {
     if (debouncedSearchQuery !== undefined) {
@@ -1134,71 +1270,173 @@ const TrackMealView = () => {
 
   const handleLogFood = async (mealData) => {
     try {
-      await mealService.addMeal(mealData);
-      // Show animated success check (non-blocking)
-      setShowSuccess(true);
-      successOpacity.setValue(0);
-      successScale.setValue(0.8);
-      successTranslateY.setValue(10);
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(successOpacity, {
-            toValue: 1,
-            duration: 260,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.spring(successScale, {
-            toValue: 1,
-            friction: 6,
-            tension: 80,
-            useNativeDriver: true,
-          }),
-          Animated.timing(successTranslateY, {
-            toValue: 0,
-            duration: 260,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(successOpacity, {
-            toValue: 0,
-            duration: 500,
-            delay: 900,
-            easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(successTranslateY, {
-            toValue: -6,
-            duration: 500,
-            delay: 900,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start(() => {
-        setShowSuccess(false);
-      });
-      setLogFoodModalVisible(false);
-      setFoodToLog(null);
-      // Clear activity cache to prevent stale data when navigating back
-      activityService.clearCache();
-      // Notify other screens to refresh immediately
-      try {
-        eventBus.emit("meal:added", {
-          date: mealData.date,
-          calories: mealData.calories,
-          name: mealData.name,
-          mealType: mealData.mealOfTheDay,
+      const idRaw = isEditModeRoute
+        ? Array.isArray(mealId)
+          ? mealId[0]
+          : mealId
+        : null;
+      const parsedMealId = idRaw ? parseInt(idRaw, 10) : null;
+
+      if (isEditModeRoute && parsedMealId) {
+        const typeRaw = Array.isArray(mealType) ? mealType[0] : mealType;
+        const parsedMealType =
+          typeRaw !== undefined && typeRaw !== null
+            ? parseInt(typeRaw, 10)
+            : null;
+
+        try {
+          // Preferred path: direct update via dedicated endpoint
+          await mealService.updateMeal(parsedMealId, {
+            name: mealData.name,
+            calories: mealData.calories,
+            protein: mealData.protein,
+            carbs: mealData.carbs,
+            fat: mealData.fat,
+            date: mealData.date,
+            ...(parsedMealType !== null
+              ? { mealOfTheDay: parsedMealType }
+              : {}),
+          });
+        } catch (err) {
+          // In some deployed environments the update endpoint may not exist yet.
+          // If we get a 404, gracefully fall back to delete + add to emulate update.
+          if (err?.response?.status === 404) {
+            try {
+              await mealService.deleteMeal(parsedMealId);
+            } catch (deleteErr) {
+              console.log(
+                "[TrackMealView] Failed to delete meal during edit fallback",
+                deleteErr
+              );
+            }
+            await mealService.addMeal(mealData);
+          } else {
+            throw err;
+          }
+        }
+
+        activityService.clearCache();
+
+        // Show success and navigate back to the dashboard
+        setShowSuccess(true);
+        successOpacity.setValue(0);
+        successScale.setValue(0.8);
+        successTranslateY.setValue(10);
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(successOpacity, {
+              toValue: 1,
+              duration: 260,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.spring(successScale, {
+              toValue: 1,
+              friction: 6,
+              tension: 80,
+              useNativeDriver: true,
+            }),
+            Animated.timing(successTranslateY, {
+              toValue: 0,
+              duration: 260,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(successOpacity, {
+              toValue: 0,
+              duration: 500,
+              delay: 900,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(successTranslateY, {
+              toValue: -6,
+              duration: 500,
+              delay: 900,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start(() => {
+          setShowSuccess(false);
+          if (router.canGoBack && router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/dashboard");
+          }
         });
-      } catch (e) {
-        // non-fatal
-        console.log("event emit failed", e);
+        setLogFoodModalVisible(false);
+        setFoodToLog(null);
+      } else {
+        // Original create flow
+        await mealService.addMeal(mealData);
+        // Show animated success check (non-blocking)
+        setShowSuccess(true);
+        successOpacity.setValue(0);
+        successScale.setValue(0.8);
+        successTranslateY.setValue(10);
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(successOpacity, {
+              toValue: 1,
+              duration: 260,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+            Animated.spring(successScale, {
+              toValue: 1,
+              friction: 6,
+              tension: 80,
+              useNativeDriver: true,
+            }),
+            Animated.timing(successTranslateY, {
+              toValue: 0,
+              duration: 260,
+              easing: Easing.out(Easing.cubic),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(successOpacity, {
+              toValue: 0,
+              duration: 500,
+              delay: 900,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(successTranslateY, {
+              toValue: -6,
+              duration: 500,
+              delay: 900,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+        ]).start(() => {
+          setShowSuccess(false);
+        });
+        setLogFoodModalVisible(false);
+        setFoodToLog(null);
+        // Clear activity cache to prevent stale data when navigating back
+        activityService.clearCache();
+        // Notify other screens to refresh immediately
+        try {
+          eventBus.emit("meal:added", {
+            date: mealData.date,
+            calories: mealData.calories,
+            name: mealData.name,
+            mealType: mealData.mealOfTheDay,
+          });
+        } catch (e) {
+          // non-fatal
+          console.log("event emit failed", e);
+        }
       }
     } catch (err) {
-      Alert.alert("Error", "Failed to log meal. Please try again.");
-      console.error("Error logging meal:", err);
+      Alert.alert("Error", "Failed to save meal. Please try again.");
+      console.error("Error saving meal:", err);
     }
   };
 
@@ -1236,7 +1474,13 @@ const TrackMealView = () => {
           </View>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => {
+              if (router.canGoBack && router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/dashboard");
+              }
+            }}
           >
             <Icon name="arrow-back" size={36} color={Colors.darkGreen.color} />
           </TouchableOpacity>
@@ -1427,6 +1671,12 @@ const TrackMealView = () => {
         food={foodToLog}
         onClose={() => setLogFoodModalVisible(false)}
         onLogFood={handleLogFood}
+        initialDate={
+          initialEditDate instanceof Date && !isNaN(initialEditDate.getTime())
+            ? initialEditDate
+            : new Date()
+        }
+        initialAmount={editInitialAmount}
       />
       {/* Unit picker modal */}
       {/** Place unit modal at root so it overlays nicely **/}

@@ -19,8 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "../../../../components/Icon";
 import { Colors } from "../../../../constants/Colors";
-import { useRouter } from "expo-router";
-import { Stack } from "expo-router";
+import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { activityService } from "@/app/services/activityService";
 import DateTimePicker, {
   DateTimePickerAndroid,
@@ -484,9 +483,18 @@ const ExerciseItem = ({
   isCustomWorkout,
   customCalories,
   onSuccessCheck,
+  mode = "create",
+  activityId: existingActivityId,
+  initialDuration,
+  initialDate,
+  onAfterSubmit,
   ...rest
 }) => {
-  const [duration, setDuration] = useState(30);
+  const [duration, setDuration] = useState(
+    typeof initialDuration === "number" && !isNaN(initialDuration)
+      ? initialDuration
+      : 30
+  );
   const [effort, setEffort] = useState(() => {
     const isHiking =
       category === "Outdoor Activity" && subcategory === "Hiking";
@@ -511,7 +519,11 @@ const ExerciseItem = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(
+    initialDate instanceof Date && !isNaN(initialDate.getTime())
+      ? initialDate
+      : new Date()
+  );
   const [showIOSPicker, setShowIOSPicker] = useState(false);
   const [iosTempDateTime, setIosTempDateTime] = useState(new Date());
   const [isFavorite, setIsFavorite] = useState(
@@ -831,6 +843,52 @@ const ExerciseItem = ({
     !(category === "Outdoor Activity" && subcategory === "Hiking");
   let showTerrain = terrainTypes.length > 0;
 
+  const updateExistingExercise = async (selectedDate) => {
+    setLoading(true);
+    setError("");
+    try {
+      const total = calories.totalCalories || 0;
+
+      try {
+        // Preferred path: use dedicated update endpoint
+        await activityService.updateActivity(existingActivityId, {
+          durationInMinutes: duration,
+          caloriesBurned: Math.round(total),
+          date: selectedDate,
+        });
+      } catch (err) {
+        // Fall back gracefully if the update endpoint is not available (e.g., 404)
+        if (err?.response?.status === 404) {
+          try {
+            await activityService.deleteActivity(existingActivityId);
+          } catch (deleteErr) {
+            console.log(
+              "[TrackExerciseView] Failed to delete activity during edit fallback",
+              deleteErr
+            );
+          }
+          await trackExercise(selectedDate);
+          // trackExercise already triggers success handling; avoid double-calling below.
+          return;
+        }
+        throw err;
+      }
+      onSuccessCheck && onSuccessCheck();
+      if (onAfterSubmit) {
+        onAfterSubmit();
+      }
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update exercise";
+      setError(errorMessage);
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddPress = () => {
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
@@ -855,7 +913,11 @@ const ExerciseItem = ({
                     0
                   );
                   setDate(finalDateTime);
-                  trackExercise(finalDateTime);
+                  if (mode === "edit" && existingActivityId) {
+                    updateExistingExercise(finalDateTime);
+                  } else {
+                    trackExercise(finalDateTime);
+                  }
                 }
               },
               maximumDate: new Date(),
@@ -865,7 +927,11 @@ const ExerciseItem = ({
         maximumDate: new Date(),
       });
     } else {
-      setIosTempDateTime(new Date());
+      setIosTempDateTime(
+        initialDate instanceof Date && !isNaN(initialDate.getTime())
+          ? initialDate
+          : new Date()
+      );
       setShowIOSPicker(true);
     }
   };
@@ -1261,7 +1327,11 @@ const ExerciseItem = ({
                   onPress={() => {
                     setDate(iosTempDateTime);
                     setShowIOSPicker(false);
-                    trackExercise(iosTempDateTime);
+                    if (mode === "edit" && existingActivityId) {
+                      updateExistingExercise(iosTempDateTime);
+                    } else {
+                      trackExercise(iosTempDateTime);
+                    }
                   }}
                 >
                   <Text
@@ -1285,6 +1355,17 @@ const ExerciseItem = ({
 
 const TrackExerciseView = () => {
   const router = useRouter();
+  const {
+    mode,
+    activityId,
+    category: initialCategoryParam,
+    exerciseName,
+    durationInMinutes,
+    caloriesBurned,
+    date,
+  } = useLocalSearchParams();
+
+  const isEditModeRoute = mode === "edit" && activityId;
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [allPublicTypes, setAllPublicTypes] = useState([]);
@@ -1531,6 +1612,47 @@ const TrackExerciseView = () => {
   // Memoized ExerciseItem to reduce rerenders across list updates
   const MemoExerciseItem = React.useMemo(() => React.memo(ExerciseItem), []);
 
+  const parsedEditActivity = React.useMemo(() => {
+    if (!isEditModeRoute) return null;
+
+    const getSingle = (v) => (Array.isArray(v) ? v[0] : v);
+
+    const idRaw = getSingle(activityId);
+    const durRaw = getSingle(durationInMinutes);
+    const calsRaw = getSingle(caloriesBurned);
+    const dateRaw = getSingle(date);
+    const categoryRaw = getSingle(initialCategoryParam);
+    const nameRaw = getSingle(exerciseName);
+
+    const parsedId = idRaw ? parseInt(idRaw, 10) : null;
+    if (!parsedId) return null;
+
+    const parsedDuration = durRaw ? parseInt(durRaw, 10) : 30;
+    const parsedCals = calsRaw ? parseInt(calsRaw, 10) : 0;
+    const parsedDate = dateRaw ? new Date(dateRaw) : new Date();
+
+    const perMinute =
+      parsedDuration > 0 ? parsedCals / parsedDuration : parsedCals || 0;
+
+    return {
+      id: parsedId,
+      category: categoryRaw || "",
+      name: nameRaw || categoryRaw || "Exercise",
+      durationInMinutes: parsedDuration,
+      caloriesBurned: parsedCals,
+      date: parsedDate,
+      caloriesPerMinute: perMinute,
+    };
+  }, [
+    isEditModeRoute,
+    activityId,
+    durationInMinutes,
+    caloriesBurned,
+    date,
+    initialCategoryParam,
+    exerciseName,
+  ]);
+
   return (
     <>
       <Stack.Screen
@@ -1621,6 +1743,69 @@ const TrackExerciseView = () => {
           >
             <Text style={{ color: "red" }}>{error}</Text>
           </View>
+        ) : isEditModeRoute && parsedEditActivity ? (
+          <ScrollView
+            style={styles.exercisesList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.exercisesListContent}
+          >
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Edit Exercise</Text>
+              <Text style={styles.sectionSubtitle}>
+                Adjust duration, effort, terrain and time
+              </Text>
+            </View>
+            {(() => {
+              const meta = getMetaForItem({
+                category: parsedEditActivity.category,
+                name: parsedEditActivity.name,
+              });
+              const effectiveEffortLevels = sortEffortLevels(
+                convertHikingToEffortLevels(
+                  Array.isArray(meta.effortLevels) ? meta.effortLevels : []
+                )
+              );
+              const effectiveTerrainTypes = sortTerrainTypes(
+                convertHikingToTerrainTypes(
+                  Array.isArray(meta.terrainTypes) ? meta.terrainTypes : []
+                )
+              );
+
+              const caloriesPerMinute =
+                parsedEditActivity.caloriesPerMinute || 0;
+
+              return (
+                <ExerciseItem
+                  key={parsedEditActivity.id}
+                  category={parsedEditActivity.category}
+                  subcategory={parsedEditActivity.name}
+                  exercise={parsedEditActivity.name}
+                  activityTypeId={0}
+                  favoriteActivityTypeIds={favoriteActivityTypeIds}
+                  onFavoriteToggle={handleFavoriteToggle}
+                  effortLevels={effectiveEffortLevels}
+                  terrainTypes={effectiveTerrainTypes}
+                  hideEffortAndDuration={false}
+                  isCustomWorkout={false}
+                  onSuccessCheck={runSuccessAnimation}
+                  mode="edit"
+                  activityId={parsedEditActivity.id}
+                  initialDuration={parsedEditActivity.durationInMinutes}
+                  initialDate={parsedEditActivity.date}
+                  caloriesPerMinute={caloriesPerMinute}
+                  caloriesPerHalfHour={caloriesPerMinute * 30}
+                  caloriesPerHour={caloriesPerMinute * 60}
+                  onAfterSubmit={() => {
+                    if (router.canGoBack && router.canGoBack()) {
+                      router.back();
+                    } else {
+                      router.replace("/dashboard");
+                    }
+                  }}
+                />
+              );
+            })()}
+          </ScrollView>
         ) : (
           <ScrollView
             style={styles.exercisesList}

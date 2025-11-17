@@ -53,6 +53,37 @@ class MealService {
     }
   }
 
+  async updateMeal(mealId, updateData) {
+    try {
+      const formatDate = (date) => {
+        if (!(date instanceof Date)) {
+          return date;
+        }
+        const utcDate = new Date(
+          date.getTime() - date.getTimezoneOffset() * 60000
+        );
+        return utcDate.toISOString();
+      };
+
+      const payload = {
+        ...updateData,
+        ...(updateData.date
+          ? {
+              date: formatDate(updateData.date),
+            }
+          : {}),
+      };
+
+      const response = await axiosInstance.put(
+        `${API_URL}/api/meal/update/${mealId}`,
+        payload
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async deleteMeal(mealId) {
     try {
       const response = await axiosInstance.delete(

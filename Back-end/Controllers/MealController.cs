@@ -95,6 +95,29 @@
             return Ok(new { Message = "Meal deleted successfully." });
         }
 
+        [HttpPut(UpdateMealHttpAttributeName)]
+        public async Task<IActionResult> UpdateMeal(int id, [FromBody] UpdateMealModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { Message = InvalidModelStateError });
+            }
+
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var updated = await _mealService.UpdateMealAsync(id, userId, model);
+            if (!updated)
+            {
+                return NotFound(new { Message = "Meal not found." });
+            }
+
+            return Ok(new { Message = MealUpdatedSuccessfully });
+        }
+
         // PRIVATE METHODS
 
         private string GetUserId()

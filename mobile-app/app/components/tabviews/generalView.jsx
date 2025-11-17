@@ -17,6 +17,7 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import Icon from "../../../components/Icon";
 import { LinearGradient } from "expo-linear-gradient";
@@ -77,6 +78,190 @@ const getTimeframeDates = (timeframe) => {
   return { startDate, endDate };
 };
 
+const MealEditForm = ({ meal, onClose, onUpdated }) => {
+  const [name, setName] = useState(meal.name || "");
+  const [calories, setCalories] = useState(String(meal.calories || 0));
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    const parsedCalories = parseInt(calories.replace(/[^0-9]/g, ""), 10);
+    if (!name.trim() || isNaN(parsedCalories) || parsedCalories <= 0) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await mealService.updateMeal(meal.id, {
+        name: name.trim(),
+        calories: parsedCalories,
+      });
+
+      onUpdated({
+        ...meal,
+        name: name.trim(),
+        calories: parsedCalories,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to update meal", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <View>
+      <View style={{ marginBottom: 12 }}>
+        <Text style={styles.statLabel}>Name</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          style={[styles.textInput, styles.textInputElevated]}
+          placeholder="Meal name"
+        />
+      </View>
+      <View style={{ marginBottom: 16 }}>
+        <Text style={styles.statLabel}>Calories (kcal)</Text>
+        <TextInput
+          value={calories}
+          onChangeText={setCalories}
+          keyboardType="numeric"
+          style={[styles.textInput, styles.textInputElevated]}
+          placeholder="Calories"
+        />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 8,
+        }}
+      >
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={onClose}
+          disabled={isSaving}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.logButton,
+            isSaving && styles.logButtonDisabled,
+            { width: "48%" },
+          ]}
+          onPress={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.logButtonText}>Save</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const ExerciseEditForm = ({ exercise, onClose, onUpdated }) => {
+  const [duration, setDuration] = useState(
+    String(exercise.durationInMinutes || 30)
+  );
+  const [caloriesBurned, setCaloriesBurned] = useState(
+    String(exercise.caloriesBurned || 0)
+  );
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    const parsedDuration = parseInt(duration.replace(/[^0-9]/g, ""), 10);
+    const parsedCalories = parseInt(caloriesBurned.replace(/[^0-9]/g, ""), 10);
+    if (
+      isNaN(parsedDuration) ||
+      parsedDuration <= 0 ||
+      isNaN(parsedCalories) ||
+      parsedCalories <= 0
+    ) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await activityService.updateActivity(exercise.id, {
+        durationInMinutes: parsedDuration,
+        caloriesBurned: parsedCalories,
+      });
+
+      onUpdated({
+        ...exercise,
+        durationInMinutes: parsedDuration,
+        caloriesBurned: parsedCalories,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Failed to update exercise", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <View>
+      <Text style={[styles.statLabel, { marginBottom: 4 }]}>
+        {exercise.name}
+      </Text>
+      <View style={{ marginBottom: 12 }}>
+        <Text style={styles.statLabel}>Duration (minutes)</Text>
+        <TextInput
+          value={duration}
+          onChangeText={setDuration}
+          keyboardType="numeric"
+          style={[styles.textInput, styles.textInputElevated]}
+          placeholder="Duration in minutes"
+        />
+      </View>
+      <View style={{ marginBottom: 16 }}>
+        <Text style={styles.statLabel}>Calories burned (kcal)</Text>
+        <TextInput
+          value={caloriesBurned}
+          onChangeText={setCaloriesBurned}
+          keyboardType="numeric"
+          style={[styles.textInput, styles.textInputElevated]}
+          placeholder="Calories burned"
+        />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 8,
+        }}
+      >
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={onClose}
+          disabled={isSaving}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.logButton,
+            isSaving && styles.logButtonDisabled,
+            { width: "48%" },
+          ]}
+          onPress={handleSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.logButtonText}>Save</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 const GeneralView = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -125,6 +310,11 @@ const GeneralView = () => {
     useState(false);
   const [isActivityTooltipVisible, setIsActivityTooltipVisible] =
     useState(false);
+  const [isMealEditModalVisible, setIsMealEditModalVisible] = useState(false);
+  const [mealBeingEdited, setMealBeingEdited] = useState(null);
+  const [isExerciseEditModalVisible, setIsExerciseEditModalVisible] =
+    useState(false);
+  const [exerciseBeingEdited, setExerciseBeingEdited] = useState(null);
 
   const isMounted = useRef(true);
   const pendingRequests = useRef(new Set());
@@ -437,6 +627,115 @@ const GeneralView = () => {
     },
     [activityOverview.exercises, handleError]
   );
+
+  const handleOpenMealEdit = useCallback(
+    (meal) => {
+      try {
+        if (!meal || !meal.id) {
+          return;
+        }
+
+        const baseDate = new Date(activityDate);
+        const timeString = meal.time;
+
+        // Combine the selected activity date with the meal time (TimeSpan "HH:mm:ss")
+        let finalDate = baseDate;
+        if (typeof timeString === "string") {
+          const [hh, mm, ss] = timeString
+            .split(":")
+            .map((x) => parseInt(x, 10));
+          finalDate = new Date(
+            baseDate.getFullYear(),
+            baseDate.getMonth(),
+            baseDate.getDate(),
+            isNaN(hh) ? 0 : hh,
+            isNaN(mm) ? 0 : mm,
+            isNaN(ss) ? 0 : ss || 0,
+            0
+          );
+        }
+
+        router.push({
+          pathname: "/components/tabviews/add/trackMealView",
+          params: {
+            mode: "edit",
+            mealId: String(meal.id),
+            mealName: meal.name ?? "",
+            mealCalories: String(meal.calories ?? 0),
+            mealProtein: String(meal.protein ?? 0),
+            mealCarbs: String(meal.carbs ?? 0),
+            mealFat: String(meal.fat ?? 0),
+            mealDate: finalDate.toISOString(),
+            mealType:
+              meal.mealType !== undefined && meal.mealType !== null
+                ? String(meal.mealType)
+                : "0",
+          },
+        });
+      } catch (err) {
+        console.error("Failed to open meal edit view", err);
+        setError("Unable to open meal editor. Please try again.");
+      }
+    },
+    [activityDate, router]
+  );
+
+  const handleOpenExerciseEdit = useCallback(
+    (exercise) => {
+      try {
+        if (!exercise || !exercise.id) {
+          return;
+        }
+
+        const baseDate = new Date(activityDate);
+        const timeString = exercise.time;
+
+        // Combine the selected activity date with the exercise time (TimeSpan "HH:mm:ss")
+        let finalDate = baseDate;
+        if (typeof timeString === "string") {
+          const [hh, mm, ss] = timeString
+            .split(":")
+            .map((x) => parseInt(x, 10));
+          finalDate = new Date(
+            baseDate.getFullYear(),
+            baseDate.getMonth(),
+            baseDate.getDate(),
+            isNaN(hh) ? 0 : hh,
+            isNaN(mm) ? 0 : mm,
+            isNaN(ss) ? 0 : ss || 0,
+            0
+          );
+        }
+
+        router.push({
+          pathname: "/components/tabviews/add/trackExerciseView",
+          params: {
+            mode: "edit",
+            activityId: String(exercise.id),
+            category: exercise.category ?? "",
+            exerciseName: exercise.name ?? "",
+            durationInMinutes: String(exercise.durationInMinutes ?? 30),
+            caloriesBurned: String(exercise.caloriesBurned ?? 0),
+            date: finalDate.toISOString(),
+          },
+        });
+      } catch (err) {
+        console.error("Failed to open exercise edit view", err);
+        setError("Unable to open exercise editor. Please try again.");
+      }
+    },
+    [activityDate, router]
+  );
+
+  const applyMealEditLocally = useCallback(() => {
+    // Editing is now handled in the dedicated TrackMealView screen.
+    // The dashboard view refreshes on focus and will pick up the latest data.
+  }, []);
+
+  const applyExerciseEditLocally = useCallback(() => {
+    // Editing is now handled in the dedicated TrackExerciseView screen.
+    // The dashboard view refreshes on focus and will pick up the latest data.
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -756,6 +1055,13 @@ const GeneralView = () => {
         >
           <Icon name="delete" size={20} color="#e74c3c" />
         </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Edit meal"
+          onPress={() => handleOpenMealEdit(item)}
+          style={styles.editButton}
+        >
+          <Icon name="edit" size={20} color="#3498db" />
+        </TouchableOpacity>
         <View style={styles.rowTop}>
           <View style={styles.titleContainer}>
             <Icon
@@ -784,7 +1090,7 @@ const GeneralView = () => {
         </View>
       </View>
     ),
-    [handleDeleteMeal]
+    [handleDeleteMeal, handleOpenMealEdit]
   );
 
   const renderExerciseItem = useCallback(
@@ -796,6 +1102,13 @@ const GeneralView = () => {
           style={styles.deleteButton}
         >
           <Icon name="delete" size={20} color="#e74c3c" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Edit exercise"
+          onPress={() => handleOpenExerciseEdit(item)}
+          style={styles.editButton}
+        >
+          <Icon name="edit" size={20} color="#3498db" />
         </TouchableOpacity>
         <View style={styles.rowTop}>
           <View style={styles.titleContainer}>
@@ -823,7 +1136,7 @@ const GeneralView = () => {
         </View>
       </View>
     ),
-    [handleDeleteExercise]
+    [handleDeleteExercise, handleOpenExerciseEdit]
   );
 
   const keyExtractorById = useCallback((x) => String(x.id), []);
@@ -1221,6 +1534,13 @@ const GeneralView = () => {
                       >
                         <Icon name="delete" size={20} color="#e74c3c" />
                       </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityLabel="Edit meal"
+                        onPress={() => handleOpenMealEdit(meal)}
+                        style={styles.editButton}
+                      >
+                        <Icon name="edit" size={20} color="#3498db" />
+                      </TouchableOpacity>
                       <View style={styles.rowTop}>
                         <View style={styles.titleContainer}>
                           <Icon
@@ -1277,6 +1597,13 @@ const GeneralView = () => {
                         style={styles.deleteButton}
                       >
                         <Icon name="delete" size={20} color="#e74c3c" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityLabel="Edit exercise"
+                        onPress={() => handleOpenExerciseEdit(exercise)}
+                        style={styles.editButton}
+                      >
+                        <Icon name="edit" size={20} color="#3498db" />
                       </TouchableOpacity>
                       <View style={styles.rowTop}>
                         <View style={styles.titleContainer}>
@@ -1343,6 +1670,8 @@ const GeneralView = () => {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Inline edit modals have been removed – editing is handled via the add/track screens */}
     </ScrollView>
   );
 };
@@ -1570,6 +1899,13 @@ const styles = StyleSheet.create({
     padding: 6,
     zIndex: 1,
   },
+  editButton: {
+    position: "absolute",
+    top: 10,
+    right: 40,
+    padding: 6,
+    zIndex: 1,
+  },
   timeText: {
     fontSize: 12,
     fontWeight: "500",
@@ -1723,6 +2059,18 @@ const styles = StyleSheet.create({
     color: "#636e72",
     lineHeight: 20,
     textAlign: "center",
+  },
+  editModal: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 32,
+    maxWidth: 340,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
 

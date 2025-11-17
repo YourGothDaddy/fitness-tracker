@@ -23,6 +23,8 @@ namespace Fitness_Tracker.Services.Activity
 
         Task<bool> DeleteActivityAsync(int id, string userId);
 
+        Task<bool> UpdateActivityAsync(int id, string userId, UpdateActivityModel model);
+
         // Hierarchical listings
         Task<List<string>> GetActivityCategoriesAsync();
         Task<List<string>> GetSubcategoriesByCategoryAsync(string category);

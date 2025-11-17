@@ -192,6 +192,28 @@ namespace Fitness_Tracker.Controllers
         }
 
         /// <summary>
+        /// Updates an existing activity (exercise) entry for the authenticated user.
+        /// Only fields provided in the request body will be updated.
+        /// </summary>
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateActivity(int id, [FromBody] Models.Activity.UpdateActivityModel model)
+        {
+            var validationResult = ValidateUserAuthentication(out var userId);
+            if (validationResult != null)
+            {
+                return validationResult;
+            }
+
+            var updated = await _activityService.UpdateActivityAsync(id, userId, model);
+            if (!updated)
+            {
+                return NotFound(new { Message = "Activity not found." });
+            }
+
+            return Ok(new { Message = "Activity updated successfully." });
+        }
+
+        /// <summary>
         /// Retrieves all available activity types.
         /// </summary>
         /// <returns>An <see cref="IActionResult"/> containing a list of activity types.</returns>

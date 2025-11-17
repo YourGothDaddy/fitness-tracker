@@ -84,6 +84,9 @@ namespace Fitness_Tracker.Services.Activity
                     Name = m.Name,
                     Weight = 0, // Add weight property to Meal model if needed
                     Calories = m.Calories,
+                    Protein = m.Protein,
+                    Carbs = m.Carbs,
+                    Fat = m.Fat,
                     MealType = m.MealOfTheDay,
                     Time = m.Date.TimeOfDay
                 })
@@ -200,6 +203,40 @@ namespace Fitness_Tracker.Services.Activity
 
             _databaseContext.Activities.Add(activity);
             await _databaseContext.SaveChangesAsync();
+        }
+
+        public async Task<bool> UpdateActivityAsync(int id, string userId, UpdateActivityModel model)
+        {
+            var activity = await _databaseContext.Activities
+                .FirstOrDefaultAsync(a => a.Id == id && a.UserId == userId);
+
+            if (activity == null)
+            {
+                return false;
+            }
+
+            if (model.DurationInMinutes.HasValue)
+            {
+                activity.DurationInMinutes = model.DurationInMinutes.Value;
+            }
+
+            if (model.CaloriesBurned.HasValue)
+            {
+                activity.CaloriesBurned = model.CaloriesBurned.Value;
+            }
+
+            if (model.Date.HasValue)
+            {
+                activity.Date = model.Date.Value;
+            }
+
+            if (model.IsPublic.HasValue)
+            {
+                activity.IsPublic = model.IsPublic.Value;
+            }
+
+            await _databaseContext.SaveChangesAsync();
+            return true;
         }
 
         public async Task<List<Models.Activity.ActivityTypeModel>> GetAllActivityTypesAsync()

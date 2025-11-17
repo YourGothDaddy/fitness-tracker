@@ -98,5 +98,52 @@
             await _databaseContext.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> UpdateMealAsync(int id, string userId, UpdateMealModel model)
+        {
+            var meal = await _databaseContext.Meals.FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+            if (meal == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.Name))
+            {
+                meal.Name = model.Name.Trim();
+            }
+
+            if (model.MealOfTheDay.HasValue)
+            {
+                meal.MealOfTheDay = model.MealOfTheDay.Value;
+            }
+
+            if (model.Calories.HasValue)
+            {
+                meal.Calories = model.Calories.Value;
+            }
+
+            if (model.Protein.HasValue)
+            {
+                meal.Protein = model.Protein.Value;
+            }
+
+            if (model.Carbs.HasValue)
+            {
+                meal.Carbs = model.Carbs.Value;
+            }
+
+            if (model.Fat.HasValue)
+            {
+                meal.Fat = model.Fat.Value;
+            }
+
+            if (model.Date.HasValue)
+            {
+                meal.Date = model.Date.Value;
+            }
+
+            await _databaseContext.SaveChangesAsync();
+            return true;
+        }
     }
 }

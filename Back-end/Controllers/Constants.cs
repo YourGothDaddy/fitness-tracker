@@ -42,9 +42,11 @@
             public const string AllMealsCaloriesHttpAttributeName = "calories";
             public const string GetAllMealsHttpAttributeName = "all-meals";
             public const string DeleteMealHttpAttributeName = "delete/{id}";
+            public const string UpdateMealHttpAttributeName = "update/{id}";
 
             public const string InvalidModelStateError = "Invalid meal data provided.";
             public const string MealAddedSuccessfully = "Meal added successfully.";
+            public const string MealUpdatedSuccessfully = "Meal updated successfully.";
         }
 
         public static class AdminController
