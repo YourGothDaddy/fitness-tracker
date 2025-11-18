@@ -1224,7 +1224,7 @@ const GeneralView = () => {
               title: "Target",
               value: energyBudget.target,
               icon: "flag",
-              color: Colors.darkGreen.color,
+              color: "#9B59B6",
             },
             ...(computedOverLimit > 0
               ? [
@@ -1240,7 +1240,7 @@ const GeneralView = () => {
               title: "Exercise",
               value: Math.round(energyExpenditure.exerciseCalories),
               icon: "directions-run",
-              color: Colors.blue.color,
+              color: "#FF6B35",
             },
           ].map((item) => (
             <View key={item.title} style={styles.budgetRow}>

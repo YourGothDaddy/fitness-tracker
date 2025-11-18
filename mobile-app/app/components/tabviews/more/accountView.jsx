@@ -313,6 +313,15 @@ const AccountView = () => {
 
   const handleFieldPress = useCallback((field) => {
     setActiveField(field);
+    // Clear password fields when opening the change password modal
+    if (field === "changePassword") {
+      setFieldValues((prevValues) => ({
+        ...prevValues,
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      }));
+    }
     setModalVisible(true);
   }, []);
 
@@ -354,6 +363,13 @@ const AccountView = () => {
                 newPassword: newValue.newPassword,
                 confirmNewPassword: newValue.confirmNewPassword,
               });
+              // Clear password fields after successful password change
+              setFieldValues((prevValues) => ({
+                ...prevValues,
+                currentPassword: "",
+                newPassword: "",
+                confirmNewPassword: "",
+              }));
               runSuccessAnimation();
               break;
 
@@ -391,9 +407,27 @@ const AccountView = () => {
         } finally {
           setIsLoading(false);
           setModalVisible(false);
+          // Clear password fields when closing the modal (if it was password change)
+          if (activeField === "changePassword") {
+            setFieldValues((prevValues) => ({
+              ...prevValues,
+              currentPassword: "",
+              newPassword: "",
+              confirmNewPassword: "",
+            }));
+          }
         }
       } else {
         setModalVisible(false);
+        // Clear password fields when closing the modal without saving (if it was password change)
+        if (activeField === "changePassword") {
+          setFieldValues((prevValues) => ({
+            ...prevValues,
+            currentPassword: "",
+            newPassword: "",
+            confirmNewPassword: "",
+          }));
+        }
       }
     },
     [activeField, fieldValues, fetchUserProfile, router]
