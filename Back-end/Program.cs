@@ -12,6 +12,8 @@ namespace Fitness_Tracker
     using Fitness_Tracker.Services.Users;
     using Fitness_Tracker.Services.Weight;
     using Fitness_Tracker.Services.Benchmarking;
+    using Fitness_Tracker.Services.FileStorage;
+    using Fitness_Tracker.Models;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.EntityFrameworkCore;
@@ -104,6 +106,10 @@ namespace Fitness_Tracker
             builder.Services.AddTransient<IEmailService, EmailService>();
             builder.Services.AddTransient<IActivityService, ActivityService>();
             builder.Services.AddMemoryCache();
+
+            // Configure Cloudinary for file storage
+            builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+            builder.Services.AddScoped<IFileStorageService, CloudinaryStorageService>();
 
             // Run data migrations and seeding in background so Kestrel can bind immediately
             builder.Services.AddHostedService<DataSeedingHostedService>();

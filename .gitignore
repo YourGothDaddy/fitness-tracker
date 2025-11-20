@@ -32,3 +32,8 @@ Back-end/bin/Debug/net8.0/benchmark-reports/
 ## Keep consumable data in repo for seeding
 # (was ignored previously)
 
+# Ignore appsettings.json (contains sensitive credentials)
+Back-end/appsettings.json
+Back-end/appsettings.*.json
+!Back-end/appsettings.json.example
+

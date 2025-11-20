@@ -140,3 +140,7 @@ C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\Fitness-Tracker.staticwebassets.runtime.json
 C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\consumableItem.json
+C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\CloudinaryDotNet.dll
+C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\Npgsql.dll
+C:\Alexander\Software Developement\repos\Web2\Fitness-Tracker\Back-end\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

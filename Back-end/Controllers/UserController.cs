@@ -3,6 +3,7 @@
     using Fitness_Tracker.Data.Models;
     using Fitness_Tracker.Models.Users;
     using Fitness_Tracker.Services.Users;
+    using Fitness_Tracker.Services.FileStorage;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Identity;
     using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,14 @@
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
         private readonly UserManager<User> _userManager;
+        private readonly IFileStorageService _fileStorageService;
 
-        public UserController(IConfiguration configuration, IUserService userService, UserManager<User> userManager)
+        public UserController(IConfiguration configuration, IUserService userService, UserManager<User> userManager, IFileStorageService fileStorageService)
         {
             _configuration = configuration;
             _userService = userService;
             _userManager = userManager;
+            _fileStorageService = fileStorageService;
         }
 
         // PUBLIC METHODS
@@ -393,34 +396,32 @@
             }
 
             // Only allow certain file types
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
             var extension = Path.GetExtension(avatar.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(extension))
             {
-                return BadRequest(new { Message = "Invalid file type. Only JPG, PNG, and GIF are allowed." });
+                return BadRequest(new { Message = "Invalid file type. Only JPG, PNG, GIF, and WebP are allowed." });
             }
 
-            // Save file to wwwroot/avatars
-            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "avatars");
-            if (!Directory.Exists(uploadsFolder))
+            try
             {
-                Directory.CreateDirectory(uploadsFolder);
+                // Upload to Cloudinary
+                var avatarUrl = await _fileStorageService.UploadImageAsync(avatar, "avatars");
+
+                // Update user in database with Cloudinary URL
+                await _userService.UpdateUserAvatarAsync(userId, avatarUrl);
+
+                return Ok(new { AvatarUrl = avatarUrl });
             }
-            var fileName = $"{userId}_{Guid.NewGuid()}{extension}";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            catch (ArgumentException ex)
             {
-                await avatar.CopyToAsync(stream);
+                return BadRequest(new { Message = ex.Message });
             }
-
-            // Build the URL to return
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var avatarUrl = $"{baseUrl}/avatars/{fileName}";
-
-            // Update user
-            await _userService.UpdateUserAvatarAsync(userId, $"/avatars/{fileName}");
-
-            return Ok(new { AvatarUrl = avatarUrl });
+            catch (Exception ex)
+            {
+                // Log the error in production
+                return StatusCode(500, new { Message = "Error uploading avatar. Please try again." });
+            }
         }
 
         // PRIVATE METHODS
